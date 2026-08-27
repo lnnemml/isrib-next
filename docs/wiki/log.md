@@ -114,3 +114,19 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - `npx tsc --noEmit` passes; `next build` succeeds (all 5 routes emit). No commit —
   Anton deploys the Vercel preview manually. `.gitignore` confirmed excluding
   `.next/`, `node_modules/`, `.vercel`.
+
+## [2026-08-27] setup | Analytics abstraction (src/lib/analytics)
+- Built the single mandatory tracking API (no call sites yet), mirroring the
+  nootropics reference (local: NORA/src/lib/analytics): `client.ts` `trackEvent(name,
+  props?, eventId?)` → dataLayer + fbq + Clarity; `server.ts` `trackServerEvent(name,
+  props)` → Meta CAPI + GA4 MP via Promise.allSettled (never throws, SHA-256 email);
+  `types.ts` Window augmentation + shared types. Each file banner-forbids direct
+  fbq/dataLayer/clarity (ADR 0005).
+- IDs read from env only (no hardcoding). `order_submitted → InitiateCheckout` kept
+  as PRIMARY Meta conversion. Reddit fired via GTM tag, not a direct client call.
+- `.env.example` (new): public IDs w/ values (GA4/Meta/Clarity/Reddit/GTM) + the two
+  server SECRETS as bare names (META_CAPI_ACCESS_TOKEN, GA4_API_SECRET) — flagged as
+  required or trackServerEvent/G3 fails silently. Only Clarity wci5xmxfnu wired;
+  wci589fgdr retired per ADR 0002 (documented as do-not-wire).
+- Added `!.env.example` negation to scaffold `.gitignore` (user-approved) so the
+  template is tracked. `npx tsc --noEmit` passes. No commit.
