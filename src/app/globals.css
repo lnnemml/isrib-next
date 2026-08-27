@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  /* ---------- Font families ---------- */
+  --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ---------- Blue — primary ---------- */
+  --color-blue-50:  #eff6ff;
+  --color-blue-100: #dbeafe;
+  --color-blue-200: #bfdbfe;
+  --color-blue-300: #93c5fd;
+  --color-blue-400: #60a5fa;
+  --color-blue-500: #3b82f6;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-800: #1e40af;
+  --color-blue-900: #1e3a8a;
+  --color-blue-950: #172554;
+
+  /* ---------- Cyan — precision accent ---------- */
+  --color-cyan-50:  #f0f9ff;
+  --color-cyan-100: #e0f2fe;
+  --color-cyan-200: #bae6fd;
+  --color-cyan-300: #7dd3fc;
+  --color-cyan-400: #38bdf8;
+  --color-cyan-500: #0ea5e9;
+  --color-cyan-600: #0284c7;
+  --color-cyan-700: #0369a1;
+  --color-cyan-800: #075985;
+  --color-cyan-900: #0c4a6e;
+
+  /* ---------- Slate — text & structure ---------- */
+  --color-slate-50:  #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  /* ---------- Semantic alias layer ---------- */
+  --color-primary:        var(--color-blue-600);   /* #2563eb — primary action  */
+  --color-primary-hover:  var(--color-blue-700);   /* #1d4ed8                    */
+  --color-primary-deep:   var(--color-blue-800);   /* #1e40af — anchor           */
+  --color-accent:         var(--color-cyan-500);   /* #0ea5e9 — signal fill      */
+  --color-accent-strong:  var(--color-cyan-600);   /* #0284c7 — mono labels      */
+
+  --color-surface:         #ffffff;
+  --color-surface-soft:    var(--color-slate-50);  /* #f8fafc                    */
+  --color-surface-inverse: var(--color-slate-900); /* #0f172a — dark sections    */
+  --color-surface-inverse-card: var(--color-slate-800); /* #1e293b               */
+
+  --color-border:      var(--color-slate-200);     /* #e2e8f0 — hairline         */
+  --color-border-soft: var(--color-slate-100);     /* #f1f5f9 — inner dividers   */
+  --color-border-inverse: var(--color-slate-700);  /* #334155 — on dark          */
+
+  --color-text:        var(--color-slate-900);     /* #0f172a                    */
+  --color-text-muted:  var(--color-slate-600);     /* #475569                    */
+  --color-text-subtle: var(--color-slate-500);     /* #64748b                    */
+  --color-text-faint:  var(--color-slate-400);     /* #94a3b8                    */
+
+  --color-danger:  #dc2626;
+  --color-success: #059669;
+  --color-warning: #d97706;
+
+  /* ---------- Type scale (size / line-height / tracking) ---------- */
+  --text-display: 3.625rem;            /* 58px — hero H1        */
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.035em;
+
+  --text-h1: 2.75rem;                  /* 44px — identity CTA   */
+  --text-h1--line-height: 1.1;
+  --text-h1--letter-spacing: -0.03em;
+
+  --text-h2: 2.375rem;                 /* 38px — section titles */
+  --text-h2--line-height: 1.12;
+  --text-h2--letter-spacing: -0.025em;
+
+  --text-h3: 1.375rem;                 /* 22px                  */
+  --text-h3--line-height: 1.25;
+  --text-h3--letter-spacing: -0.01em;
+
+  --text-body-lg: 1.1875rem;           /* 19px                  */
+  --text-body-lg--line-height: 1.6;
+
+  --text-body: 1.0625rem;              /* 17px                  */
+  --text-body--line-height: 1.7;
+
+  --text-small: 0.875rem;              /* 14px                  */
+  --text-small--line-height: 1.6;
+
+  --text-caption: 0.75rem;             /* 12px                  */
+  --text-caption--line-height: 1.4;
+
+  --text-mono-value: 0.9375rem;        /* 15px — inline sci val */
+  --text-mono-value--line-height: 1.3;
+
+  --text-mono-label: 0.75rem;          /* 12px — uppercase kicker */
+  --text-mono-label--line-height: 1.2;
+  --text-mono-label--letter-spacing: 0.16em;
+
+  /* ---------- Radius ---------- */
+  --radius-md:  0.75rem;   /* 12px — buttons, inputs        */
+  --radius-lg:  0.875rem;  /* 14px — small cards, spectra   */
+  --radius-xl:  1rem;      /* 16px — standard cards         */
+  --radius-2xl: 1.125rem;  /* 18px — hero card, order panel */
+
+  /* ---------- Elevation ---------- */
+  --shadow-xs: 0 1px 2px rgba(15,23,42,.04);
+  --shadow-sm: 0 1px 3px rgba(2,6,23,.06);
+  --shadow-md: 0 12px 30px rgba(2,6,23,.08);
+  --shadow-btn: 0 1px 2px rgba(37,99,235,.35), inset 0 1px 0 rgba(255,255,255,.15);
+
+  /* ---------- Layout ---------- */
+  --container-page: 1160px;
+}

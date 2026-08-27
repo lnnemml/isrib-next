@@ -96,3 +96,21 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   `raw/legacy/` HTML donor are not yet in the repo. Day 0 step 3 needs the PDFs;
   Sessions 3.2 (content port) + 4.1 (301 redirects read the old URL list from
   `raw/legacy/`) are blocked until the legacy HTML lands. Must be in before Day 3.
+
+## [2026-08-27] setup | Next.js 16 scaffold + design-system wiring
+- Scaffolded Next 16.3.3 (App Router, TS strict, Tailwind v4, React 19.2.8) via
+  create-next-app into a temp dir, then merged into the repo root (create-next-app
+  refuses to run in the non-empty repo). Preserved existing CLAUDE.md/AGENTS.md/docs.
+- Route-group skeleton: `(marketing)/` (home at `/`), `(shop)/{products/[slug],
+  isrib-a15,checkout}`, `go/`. Placeholder pages only — no logic. Checkout carries
+  an explicit "no card/Pay Now/Stripe" comment; scan confirms zero payment fields.
+- `src/lib/{db,auth,analytics,copy,email}` and `src/components/{ui,layout,shop,
+  marketing}` stubbed with `.gitkeep`.
+- Pasted `@theme` (§1) into `globals.css` and `next/font` Geist setup (§2) into
+  `layout.tsx` verbatim from `design/handoff-spec.md`. Verified the `--font-geist-
+  sans`/`--font-geist-mono` variable names match on both sides (the one silent-fail
+  point). §2's explicit `weight` arrays on the variable fonts build fine on Next 16
+  — no fallback needed.
+- `npx tsc --noEmit` passes; `next build` succeeds (all 5 routes emit). No commit —
+  Anton deploys the Vercel preview manually. `.gitignore` confirmed excluding
+  `.next/`, `node_modules/`, `.vercel`.
