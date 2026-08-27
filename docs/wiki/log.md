@@ -76,3 +76,23 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - Wrote `architect-brief.md` — the bootstrap primer for the web architect session
   (role, current state, two-session operating model, first moves, owned constraints).
 - Everything is now in place to begin Track A Day 0.
+
+## [2026-08-27] lint | Drift fix — align stale amber refs to locked light design
+
+- Architect fresh-eyes drift check before Track A Day 0. Found two pages still
+  describing the *diverged* amber-on-dark landing branch as the locked design
+  system, contradicting the 2026-08-27 `decision` (light blue/cyan/white
+  storefront identity locked; `design-system.md` STATUS: LOCKED; `handoff-spec.md`
+  §1 = blue/cyan/slate light-mode @theme).
+- Fixed `architecture/migration-plan.md` §4 Day 1 point 1 (it instructed writing
+  the amber `#0D0D12`/`#E8A427` palette into `design-system.md` — would have
+  overwritten the locked light palette) → now points to `handoff-spec.md` as the
+  source of truth.
+- Fixed `roadmap.md` Pre-build: flipped status from *(current)* to
+  *(done — LOCKED)*, corrected the "amber-on-near-black" direction line, set the
+  current phase to "ready for Track A Day 0".
+- No positioning change — this aligns stale pages to an already-accepted decision.
+- Flagged (not fixed): `docs/raw/` holds only README; the intelligence PDFs and
+  `raw/legacy/` HTML donor are not yet in the repo. Day 0 step 3 needs the PDFs;
+  Sessions 3.2 (content port) + 4.1 (301 redirects read the old URL list from
+  `raw/legacy/`) are blocked until the legacy HTML lands. Must be in before Day 3.

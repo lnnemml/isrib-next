@@ -4,12 +4,17 @@
 > [`architecture/migration-plan.md`](./architecture/migration-plan.md). This page
 > is the phase overview.
 
-## Pre-build — Design pass *(current)*
+## Pre-build — Design pass *(done — LOCKED 2026-08-27)*
 
-Claude Design produces the premium design system (tokens, typography, components,
-key page templates) evolving the existing amber-on-near-black underground-lab
-direction. Output is filed into [`design/design-system.md`](./design/design-system.md)
-before any component is built. See design-system.md status note.
+Claude Design produced the premium design system (tokens, typography, components,
+key page templates), **preserving the current `isrib.shop` light blue/cyan/white
+lab-grade identity and elevating it to premium** — NOT the amber-on-near-black
+landing branch (diverged, not adopted). Output is locked in
+[`design/design-system.md`](./design/design-system.md) (direction + rationale) and
+[`design/handoff-spec.md`](./design/handoff-spec.md) (exact Tailwind v4 `@theme`
+tokens + `next/font` — the implementation source of truth).
+
+**Current phase: ready for Track A Day 0.**
 
 ## Track A — Safe storefront replacement *(build target: a few days)*
 

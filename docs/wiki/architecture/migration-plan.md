@@ -154,9 +154,13 @@ Karpathy LLM-wiki — три шари: **raw** (immutable джерела) → **
    **Gate:** `next build` проходить, порожній сайт деплоїться на Vercel-preview.
 
 ### День 1 — Design system + продуктова модель (дані, не сторінки)
-1. Перенести Tailwind theme/tokens. Твій редизайн уже визначив палітру
-   (`#0D0D12` + amber `#E8A427`, underground-lab) — це і є locked design system,
-   зафіксуй у `docs/wiki/design/design-system.md`.
+1. Перенести Tailwind theme/tokens з **locked** design system. Напрям — поточна
+   storefront-айдентика `isrib.shop`: **світла, blue/cyan/white, lab-grade**,
+   піднята до premium. Amber-on-dark гілка з лендінг-редизайну **diverged і НЕ
+   прийнята** для уніфікованого сайту. Джерело істини для імплементації —
+   `docs/wiki/design/handoff-spec.md` §1 (@theme токени) + §2 (next/font);
+   рішення зафіксоване в `docs/wiki/design/design-system.md` (STATUS: LOCKED) та
+   log 2026-08-27 `decision`.
 2. `src/lib/copy/products.ts` — 6 продуктів як типізовані дані:
    ISRIB A15 (флагман), ISRIB Original, ZZL-7, MPEP Oxalate, Bromantane,
    N-Acetyl-Bromantane. SKU/ціни/формати — з `ISRIB_Analytics_Summary` таблиць.
