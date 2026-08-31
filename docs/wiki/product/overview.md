@@ -78,12 +78,23 @@ with a custom-quantity calculator (min 100mg, max 30g):
 - Per-gram tiers: 1g $100/g (10000/g) · 2–4g $90/g, −10% (9000/g) · 5–9g $85/g,
   −15% (8500/g) · 10–30g $80/g, −20% (8000/g).
 
-**Data-model consequence:** the product model must NOT assume one uniform pricing
-form. Use a discriminated union — `pricing.kind: "fixed"` (formats[] with priceCents,
-the five above) vs `pricing.kind: "per-gram-tiered"` (trials[] + tiers[] with
-perGramCents + range, ISRIB Original). The interactive custom-quantity calculator is
-NOT part of 1.2 (checkout/interactive logic) — model the data, render the discrete
-tiers as display cards, defer the live calculator.
+**Data-model consequence** (ratified in [ADR 0007](../decisions/0007-pricing-model-shape.md)):
+the model is a discriminated union on `pricing.kind` — `"fixed"` (formats[] with
+priceCents) vs `"per-gram-tiered"` (trials[] + tiers[] with perGramCents + range).
+`kind` denotes the **primary** sales/display mode and drives the default product-page
+render. **The live catalog is richer than a strict either/or**, so each shape carries
+OPTIONAL secondary fields for real extras:
+- **A15** (`kind: "fixed"`): also a **100mg powder** ($60) and **bulk per-gram tiers**
+  (2–4g $180/g −10%, 5–9g $170/g −15%, 10–30g $160/g −20%, off the $200/g base) →
+  `tiers?` on `PricingFixed`.
+- **ISRIB Original** (`kind: "per-gram-tiered"`): also **capsule SKUs**
+  (25×20mg $100, 50×20mg $140) → `formats?` on `PricingPerGramTiered`.
+
+Nothing is flattened; the discriminant is preserved. The interactive custom-quantity
+calculator (Original) is NOT modeled here — render discrete tiers as display cards,
+defer the live calculator. **Checkout consumer (Day 2):** a product may present
+multiple purchase modes — read `kind` for the primary UI, optionally surface secondary
+(A15 bulk tiers, Original capsules).
 
 ### Product copy — preserve, don't regenerate
 

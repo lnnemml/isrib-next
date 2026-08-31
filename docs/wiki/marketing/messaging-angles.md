@@ -49,6 +49,16 @@ comparison.
 
 ## Creative compliance (hard rules)
 
+- **Surface scope (Anton, 2026-08-31):** "ad-facing" = the ad creative + ad copy +
+  **the page the paid ad lands on**. Meta reviews the destination page, not just the
+  creative. So:
+  - **Paid-traffic destination** (the A15 landing / any URL a Meta ad points to):
+    NO prescription-drug brand names, NO asserted efficacy/health claims, cancer only
+    *answered* as an objection. Kept clean.
+  - **Organic-only product pages** (Bromantane, N-Acetyl-Bromantane, ZZL-7, MPEP,
+    Original — SEO/word-of-mouth, not Meta ad targets): may name related research
+    compounds (`Ladasten`, `sydnocarb`, `phenamin`) and carry the legacy mechanism
+    copy. Anton owns and accepts this compliance.
 - Never name prescription drugs in ad copy (Meta rejects). Use category terms:
   "prescription stimulants," "popular nootropic stacks."
 - No dementia claims. **Cancer risk claims never appear** (unsupported; the

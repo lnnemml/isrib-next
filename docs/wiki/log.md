@@ -246,3 +246,38 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   `fixed+tiers` shape; (C) revert to the strict union and drop the extra SKUs (contra
   Anton's product call). **Lean: (A)** — minimal, matches the live catalog, preserves
   the union's intent. Needs overview.md reconciliation or a new ADR. Not positioning.
+
+## [2026-08-31] decision | ADR 0007 ratifies pricing shape (option A) — G1b closed
+
+- Ratified the 1.2 escalate: discriminated union on `pricing.kind` + optional secondary
+  fields (`tiers?` on fixed, `formats?` on per-gram-tiered). Verified committed
+  products.ts: A15 bulk tiers = 10/15/20% off the $200/g base (consistent); Original
+  matches live to the cent; A15 100mg = $60 (visible grid over JSON-LD). Reconciled
+  overview.md; wired ADR into index. Rejected (B) flatten-to-one-shape and (C) drop
+  extras.
+- G1b CLOSED: 6 slugs SSG-render, prices to the cent, union not flattened, ported
+  short copy compliance-clean.
+- Open punch-list items (NOT blocking 1.2, gated before their ship points):
+  * COA claim: A15 page asserts "COA Included" but no COA file exists → must not assert
+    an unverifiable cert. Reword to the real artifact (¹H/¹³C NMR verification, which IS
+    attached) + "COA on request per batch", OR drop in a real COA PDF. Architect call
+    pending Anton on which. Pre-A15-ship gate.
+  * Deep-copy port (later session): legacy mechanism copy names phenamin/sydnocarb
+    (N-Acetyl-Brom) and Ladasten (Bromantane) + strong efficacy figures → HARD compliance
+    gate; my pass required before that copy ships (rx brand names + claim risk).
+  * Other 5 products' formula/NMR/FID exist in legacy (placeholder shown now) → port
+    into public/ before cutover.
+- Added `*.patch` to .gitignore (architect transfer patches were landing untracked).
+
+## [2026-08-31] decision | Punch-list resolutions: COA (variant A) + deep-copy compliance scope
+
+- COA claim → **variant A**: the A15 trust block reworks "COA Included" to the real
+  attached artifact — third-party ¹H/¹³C NMR verification (DMSO-d6) — plus "COA
+  available per batch on request". No fabricated cert. Applied when the A15 trust
+  block is finalized (bespoke A15-page session).
+- Deep-copy compliance → **Anton accepts, keep legacy copy as written**, scoped by
+  surface (recorded in marketing/messaging-angles.md): named research compounds +
+  legacy efficacy copy are fine on ORGANIC product pages; the PAID-traffic destination
+  (A15 landing / any Meta ad target) stays clean of rx brand names + asserted efficacy.
+  Rationale: Meta reviews the ad's destination page, not just the creative.
+- Both open punch-list items from the G1b entry are now closed.
