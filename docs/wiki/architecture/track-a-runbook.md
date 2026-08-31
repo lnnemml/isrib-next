@@ -153,6 +153,10 @@ price in your report.
 
 ## Session 1.3 — ISRIB A15 flagship landing
 
+> **PARKED (ADR 0008).** Not the A15 page — the live A15 product page is ported
+> faithfully instead (see roadmap 1.5). May return as the paid isrib-a15.com landing
+> (Track B). Prompt kept below for reference only.
+
 **Goal:** the long-form flagship page in belief-gate order.
 **Main risks:** copy compliance (prescription names / cancer claims) · belief order
 · page too heavy / not using ui components.

@@ -23,17 +23,30 @@ without breaking orders. Cutover (Vercel domain reassignment) only after the
 checkout gate is green; old deploy stays as instant rollback.
 
 - **Day 0** — Scaffold + wiki + analytics layer skeleton. Gate: `next build` ok,
-  empty site on preview.
-- **Day 1** — Design system + product model (`src/lib/copy/products.ts`, 6 products)
-  + `(shop)/products/[slug]` + ISRIB A15 landing. Gate: all 6 render, prices correct.
-- **Day 2** — Checkout (Neon + Drizzle orders, `submitOrder` action, payment-method
-  selector, Resend emails, NowPayments invoice + webhook route). **Gate G2:** real
-  test order → Neon → 2 emails → invoice → status. No DNS/domain move until green.
+  empty site on preview. *(done)*
+- **Day 1** — Component library + product model + generic `products/[slug]`. *(done —
+  1.1, 1.2)* **Reshaped by [ADR 0008](./decisions/0008-full-migration-and-cart.md):**
+  the generic render is a fallback, not the flagship. Faithful ports of the live pages
+  now drive Day 1's tail:
+  - **1.3 — PARKED** (long-form belief landing; not the A15 page; maybe the paid
+    `isrib-a15.com` landing later, Track B).
+  - **1.4 — Site chrome + cart foundation:** real header (nav, mobile menu, **cart
+    badge**) + footer + client cart state (line items, count, persist, cart→checkout).
+  - **1.5 — A15 faithful port (reference):** the full live A15 page ported onto the
+    new design system — commerce core (format selector + per-gram calculator + Add to
+    Cart) + rich sections — lightly design-lifted, not redesigned.
+  - **1.6 — Other 5 product ports** (same pattern; Original also has a calculator).
+  Gate G1: every product page is a faithful, cart-wired port; parity vs the live site.
+- **Day 2** — **Multi-line** checkout (Neon + Drizzle `orders` + `order_items`,
+  `submitOrder` from the cart, payment-method selector, Resend emails, NowPayments
+  invoice + webhook). **Gate G2:** real **multi-item** test order → Neon → 2 emails →
+  invoice → status. No DNS/domain move until green.
 - **Day 3** — Analytics end-to-end (preserve IDs, `order_submitted` primary) +
-  legal templates + port 6 product content pages (parallelizable). Gate: funnel
-  fires; analytics parity.
+  legal templates + deep product content port (incl. the deferred rx-name/efficacy
+  copy — architect compliance pass first). Gate: funnel fires; analytics parity.
 - **Day 4** — QA (desktop + mobile + Clarity), sitemap/robots, 301 redirects from
-  old URLs, **cutover** (Vercel domain reassignment), 48h monitoring.
+  old URLs, **parity audit vs the live site (nothing dropped)**, **cutover** (Vercel
+  domain reassignment), 48h monitoring.
 
 ## Track B — Platform fast-follow *(week 2, no live pressure)*
 
