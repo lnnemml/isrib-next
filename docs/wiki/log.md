@@ -195,3 +195,16 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   summaries / raw sources (never invented); page copy must trace to the six beliefs
   (product/beliefs-and-objections.md) before shipping. This is a standing gate on
   every page session, not a one-off.
+
+## [2026-08-27] data | Full product price table + copy-preservation rule (pre-1.2)
+
+- Anton supplied live-page prices for the other 5 SKUs; catalog now fully priced in
+  overview.md (integer cents). No more TODO prices for 1.2.
+- Structural finding: ISRIB Original is NOT fixed size→price — it's a per-gram tiered
+  model with a custom-qty calculator. Recorded discriminated-union requirement
+  (fixed vs per-gram-tiered) in overview.md so the 1.2 data model doesn't assume one
+  shape. Live calculator deferred (not 1.2 scope).
+- Copy decision (Anton): existing product-page copy is validated and PRESERVED —
+  page sessions port it verbatim from the local old site, not regenerate. Standing
+  copy gate updated: port verbatim + compliance-scan-and-FLAG (never silent rewrite);
+  new copy only where the old site has none; prices only from source, never invented.

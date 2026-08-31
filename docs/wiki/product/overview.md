@@ -56,6 +56,48 @@ ISRIB A15 pricing (from `ISRIB_Analytics_Summary`): 500mg $130, 1g $200,
 25 caps (20mg) $170, 50 caps (20mg) $240. ~50–100 doses/gram. Price context:
 AMSBIO charges $415 for 50mg — isrib.shop 1g at $200 is ~20× better value/dose.
 
+### Full authoritative price table (from live isrib.shop product pages, 2026-08-27)
+
+Source of truth for the other five SKUs; integer cents. **Never invent — sourced
+from the live pages Anton provided.** All powder unless noted.
+
+| Product | Format | Size | Price | cents |
+|---|---|---|---|---|
+| ISRIB A15 | powder | 500mg | $130 | 13000 |
+| ISRIB A15 | powder | 1g | $200 | 20000 |
+| ISRIB A15 | capsules | 25×20mg | $170 | 17000 |
+| ISRIB A15 | capsules | 50×20mg | $240 | 24000 |
+| MPEP Oxalate | powder | 100mg / 500mg / 1g | $60 / $130 / $200 | 6000 / 13000 / 20000 |
+| N-Acetyl-Bromantane | powder | 500mg / 1g / 2g | $40 / $70 / $130 | 4000 / 7000 / 13000 |
+| Bromantane | powder | 1g / 2g / 5g | $40 / $70 / $160 | 4000 / 7000 / 16000 |
+| ZZL-7 | powder | 100mg | $50 | 5000 |
+
+**ISRIB Original — distinct pricing shape (NOT fixed size→price).** Per-gram tiered
+with a custom-quantity calculator (min 100mg, max 30g):
+- Trials (fixed): 100mg $27 (2700), 500mg $60 (6000).
+- Per-gram tiers: 1g $100/g (10000/g) · 2–4g $90/g, −10% (9000/g) · 5–9g $85/g,
+  −15% (8500/g) · 10–30g $80/g, −20% (8000/g).
+
+**Data-model consequence:** the product model must NOT assume one uniform pricing
+form. Use a discriminated union — `pricing.kind: "fixed"` (formats[] with priceCents,
+the five above) vs `pricing.kind: "per-gram-tiered"` (trials[] + tiers[] with
+perGramCents + range, ISRIB Original). The interactive custom-quantity calculator is
+NOT part of 1.2 (checkout/interactive logic) — model the data, render the discrete
+tiers as display cards, defer the live calculator.
+
+### Product copy — preserve, don't regenerate
+
+Existing live product-page copy is **validated and kept** (Anton's call). Page-building
+sessions **port it verbatim** from the local old site
+(`/home/laptop/Documents/ISRIB/isrib shop website/ISRIB`) rather than writing new
+descriptions. New copy only where the old site has none. A compliance scan **flags**
+(never silently rewrites) any rx-drug brand name, asserted cancer benefit, or
+guarantee language for Anton to decide. Category descriptors carry over, e.g. MPEP
+"mGluR5 Negative Allosteric Modulator", N-Acetyl-Bromantane "Acylated Dopaminergic
+Actoprotector", Bromantane "Dopaminergic Actoprotector", ZZL-7 "Fast-Onset Research
+Compound". Common trust block: ≥98% (HPLC), COA included, worldwide shipping, secure
+packaging, support via Email/Telegram/Signal, payments arranged individually.
+
 ## Product-page template convention (from legacy MPEP)
 
 Hero with formula SVG → five-block mechanism section → NMR section with lightbox +
