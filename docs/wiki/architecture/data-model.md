@@ -1,26 +1,40 @@
 # Architecture — Data Model
 
 > **Stub — grows with `src/lib/db/schema.ts` (the ground truth for types).** This
-> page explains intent. Based on the nootropics `orders` shape (ADR 0003).
+> page explains intent. Based on the nootropics `orders` shape (ADR 0003), extended to
+> **multi-line orders** per [ADR 0008](../decisions/0008-full-migration-and-cart.md).
 
-## `orders` (denormalized single table for MVP)
+## `orders` + `order_items` (multi-line — ADR 0008)
 
+The live site has a real multi-item cart, so an order carries **line items**. Two
+tables (or an `order_items` JSON column if simpler at this scale — orchestrator's
+technical call at schema time):
+
+**`orders`** — customer + payment + totals, one row per order:
 `id` (nanoid), `created_at`, `status` (enum), `name`, `email`, `phone`, `address`,
-`city`, `postal_code`, `state_region` (nullable), `country`, `product_slug`,
-`quantity`, `format` (powder|capsules), `base_price` (cents), `payment_method`
-(crypto|manual), `crypto_discount_pct` (nullable), `total_price` (cents),
-`promo_code` (nullable), `note` (nullable), `nowpayments_invoice_id` (nullable),
-`nowpayments_payment_url` (nullable), `order_number` (unique), UTM fields,
-`confirmation_email_sent_at`, `user_id` (nullable — guest checkout stays supported).
+`city`, `postal_code`, `state_region` (nullable), `country`, `payment_method`
+(crypto|manual), `crypto_discount_pct` (nullable), `subtotal_price` (cents),
+`total_price` (cents), `promo_code` (nullable), `note` (nullable),
+`nowpayments_invoice_id` (nullable), `nowpayments_payment_url` (nullable),
+`order_number` (unique), UTM fields, `confirmation_email_sent_at`,
+`user_id` (nullable — guest checkout stays supported).
 
-Status enum: `pending_payment_instructions -> awaiting_payment -> paid ->
-fulfilled`, or any -> `cancelled`.
+**`order_items`** — one row per cart line: `id`, `order_id` (FK), `product_slug`,
+`format` (powder|capsules), `quantity`, `size_label` (e.g. "2g", "50 × 20mg"),
+`line_price` (cents). Capsules vs powder affects mg math — carry `format` explicitly
+(lesson from legacy `normalizeItem`). No implicit mg→g conversion.
 
-## ISRIB-specific note vs nootropics
+Status enum (per-order, unchanged): `pending_payment_instructions -> awaiting_payment
+-> paid -> fulfilled`, or any -> `cancelled`.
 
-nootropics was single-product; ISRIB has 6. `product_slug` + `format` on the row is
-enough for MVP (no `products`/`order_items` tables yet). Capsules vs powder affects
-mg calculation — carry `format` explicitly (lesson from legacy `normalizeItem`).
+**G2 test order is multi-item** — the end-to-end order that must pass before any
+cutover contains ≥2 line items across ≥2 products.
+
+## Cart (client state — ADR 0008)
+
+A client-side cart holds line items { product_slug, format, quantity, sizeLabel,
+linePriceCents } with a live count for the header badge; checkout reads the cart to
+build the `order` + `order_items`. Persisted across reloads.
 
 ## Product catalog data (`src/lib/copy/products.ts`)
 
@@ -54,20 +68,23 @@ and the legacy pages):
 
 | Product | kind | pricing |
 | --- | --- | --- |
-| ISRIB A15 | fixed | powder 100mg 6000 / 500mg 13000 / 1g 20000; caps 25×20mg 17000 / 50×20mg 24000; **tiers** 2–4g 18000/g −10%, 5–9g 17000/g −15%, 10–30g 16000/g −20% |
+| ISRIB A15 | per-gram-tiered ¹ | trials 100mg 6000 / 500mg 13000; tiers 1g 20000/g, 2–4g 18000/g −10%, 5–9g 17000/g −15%, 10–30g 16000/g −20%; **caps** 25×20mg 17000 / 50×20mg 24000 |
 | ISRIB Original | per-gram-tiered | trials 100mg 2700 / 500mg 6000; tiers 1g 10000/g, 2–4g 9000/g −10%, 5–9g 8500/g −15%, 10–30g 8000/g −20%; **caps** 25×20mg 10000 / 50×20mg 14000 |
 | MPEP Oxalate | fixed | powder 100mg 6000 / 500mg 13000 / 1g 20000 |
 | N-Acetyl-Bromantane | fixed | powder 500mg 4000 / 1g 7000 / 2g 13000 |
 | Bromantane | fixed | powder 1g 4000 / 2g 7000 / 5g 16000 |
 | ZZL-7 | fixed | powder 100mg 5000 |
 
-**⚠ Deviation from overview.md (pending architect ratification — logged `escalate`
-2026-08-31):** overview.md scopes A15 to `fixed` and Original to `per-gram-tiered`-only.
-Anton ruled in-session (2026-08-31) that the real catalog also sells A15 bulk per-gram
-tiers and Original capsules. Modeled as **optional secondary fields** on each union arm
-(`tiers?` on fixed, `formats?` on tiered) — still a discriminated union, nothing
-flattened. overview.md should be reconciled (or an ADR issued) by the architect. Not a
-positioning change.
+**✓ Ratified — [ADR 0007](../decisions/0007-pricing-model-shape.md):** the union +
+optional-secondary-fields shape (`tiers?` on fixed, `formats?` on tiered) is accepted;
+overview.md reconciled. Nothing flattened.
+
+**¹ A15 correction (ADR 0008 / the live A15 page):** the live A15 page is a **per-gram
+calculator** (trials 100mg/500mg + tiers 1g→30g with savings + a custom-quantity
+input), structurally identical to ISRIB Original — NOT `fixed`. So A15 is reassigned
+`kind: "per-gram-tiered"` with capsules as `formats?`. **`src/lib/copy/products.ts`
+currently still has A15 as `fixed` — correct it during the A15 faithful port.** Prices
+are unchanged (verified to the cent); only the `kind` and grouping change.
 
 ## Deferred (Track B)
 

@@ -281,3 +281,22 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   (A15 landing / any Meta ad target) stays clean of rx brand names + asserted efficacy.
   Rationale: Meta reviews the ad's destination page, not just the creative.
 - Both open punch-list items from the G1b entry are now closed.
+
+## [2026-08-31] decision | ADR 0008 — full migration (not MVP) + multi-item cart
+
+- Anton's ruling on reviewing the hollow generic A15 page: (1) this is a FULL
+  migration — preserve everything the live site does, improve in places, never reduce;
+  "MVP" retired. (2) Real multi-item cart (header badge → checkout); customers buy A15
+  with other SKUs.
+- Recorded ADR 0008. Reconciled data-model.md: single-order/MVP model → multi-line
+  `orders` + `order_items`; client cart state; G2 test order is now multi-item.
+- Drift fixes in data-model.md: the stale "pending ratification" escalate note →
+  marked ratified (ADR 0007); A15 `kind` corrected `fixed` → `per-gram-tiered` (the
+  live A15 page is a per-gram calculator like Original) — products.ts still says fixed,
+  to be corrected in the A15 port. Prices unchanged.
+- 1.3 (long-form belief landing) PARKED — not the A15 page. Product pages become
+  faithful ports of the live pages (commerce core intact), lightly design-lifted.
+- Parity principle: every gate now includes "did we drop anything the old site had?"
+  Early old-site inventory (explorer over the local path) recommended.
+- Reshaped sequence (roadmap to follow): site chrome + cart foundation → A15 faithful
+  port → other 5 ports → Day-2 multi-line orders schema + checkout + payment (G2).
