@@ -24,14 +24,29 @@
 - **prober** on Sonnet does the mechanical "does it actually work" checks; its value
   peaks at the G2 checkout gate (real test order).
 
-**When to use the full pipeline vs. just do it:** Track A is a sequential, dependent
-chain — the orchestrator does NOT run the full explorer→implementer→verifier→prober
-loop on every trivial task. Reach for the roles where they earn their cost:
-- explorer → before any build that mirrors nootropics, or that needs a call-site map.
-- implementer → any real code change.
-- verifier → after any change touching constraints (checkout, analytics, forbidden
-  files, compliance copy, design tokens).
-- prober → after checkout, analytics, and at QA (G2/G3/G4). Skip for pure UI.
+**When roles are MANDATORY vs. when solo is allowed** (see [ADR 0006](../decisions/0006-delegation-discipline.md)).
+Track A is a sequential, dependent chain — so the orchestrator does NOT run the full
+explorer→implementer→verifier→prober loop on *every* task. But delegation is **not
+discretionary** for the task classes below — the orchestrator may not "just do it"
+solo on these:
+- **explorer** — REQUIRED before any build that mirrors `nootropics` or needs a
+  call-site/shape map. (Keeps the orchestrator's context lean on a long ephemeral
+  chain; a solo read bloats it.)
+- **implementer** — any non-trivial real code change (multiple files or logic).
+- **verifier** — REQUIRED after any change touching a hard-constraint area:
+  checkout, analytics, forbidden/live files, compliance copy, design tokens. This is
+  the only *independent* check; self-authored + self-attested constraint code has no
+  guardrail. The architect's gate-time drift check is a backstop at a different
+  altitude (built-vs-intended), NOT a substitute for the in-session line-by-line
+  verifier.
+- **prober** — REQUIRED after checkout, analytics wiring, and at QA (G2/G3/G4).
+
+**Solo ("just do it") is allowed ONLY for genuinely trivial/mechanical work** —
+empty placeholder pages, a single class-string edit, a config one-liner — and even
+then the orchestrator must *declare* it soloed and why (see the report format in §6).
+Do not manufacture ceremony on trivial work; but do not solo a constraint task to
+save a turn. This is calibration, not "full pipeline on everything" — that would
+bottleneck the 4-day build and is an explicit anti-goal.
 
 **Parallelism:** only (a) multiple explorers doing independent recon, and (b) Day-3
 content port (one implementer per product, disjoint files). Never parallelize the
@@ -101,6 +116,19 @@ After a task passes its gate, the orchestrator updates `docs/wiki/log.md`
 (`## [YYYY-MM-DD] phase | <session> done`) and any wiki page whose contract changed
 (e.g. data-model.md when the schema lands). A good result gets filed back into the
 wiki, not left only in the session.
+
+### 6. Session report format — make the loop observable
+Every report the orchestrator returns to Anton **opens with a `Roles run:` line** —
+which subagents actually ran, plus the verifier verdict and prober evidence where
+they applied. Examples:
+- `Roles run: explorer (nootropics analytics shape) → implementer → verifier: approve → prober: n/a (no call sites)`
+- `Roles run: soloed — trivial (empty placeholder pages only)`
+
+A report without this line is **incomplete** — Anton should push back and ask which
+roles ran before accepting the gate. This is the forcing function that makes
+delegation drift visible at gate time instead of invisible: without it, a solo run on
+a constraint task looks identical to a properly-reviewed one. If a mandated role (§3
+above) was skipped, say so explicitly and why — don't omit it.
 
 ## Guardrails that bind every agent
 Inherited from [`../../../CLAUDE.md`](../../../CLAUDE.md): don't touch the live repo;

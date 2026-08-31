@@ -62,6 +62,7 @@ rather than scanning the whole directory.
 - [`decisions/0003-order-storage-neon.md`](./decisions/0003-order-storage-neon.md)
 - [`decisions/0004-blue-green-cutover.md`](./decisions/0004-blue-green-cutover.md)
 - [`decisions/0005-analytics-preservation.md`](./decisions/0005-analytics-preservation.md)
+- [`decisions/0006-delegation-discipline.md`](./decisions/0006-delegation-discipline.md)
 
 ## Planning
 

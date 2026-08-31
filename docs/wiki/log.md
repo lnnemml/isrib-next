@@ -130,3 +130,21 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   wci589fgdr retired per ADR 0002 (documented as do-not-wire).
 - Added `!.env.example` negation to scaffold `.gitignore` (user-approved) so the
   template is tracked. `npx tsc --noEmit` passes. No commit.
+
+## [2026-08-27] decision | Delegation discipline + session-report observability (ADR 0006)
+
+- Architect escalation from Anton at G0.2: the orchestrator executed 0.1/0.2 largely
+  solo. 0.2 (analytics) is a named constraint area; its prompt ordered an explorer
+  pass on nootropics, but the report showed neither explorer nor verifier — so
+  constraint code (dedup, no-raw-fbq, env-only IDs) was self-authored and
+  self-attested with no independent review.
+- Recorded ADR 0006: subagent roles are MANDATORY for named classes (explorer before
+  nootropics-mirroring builds; verifier after constraint-touching changes; prober
+  after checkout/analytics/QA; implementer for non-trivial code). Solo allowed only
+  for genuinely trivial work, and must be declared.
+- Tightened `architecture/agent-roles.md` §3 (mandatory-not-discretionary) and added
+  §6 (every report opens with a `Roles run:` line — the forcing function that makes
+  delegation drift visible at gate time). Wired ADR into index.md.
+- NOT a move to full-pipeline-on-everything — calibration, per architect-brief
+  anti-over-rev. Immediate remedy: fresh verifier pass on committed 0.2 diff
+  (d8133e8) before Session 1.1 is released.
