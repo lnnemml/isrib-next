@@ -300,3 +300,31 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   Early old-site inventory (explorer over the local path) recommended.
 - Reshaped sequence (roadmap to follow): site chrome + cart foundation → A15 faithful
   port → other 5 ports → Day-2 multi-line orders schema + checkout + payment (G2).
+
+## [2026-08-31] setup | Site chrome + client cart foundation (ADR 0008)
+
+- Explorer pass first: reverse-engineered the live cart (localStorage "isrib_cart";
+  badge=Σcount; add merges sku+format+grams+price; update min-1; remove-by-index;
+  checkout reads storage → subtotal → POST /api/checkout → clear) + NORA's
+  hydration-safe pattern.
+- Built the site chrome in the ROOT layout so every route inherits it: `Header`
+  ("use client" — wordmark, nav, mobile menu, live cart badge → /checkout) + `Footer`
+  (server — 4-col legacy structure, product links resolve to real /products/[slug]).
+  Tokens-only light lift; legacy 🧺 emoji → SVG.
+- Built the client cart as the SOLE API (`src/lib/cart/`): Context + useReducer,
+  `useCart()` → { lines, count, subtotalCents, addLine, updateQuantity, removeLine,
+  clear }. Storage/read/write live only in `CartProvider`; verifier grep-confirmed no
+  other consumer touches storage. Hydration guard (empty SSR state, load in mount
+  effect, persist guarded by `hydrated`) — no mismatch, no empty-state clobber.
+- `AddToCartButton` wired on every discrete purchasable (fixed formats + tiered trials)
+  across product pages; per-gram tiers stay display-only. `/checkout` replaced with a
+  cart shell (lists lines, qty stepper/remove, subtotal) — NO card fields, NO
+  submission (Day 2). `tsc` clean; `next build` all 15 routes; verifier APPROVE (7/7).
+- **Parity deltas (intentional, flagged):** line-item shape → ADR 0008
+  { productSlug, format, quantity, sizeLabel, linePriceCents } (drops legacy mg-in-grams
+  bug + dollar prices); storage key → `isrib_cart_v2` (legacy shape not forward-compat,
+  garbage filtered on load); promo codes + per-gram calculator + capsule mg display
+  deferred to the ports/Day-2. Not-yet-built linked routes (About/FAQ/Contact/Quality/
+  Safety/Terms/Privacy/Research/Disclaimer + /products index) 404 until their sessions.
+  Chrome also renders on /go (DR landing) — NORA hides chrome there; a pathname
+  exclusion is worth considering later.

@@ -8,7 +8,9 @@ import {
   type Pricing as ProductPricing,
   type FixedFormat,
 } from "@/lib/copy/products";
-import { Button, ProductHero, HeroStat, NmrSection } from "@/components/ui";
+import { ProductHero, HeroStat, NmrSection } from "@/components/ui";
+import { AddToCartButton } from "@/components/shop/AddToCartButton";
+import type { CartFormat } from "@/lib/cart/types";
 
 export function generateStaticParams() {
   return getAllProductSlugs().map((slug) => ({ slug }));
@@ -39,28 +41,43 @@ function PriceCard({
   priceLabel,
   badge,
   discount,
+  add,
 }: {
   sizeLabel: string;
   priceLabel: string;
   badge?: string;
   discount?: string;
+  add?: { productSlug: string; format: CartFormat; sizeLabel: string; priceCents: number };
 }) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
-      <div className="flex items-center justify-between gap-3">
-        <span className="font-mono text-[14px] text-text">{sizeLabel}</span>
-        {badge && (
-          <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-text-faint">
-            {badge}
-          </span>
-        )}
-        {discount && (
-          <span className="rounded-full bg-success/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-success">
-            {discount}
-          </span>
-        )}
+    <div className="flex flex-col justify-between rounded-lg border border-border bg-surface p-4 shadow-sm">
+      <div>
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-mono text-[14px] text-text">{sizeLabel}</span>
+          {badge && (
+            <span className="rounded-full border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.06em] text-text-faint">
+              {badge}
+            </span>
+          )}
+          {discount && (
+            <span className="rounded-full bg-success/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-success">
+              {discount}
+            </span>
+          )}
+        </div>
+        <div className="mt-2 font-mono text-[20px] font-semibold text-text">{priceLabel}</div>
       </div>
-      <div className="mt-2 font-mono text-[20px] font-semibold text-text">{priceLabel}</div>
+      {add && (
+        <div className="mt-3">
+          <AddToCartButton
+            productSlug={add.productSlug}
+            format={add.format}
+            sizeLabel={add.sizeLabel}
+            priceCents={add.priceCents}
+            variant="secondary"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -76,22 +93,23 @@ function PriceGroup({ heading, children }: { heading: string; children: React.Re
   );
 }
 
-function formatCard(f: FixedFormat) {
+function formatCard(f: FixedFormat, productSlug: string) {
   return (
     <PriceCard
       key={f.sku}
       sizeLabel={f.sizeLabel}
       priceLabel={formatCents(f.priceCents)}
       badge={f.format === "capsules" ? "Capsules" : "Powder"}
+      add={{ productSlug, format: f.format, sizeLabel: f.sizeLabel, priceCents: f.priceCents }}
     />
   );
 }
 
-function Pricing({ pricing }: { pricing: ProductPricing }) {
+function Pricing({ pricing, productSlug }: { pricing: ProductPricing; productSlug: string }) {
   if (pricing.kind === "fixed") {
     return (
       <div className="flex flex-col gap-8">
-        <PriceGroup heading="Sizes">{pricing.formats.map(formatCard)}</PriceGroup>
+        <PriceGroup heading="Sizes">{pricing.formats.map((f) => formatCard(f, productSlug))}</PriceGroup>
         {pricing.tiers && (
           <PriceGroup heading="Bulk (per gram)">
             {pricing.tiers.map((t) => (
@@ -113,7 +131,12 @@ function Pricing({ pricing }: { pricing: ProductPricing }) {
     <div className="flex flex-col gap-8">
       <PriceGroup heading="Trial sizes">
         {pricing.trials.map((t) => (
-          <PriceCard key={t.sizeLabel} sizeLabel={t.sizeLabel} priceLabel={formatCents(t.priceCents)} />
+          <PriceCard
+            key={t.sizeLabel}
+            sizeLabel={t.sizeLabel}
+            priceLabel={formatCents(t.priceCents)}
+            add={{ productSlug, format: "powder", sizeLabel: t.sizeLabel, priceCents: t.priceCents }}
+          />
         ))}
       </PriceGroup>
       <PriceGroup heading="Per-gram pricing">
@@ -127,7 +150,9 @@ function Pricing({ pricing }: { pricing: ProductPricing }) {
         ))}
       </PriceGroup>
       {pricing.formats && (
-        <PriceGroup heading="Capsules">{pricing.formats.map(formatCard)}</PriceGroup>
+        <PriceGroup heading="Capsules">
+          {pricing.formats.map((f) => formatCard(f, productSlug))}
+        </PriceGroup>
       )}
     </div>
   );
@@ -151,7 +176,6 @@ export default async function ProductPage({
         kicker={product.categorySubtitle}
         title={product.name}
         body={product.description}
-        cta={<Button variant="primary">{`Order ${product.name}`}</Button>}
         stats={
           <div className="mt-8 flex gap-10">
             {purity && <HeroStat figure={purity} label="Purity" />}
@@ -177,7 +201,7 @@ export default async function ProductPage({
       <div className="mx-auto flex max-w-[--container-page] flex-col gap-16 px-8 py-16">
         <section>
           <h2 className="mb-6 text-h3 font-semibold">{"Pricing"}</h2>
-          <Pricing pricing={product.pricing} />
+          <Pricing pricing={product.pricing} productSlug={product.slug} />
         </section>
 
         {product.assets?.spectra && (
