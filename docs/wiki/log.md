@@ -171,3 +171,27 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   FID/COA files) not yet in `public/`; all preview copy/values are placeholders (real
   numbers/prices from `raw/`); completed-stepper-label colour is an undocumented spec
   gap (reuses active treatment for now).
+
+## [2026-08-27] gate | Session 1.1 verifier: APPROVE — G1a closed
+
+- Component library (11 UI files + barrel + cn.ts) from handoff-spec §4, plus guarded
+  (dev)/kitchen-sink + robots.ts. Committed 9db0d19. Report opened with `Roles run:`
+  (orchestrator → 2× explore → implementer → verifier: approve). ADR 0006 working.
+- Architect spot-check on committed code (not trusting the report): VERCEL_ENV guard
+  present (line 34, correct — not NODE_ENV); PaymentSelector card slot aria-disabled +
+  disabled, no live value path ("No card checkout — by design"); NmrSection lightbox
+  <img> mounted only under `{src !== null && …}`. All confirmed.
+- Resolved micro-fork (design call, architect): stepper completed-step label color is
+  unspecified in §4. Decision — completed labels use a MUTED treatment
+  (`text-text-subtle`) so the ACTIVE step stands out as "where you are"; upcoming stay
+  faint. Not worth rebuilding kitchen-sink; apply when the stepper lands in the real
+  checkout page (Day 2 checkout session prompt to carry this).
+- Recorded local donor paths in migration-plan.md (old site + NORA/nootropics) and
+  reconciled the raw/legacy gap: read legacy from the local path, copy assets to
+  public/ at content-port, enumerate old URLs there for 4.1 redirects.
+
+## Note on copy/prices (carry to every page-building session)
+- All kitchen-sink copy is placeholder. Real prices come ONLY from the analytics
+  summaries / raw sources (never invented); page copy must trace to the six beliefs
+  (product/beliefs-and-objections.md) before shipping. This is a standing gate on
+  every page session, not a one-off.
