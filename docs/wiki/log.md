@@ -148,3 +148,26 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - NOT a move to full-pipeline-on-everything — calibration, per architect-brief
   anti-over-rev. Immediate remedy: fresh verifier pass on committed 0.2 diff
   (d8133e8) before Session 1.1 is released.
+
+## [2026-08-31] setup | UI component library from handoff-spec §4 + kitchen-sink
+
+- Built `src/components/ui/` (Button, Card, Quote, ProductHero/HeroStat, NmrSection,
+  MechanismSection, ComparisonTable, FaqAccordion, CheckoutStepper,
+  PaymentSelector/RadioCard) from the exact class strings in `design/handoff-spec.md`
+  §4 — no invented tokens; every utility resolves to the locked `@theme` block in
+  `globals.css`. Variant-prop API for Button/Card; minimal `cn()` join helper (no
+  tailwind-merge, so spec classes can't be dropped/reordered).
+- NmrSection lightbox mounts its `<img>` only when `src !== null` — closes the
+  unresolved-hole fetch bug caught in the design pass.
+- Dev-only `/kitchen-sink` preview (route group `(dev)`, exposed at `/kitchen-sink`)
+  renders every component in all states. Hard guard
+  `if (process.env.VERCEL_ENV === "production") notFound();` keeps it off the live
+  domain after cutover (VERCEL_ENV, not NODE_ENV — preview builds run
+  NODE_ENV=production); `robots.ts` adds a `/kitchen-sink` disallow as a courtesy.
+- Roles run: orchestrator → 2× explore (spec + repo map) → implementer → verifier
+  (G1a, fresh context) APPROVE; `npx tsc --noEmit` clean. Presentational only — no
+  data fetch, no analytics calls.
+- Flagged for Anton before use in real pages: spec asset paths (formula SVG, NMR PNGs,
+  FID/COA files) not yet in `public/`; all preview copy/values are placeholders (real
+  numbers/prices from `raw/`); completed-stepper-label colour is an undocumented spec
+  gap (reuses active treatment for now).
