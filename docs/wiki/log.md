@@ -208,3 +208,41 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   page sessions port it verbatim from the local old site, not regenerate. Standing
   copy gate updated: port verbatim + compliance-scan-and-FLAG (never silent rewrite);
   new copy only where the old site has none; prices only from source, never invented.
+
+## [2026-08-31] setup | Product data (products.ts) + (shop)/products/[slug] template
+
+- Built `src/lib/copy/products.ts` (6 products, typed) + the dynamic product page
+  rendering from it via the 1.1 UI components (ProductHero/HeroStat, NmrSection, Button
+  + token-only pricing cells). Explorer pass first (ADR 0006): legacy pages + NORA
+  pattern. `getProduct` / `getAllProductSlugs` / `formatCents` helpers; async params,
+  generateStaticParams, generateMetadata, notFound. `next build` pre-renders all 6
+  slugs as SSG; `tsc --noEmit` clean. Presentational only — no analytics, no checkout.
+- Prices ported as integer cents, verified to the cent vs the authoritative table AND
+  the legacy pages (incl. Anton's extras). `format` carried explicitly; tiered NOT
+  flattened. Shape recorded in `architecture/data-model.md`.
+- Source-data conflict resolved: the legacy A15 page contradicts itself on the 100mg
+  powder (JSON-LD $50 vs tier grid $60). Anton confirmed **$60 (6000¢)** — set in
+  products.ts.
+- Copy ported verbatim (subtitle/description/trust bullets/specs). Compliance: the
+  ported SHORT descriptions are clean (no rx-brand/cancer/guarantee). FLAGGED for the
+  later deep-copy port: legacy mechanism sections (NOT ported this session) name
+  `phenamin`/`sydnocarb` (N-Acetyl-Brom) and `Ladasten` (Bromantane) + carry strong
+  efficacy figures — Anton's call before that copy ships.
+- Assets: copied A15's real formula SVG + H1/C13 NMR + two FID zips into
+  `public/{images,files}`. COA does not exist in the legacy site (page asserts "COA
+  ✓ Included" but no file) → flagged, not fabricated. Other 5 products' formula/NMR/FID
+  exist in legacy but are out of scope this session (hero shows placeholder).
+
+## [2026-08-31] escalate | Pricing union extended beyond overview.md (A15 tiers, Original caps)
+
+- overview.md scopes A15 to `fixed` and ISRIB Original to `per-gram-tiered`-only. Legacy
+  pages show A15 ALSO sells a 100mg + per-gram bulk tiers, and Original ALSO sells
+  capsules. Anton ruled in-session (WHAT-level) to include both.
+- Interim model (approved-plan): keep the discriminated union on `pricing.kind`, add
+  OPTIONAL secondary fields — `tiers?` on `PricingFixed`, `formats?` on
+  `PricingPerGramTiered`. Nothing flattened; still a union.
+- Options for the architect to ratify: (A) accept the optional-secondary-field
+  refinement and update overview.md; (B) promote A15/Original to a distinct
+  `fixed+tiers` shape; (C) revert to the strict union and drop the extra SKUs (contra
+  Anton's product call). **Lean: (A)** — minimal, matches the live catalog, preserves
+  the union's intent. Needs overview.md reconciliation or a new ADR. Not positioning.
