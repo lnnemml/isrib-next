@@ -82,9 +82,11 @@ overview.md reconciled. Nothing flattened.
 **¹ A15 correction (ADR 0008 / the live A15 page):** the live A15 page is a **per-gram
 calculator** (trials 100mg/500mg + tiers 1g→30g with savings + a custom-quantity
 input), structurally identical to ISRIB Original — NOT `fixed`. So A15 is reassigned
-`kind: "per-gram-tiered"` with capsules as `formats?`. **`src/lib/copy/products.ts`
-currently still has A15 as `fixed` — correct it during the A15 faithful port.** Prices
-are unchanged (verified to the cent); only the `kind` and grouping change.
+`kind: "per-gram-tiered"` with capsules as `formats?`. **Applied 2026-08-31 in the A15
+faithful port** — `products.ts` A15 is now `per-gram-tiered` (trials 100mg/500mg; tiers
+1g→30g; caps as `formats?`), with machine-readable calculator bounds (`Trial.mg`,
+`PerGramTier.minMg/maxMg`) driving `src/lib/copy/pricing.ts`. Prices unchanged (verified
+to the cent, runtime + verifier); only the `kind` and grouping changed.
 
 ## Deferred (Track B)
 

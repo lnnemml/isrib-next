@@ -8,8 +8,9 @@ import {
   type Pricing as ProductPricing,
   type FixedFormat,
 } from "@/lib/copy/products";
-import { ProductHero, HeroStat, NmrSection } from "@/components/ui";
+import { ProductHero, HeroStat, NmrSection, MechanismSection, Card } from "@/components/ui";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
+import { OrderBlock } from "@/components/shop/OrderBlock";
 import type { CartFormat } from "@/lib/cart/types";
 
 export function generateStaticParams() {
@@ -198,15 +199,56 @@ export default async function ProductPage({
         }
       />
 
-      <div className="mx-auto flex max-w-[--container-page] flex-col gap-16 px-8 py-16">
+      {/* Order block — A15 (per-gram-tiered w/ calculator bounds) gets the live calculator;
+          fixed products keep the discrete PriceCard grid. */}
+      <div className="mx-auto max-w-[--container-page] px-8 py-16">
         <section>
-          <h2 className="mb-6 text-h3 font-semibold">{"Pricing"}</h2>
-          <Pricing pricing={product.pricing} productSlug={product.slug} />
+          <h2 className="mb-6 text-h3 font-semibold">{"Order"}</h2>
+          {product.pricing.kind === "per-gram-tiered" &&
+          product.pricing.trials.some((t) => t.mg != null) ? (
+            <OrderBlock
+              productSlug={product.slug}
+              trials={product.pricing.trials}
+              tiers={product.pricing.tiers}
+              capsules={product.pricing.formats}
+            />
+          ) : (
+            <Pricing pricing={product.pricing} productSlug={product.slug} />
+          )}
         </section>
+      </div>
+
+      {product.mechanism && (
+        <MechanismSection
+          kicker={product.mechanism.kicker}
+          title={product.mechanism.title}
+          body={product.mechanism.body}
+          steps={product.mechanism.steps}
+          quote={product.mechanism.quote}
+        />
+      )}
+
+      <div className="mx-auto flex max-w-[--container-page] flex-col gap-16 px-8 py-16">
+        {product.education && (
+          <section>
+            <h2 className="mb-6 text-h3 font-semibold">{"Research applications"}</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {product.education.map((b) => (
+                <Card key={b.heading}>
+                  <h3 className="text-h3 font-semibold">{b.heading}</h3>
+                  <p className="mt-2 text-body text-text-muted">{b.body}</p>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
 
         {product.assets?.spectra && (
           <section>
-            <h2 className="mb-6 text-h3 font-semibold">{"NMR characterization"}</h2>
+            <h2 className="mb-3 text-h3 font-semibold">{"NMR characterization"}</h2>
+            <p className="mb-6 max-w-[70ch] text-body text-text-muted">
+              {"Every batch is characterised by ¹H and ¹³C NMR. We publish both the processed spectra and the raw FID data so any researcher can independently verify the structure and purity of what they receive — compatible with MestReNova, TopSpin, and other standard NMR software. COA available per batch on request."}
+            </p>
             <NmrSection spectra={product.assets.spectra} downloads={product.assets.downloads} />
           </section>
         )}

@@ -21,12 +21,15 @@ export interface FixedFormat {
 export interface Trial {
   sizeLabel: string;
   priceCents: number;
+  mg?: number; // exact mg — set when a per-gram calculator is wired (A15)
 }
 
 export interface PerGramTier {
   rangeLabel: string;
   perGramCents: number;
   discountPct: number;
+  minMg?: number; // inclusive range bounds — set when a calculator is wired (A15)
+  maxMg?: number;
 }
 
 export interface PricingFixed {
@@ -68,6 +71,20 @@ export interface ProductAssets {
   downloads?: DownloadItem[];
 }
 
+// Rich long-form content ported verbatim from a live product page (A15 is the first).
+export interface MechanismContent {
+  kicker: string;
+  title: string;
+  body: string;
+  steps: { title: string; body: string }[];
+  quote?: string;
+}
+
+export interface EducationBlock {
+  heading: string;
+  body: string;
+}
+
 export interface Product {
   slug: string; // canonical (redirect target)
   name: string;
@@ -77,11 +94,14 @@ export interface Product {
   specs: SpecRow[];
   pricing: Pricing;
   assets?: ProductAssets;
+  mechanism?: MechanismContent; // rendered via MechanismSection (A15)
+  education?: EducationBlock[]; // research-application cards (A15)
 }
 
-// Identical across all six legacy pages — ported verbatim.
+// Identical across all six legacy pages — ported verbatim. COA line framed per variant A
+// (ADR 0008): available on request, not asserted as "included".
 const TRUST_BULLETS: string[] = [
-  "COA available per batch",
+  "COA available per batch on request",
   "Worldwide shipping",
   "Secure packaging",
   "Support via Email/Telegram/Signal",
@@ -106,19 +126,24 @@ const PRODUCTS: Product[] = [
       { label: "Stability", value: "2+ years" },
       { label: "Container", value: "Amber glass vial" },
     ],
+    // A15 is a per-gram calculator (live page), NOT fixed formats — corrected per
+    // data-model.md ¹ / ADR 0008. Prices unchanged, verified to the cent. mg/minMg/maxMg
+    // drive the calculator (src/lib/copy/pricing.ts); the discrete display ignores them.
     pricing: {
-      kind: "fixed",
-      formats: [
-        { format: "powder", sku: "isrib-a15-100mg", sizeLabel: "100mg", priceCents: 6000 },
-        { format: "powder", sku: "isrib-a15-500mg", sizeLabel: "500mg", priceCents: 13000 },
-        { format: "powder", sku: "isrib-a15-1g", sizeLabel: "1g", priceCents: 20000 },
-        { format: "capsules", sku: "isrib-a15-caps-25", sizeLabel: "25 × 20mg", priceCents: 17000 },
-        { format: "capsules", sku: "isrib-a15-caps-50", sizeLabel: "50 × 20mg", priceCents: 24000 },
+      kind: "per-gram-tiered",
+      trials: [
+        { sizeLabel: "100mg", priceCents: 6000, mg: 100 },
+        { sizeLabel: "500mg", priceCents: 13000, mg: 500 },
       ],
       tiers: [
-        { rangeLabel: "2–4g", perGramCents: 18000, discountPct: 10 },
-        { rangeLabel: "5–9g", perGramCents: 17000, discountPct: 15 },
-        { rangeLabel: "10–30g", perGramCents: 16000, discountPct: 20 },
+        { rangeLabel: "1g", perGramCents: 20000, discountPct: 0, minMg: 1000, maxMg: 1000 },
+        { rangeLabel: "2–4g", perGramCents: 18000, discountPct: 10, minMg: 2000, maxMg: 4000 },
+        { rangeLabel: "5–9g", perGramCents: 17000, discountPct: 15, minMg: 5000, maxMg: 9000 },
+        { rangeLabel: "10–30g", perGramCents: 16000, discountPct: 20, minMg: 10000, maxMg: 30000 },
+      ],
+      formats: [
+        { format: "capsules", sku: "isrib-a15-caps-25", sizeLabel: "25 × 20mg", priceCents: 17000 },
+        { format: "capsules", sku: "isrib-a15-caps-50", sizeLabel: "50 × 20mg", priceCents: 24000 },
       ],
     },
     assets: {
@@ -142,6 +167,55 @@ const PRODUCTS: Product[] = [
         { href: "/files/isrib-a15-13c-fid.zip", filename: "isrib-a15-13c-fid.zip", label: "↓ ¹³C FID" },
       ],
     },
+    // Ported verbatim from product_isrib_A15.html (lines 424–631). Research-efficacy copy
+    // included by Anton's explicit ruling (2026-08-31) — see log.md.
+    mechanism: {
+      kicker: "The mechanism · eIF2B",
+      title: "A15 is a molecular staple for eIF2B.",
+      body:
+        "ISRIB A15 (also known as ISR-IN-2) is an analog of ISRIB, developed through structure-activity relationship (SAR) studies at UCSF. Unlike the parent molecule — which suffered from poor aqueous solubility limiting its oral utility — A15 incorporates dichlorophenoxy groups that dramatically improve both potency and pharmacokinetic profile. At its core, A15 is a molecular stabilizer of the eIF2B decamer complex: under cellular stress, phosphorylated eIF2α binds and inactivates eIF2B, shutting down protein synthesis globally. A15 binds at the β/δ subunit interface, acting as a \"molecular staple\" that locks the decameric complex in its active conformation regardless of eIF2α phosphorylation state.",
+      steps: [
+        {
+          title: "eIF2B binding",
+          body:
+            "A15 crosses the blood-brain barrier rapidly (high CNS penetration, ~8h plasma half-life in rodents) and binds with sub-nanomolar affinity (EC₅₀ ≈ 0.8 nM) at the interface of the eIF2B β and δ subunits.",
+        },
+        {
+          title: "Decamer stabilization",
+          body:
+            "Binding induces conformational stabilization of the eIF2B decameric complex, facilitating assembly of two eIF2B(βγδε) tetramers with one eIF2B(α)₂ dimer — the maximally active form of eIF2B.",
+        },
+        {
+          title: "Translational restoration",
+          body:
+            "Active eIF2B catalyzes GDP→GTP exchange on eIF2α, regenerating the eIF2-GTP-Met-tRNAi ternary complex required for ribosomal scanning and AUG recognition — restoring protein synthesis even under stress.",
+        },
+      ],
+      quote:
+        "In aging brain and chronic stress conditions, eIF2α phosphorylation becomes tonically elevated — creating a persistent brake on the protein synthesis required for long-term potentiation, memory consolidation, and synaptic remodeling.",
+    },
+    education: [
+      {
+        heading: "Aging brain",
+        body:
+          "eLife 2020: ISRIB treatment in aged mice (equivalent to 65+ human years) restored spatial learning and memory to levels comparable to young mice. Improvements persisted weeks after dosing cessation — suggesting restoration of functional capacity rather than temporary masking.",
+      },
+      {
+        heading: "Traumatic brain injury",
+        body:
+          "2017 landmark study (Rosi/Walter, UCSF): ISRIB reversed memory deficits in mice weeks after traumatic brain injury, restoring dendritic spine density and working-memory performance to levels indistinguishable from uninjured controls.",
+      },
+      {
+        heading: "eIF2B-related disorders",
+        body:
+          "ISRIB A15 and analogs have shown activity in models of Vanishing White Matter Disease (VWMD), a leukodystrophy caused by loss-of-function mutations in eIF2B subunits.",
+      },
+      {
+        heading: "The ISR window",
+        body:
+          "The Integrated Stress Response is triggered by four kinases (PERK, GCN2, HRI, PKR) responding to different stressors — unfolded proteins, nutrient deprivation, heme deficiency, viral infection. All converge on eIF2α-Ser51 phosphorylation, which halts global protein synthesis. In healthy tissue this is a brief protective pause; when tonically elevated it becomes a persistent brake on plasticity.",
+      },
+    ],
   },
   {
     slug: "isrib-original",

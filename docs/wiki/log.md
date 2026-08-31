@@ -328,3 +328,44 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   Safety/Terms/Privacy/Research/Disclaimer + /products index) 404 until their sessions.
   Chrome also renders on /go (DR landing) — NORA hides chrome there; a pathname
   exclusion is worth considering later.
+
+## [2026-08-31] lint | Cart persistence runtime-verified (reported 1.4 bug was stale server)
+
+- A "cart doesn't persist across reload" bug was reported before the 1.5 gate. Verified
+  AT RUNTIME (real Chrome, dev :3000 + prod `next start` :3100, not curl/review):
+  add → reload → cart persists in every path tried (product page, checkout page, clean
+  slate, add+reload same tick). Console clean (no hydration mismatch). Committed code
+  (4efb9c9) persists correctly — Anton confirmed the earlier loss was a stale dev server
+  before the 1.4 fix applied. No code change.
+- Real finding kept for later (not blocking): in PRODUCTION, an Add click fired BEFORE
+  React hydrates the button is dropped (SSR-rendered button, onClick not yet wired) — no
+  add, no feedback. Invisible to curl/dev/review. Consider gating Add-to-Cart until
+  hydrated + surfacing saveCart/loadCart failures (currently silently swallowed) when the
+  A15 order block is built.
+
+## [2026-08-31] setup | A15 faithful port (reference product port, ADR 0008)
+
+- Ported the live A15 product page onto the new stack — the reference every other product
+  follows. `src/lib/copy/pricing.ts`: pure `computeTieredPrice` faithfully reproduces the
+  live per-gram calculator (trials 100mg $60 / 500mg $130; tiers 1g $200 · 2–4g $180 −10%
+  · 5–9g $170 −15% · 10–30g $160 −20% per g; savings vs $200/g; min 100mg / max 30g).
+  `OrderBlock` + `PerGramCalculator` (client) = format selector + calculator + capsule
+  selector; all adds go through `useCart` (sole API) with a mounted-guard (closes the
+  pre-hydration dropped-click found this session).
+- products.ts: A15 `fixed → per-gram-tiered` (data-model.md ¹ correction applied) —
+  prices UNCHANGED, verified to the cent; added machine-readable calculator bounds
+  (`Trial.mg`, `PerGramTier.minMg/maxMg`) so display + calculator share one source. Added
+  optional `mechanism`/`education` rich content (ported verbatim). Other 5 products +
+  Original's display path untouched (OrderBlock gated on per-gram-tiered w/ `trials[].mg`).
+- **Anton rulings (2026-08-31):** (1) calculator replicates the live `findTier` exactly —
+  quantities between tier ranges (1.5g/4.5g/9.5g) are "invalid", NOT smoothed. (2) research
+  copy ported VERBATIM incl. cited animal-study efficacy (eLife 2020 aged-mice; Rosi/Walter
+  2017 TBI) — a deliberate override of the default "no efficacy" posture, logged here for
+  the record. rx-brand/cancer/guarantee remain absent (hard-blocked). COA variant A: no
+  "COA included" assertion — NMR framed as independent ¹H/¹³C verification + "COA available
+  per batch on request" (shared trust bullet reworded).
+- **Verified at RUNTIME** (real Chrome, dev): calculator to the cent across 100mg/500mg/1g/
+  3g/7g/15g + gap-invalid (1.5g) + bulk (35g) + below-min (50mg); format switch → caps;
+  Add-to-Cart powder (3g→$540) + capsule (→$170) produce correct line items; checkout lists
+  both, subtotal $710; **reload persists**. `tsc` clean; `next build` all 15 routes.
+  Fresh-context verifier APPROVE (6/6, re-ran the calculator math independently).
