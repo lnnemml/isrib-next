@@ -192,6 +192,7 @@ export interface Product {
   mechanism?: MechanismContent; // rendered via MechanismSection (A15)
   education?: EducationBlock[]; // research-application cards (A15)
   understanding?: UnderstandingContent; // deep "Understanding ISRIB A15" section (A15)
+  heroSubtitle?: string; // chemical-name subheading under the H1 (MPEP); falls back to Formula spec
   heroStats?: HeroStatItem[]; // hero stat trio (A15); falls back to Purity/MW when absent
   heroBadges?: HeroBadge[]; // hero pills e.g. "Most Popular" / "In stock" (A15)
   heroHighlights?: string[]; // hero "key highlights" checklist filling the left column (A15)
@@ -672,8 +673,12 @@ const PRODUCTS: Product[] = [
       { label: "Solubility", value: "DMSO, Ethanol" },
       { label: "Storage", value: "2-8°C" },
       { label: "Stability", value: "2+ years" },
+      { label: "Light", value: "Store in dark" },
+      { label: "Moisture", value: "Keep dry" },
       { label: "Container", value: "Amber glass vial" },
     ],
+    // Fixed-size SKUs (live product_MPEP.html). Prices unchanged, verified to the cent:
+    // 100mg=$60, 500mg=$130, 1g=$200. Renders via OrderBlock → FixedSizeSelector.
     pricing: {
       kind: "fixed",
       formats: [
@@ -681,6 +686,202 @@ const PRODUCTS: Product[] = [
         { format: "powder", sku: "mpep-oxalate-500mg", sizeLabel: "500mg", priceCents: 13000 },
         { format: "powder", sku: "mpep-oxalate-1g", sizeLabel: "1g", priceCents: 20000 },
       ],
+    },
+    // NMR assets ported from the live page (product_MPEP.html §NMR). Solvent CDCl₃ (not
+    // DMSO-d₆ as A15/Original). Spectra images + FID zips copied into public/.
+    assets: {
+      formulaSvg: "/images/mpep-formula.svg",
+      spectra: [
+        {
+          label: "¹H NMR",
+          hint: "Click to zoom",
+          src: "/images/mpep-nmr-h1.png",
+          alt: "¹H NMR spectrum of MPEP Oxalate — Batch 2",
+          meta: "400 MHz · CDCl₃",
+          batch: "Batch 2",
+          signals:
+            "Key signals: δ 7.73 (t, ArH, 1H), 7.60 (m, ArH, 2H), 7.45 (m, ArH, 4H), 7.28 (d, ArH, 1H), 5.45 (br s, COOH × 2), 2.48 (s, CH₃, 3H)",
+        },
+        {
+          label: "¹³C NMR",
+          hint: "Click to zoom",
+          src: "/images/mpep-nmr-c13.png",
+          alt: "¹³C NMR spectrum of MPEP Oxalate — Batch 2",
+          meta: "100 MHz · CDCl₃",
+          batch: "Batch 2",
+          signals:
+            "Key signals: δ 161.00, 158.57 (C=O oxalate), 141.32, 137.10, 131.64, 129.36, 128.83, 123.10, 121.43 (ArC), 88.95, 88.05 (alkyne C≡C), 23.80 (CH₃)",
+        },
+      ],
+      downloads: [
+        { href: "/files/mpep-1h-fid.zip", filename: "¹H FID data (.zip)", label: "↓" },
+        { href: "/files/mpep-13c-fid.zip", filename: "¹³C FID data (.zip)", label: "↓" },
+      ],
+    },
+    // Hero enrichment (live product_MPEP.html hero) — MPEP's real data.
+    heroSubtitle: "2‑Methyl‑6‑(phenylethynyl)pyridine · Oxalate",
+    heroStats: [
+      { figure: "98%+", label: "Purity" },
+      { figure: "COA", label: "Per batch" },
+      { figure: "mGluR5", label: "Selective NAM" },
+    ],
+    heroBadges: [{ label: "✓ In stock", tone: "success" }],
+    heroHighlights: [
+      "Selective mGluR5 NAM — non-competitive",
+      "High blood–brain-barrier permeability",
+      "¹H / ¹³C NMR verified every batch",
+      "Free worldwide shipping on all orders",
+    ],
+    formulaCaption: "Molecular formula: C₁₁H₁₀N₂ · C₂H₂O₄",
+    heroCtas: [
+      { label: "Order MPEP Oxalate", href: "#order" },
+      { label: "Learn More", href: "#understanding" },
+    ],
+    // Dark MechanismSection (live block 4 "Mechanism of action"). Body drawn faithfully
+    // from the What-is copy; the 3 steps are ported verbatim. Quote omitted (the callout
+    // lives in the isrWindow block).
+    mechanism: {
+      kicker: "The mechanism · mGluR5",
+      title: "MPEP turns the mGluR5 volume down.",
+      body:
+        "MPEP is a non-competitive negative allosteric modulator of mGluR5. Rather than blocking the glutamate binding site directly, it binds a separate transmembrane pocket and reduces receptor sensitivity — turning the receptor's signalling down without occupying the orthosteric domain.",
+      steps: [
+        {
+          title: "Selective binding",
+          body:
+            "MPEP rapidly crosses the blood-brain barrier and binds with high affinity to the allosteric transmembrane site of mGluR5 — a pocket entirely distinct from the orthosteric glutamate binding domain. No cross-reactivity with mGluR1 or ionotropic glutamate receptors at pharmacologically relevant concentrations.",
+        },
+        {
+          title: "Negative modulation",
+          body:
+            "Binding induces a conformational shift in the receptor's seven-transmembrane domain, reducing the efficiency of G-protein coupling. The receptor remains intact but becomes markedly less sensitive to glutamate — analogous to turning down a volume knob rather than cutting the wire. Efficacy is maintained even under high glutamate conditions.",
+        },
+        {
+          title: "Cascade inhibition",
+          body:
+            "Reduced mGluR5 signalling suppresses downstream IP₃-mediated calcium release and attenuates ERK / mTOR phosphorylation — dampening neuronal hyperexcitability, reducing pathological protein synthesis at the synapse, and protecting against excitotoxic calcium overload.",
+        },
+      ],
+    },
+    // Deep "Understanding MPEP Oxalate" section — ported VERBATIM from product_MPEP.html
+    // blocks 1–5 (block 4 "Mechanism of action" is the dark MechanismSection above,
+    // injected into the section's live position). Live amber/purple/red card accents map
+    // onto the locked cyan/blue/success rotation.
+    understanding: {
+      eyebrow: "Scientific background",
+      title: "Understanding MPEP Oxalate",
+      intro:
+        "A look at the pharmacology, research applications, and mechanism behind one of the most studied mGluR5 antagonists in neuroscience.",
+      whatIs: {
+        heading: "What is MPEP Oxalate?",
+        paragraphs: [
+          "MPEP Oxalate (2-Methyl-6-(phenylethynyl)pyridine oxalate) is a potent, highly selective negative allosteric modulator (NAM) of the metabotropic glutamate receptor subtype 5 (mGluR5). Synthesised as an oxalate salt for enhanced stability and ease of handling, it is widely regarded in the research community as a gold-standard pharmacological tool for dissecting glutamatergic neurotransmission.",
+          "Unlike competitive antagonists that block the glutamate binding site directly, MPEP acts allosterically — binding to a separate transmembrane domain and reducing receptor sensitivity without occupying the orthosteric pocket. This non-competitive profile affords greater selectivity and predictable dose-response relationships, making it the preferred probe in hundreds of pre-clinical studies across addiction, cognition, and neurodegeneration.",
+        ],
+        table: [
+          {
+            property: "Chemical name",
+            detail: "2-Methyl-6-(phenylethynyl)pyridine · C₂H₂O₄",
+            mono: true,
+          },
+          { property: "Mechanism class", detail: "Negative allosteric modulator (NAM)" },
+          {
+            property: "Primary target",
+            detail: "mGluR5 (Group I metabotropic glutamate receptor)",
+          },
+          {
+            property: "BBB permeability",
+            detail: "High — rapid CNS entry after systemic dosing",
+          },
+          { property: "Research status", detail: "Gold-standard mGluR5 tool compound", strong: true },
+        ],
+      },
+      isrWindow: {
+        heading: "The anti-addictive mechanism — mGluR5 and craving",
+        paragraphs: [
+          "mGluR5 receptors are densely expressed in the nucleus accumbens, prefrontal cortex, and ventral tegmental area — the circuit that governs reward, motivation, and compulsive behaviour. Under normal conditions, glutamate signalling through mGluR5 amplifies dopamine-driven reward signals. In addiction, this amplification becomes pathologically overactive: the receptor effectively locks the brain into a state of craving and drug-seeking.",
+          "MPEP has been used in over 200 pre-clinical studies to probe this circuitry. By silencing mGluR5 activity, it selectively attenuates the reward salience of a substance — without broadly suppressing appetite, locomotion, or natural reward — making it an indispensable pharmacological scalpel.",
+        ],
+        cards: [
+          {
+            eyebrow: "Alcohol",
+            body:
+              "MPEP significantly reduces voluntary ethanol self-administration and prevents reinstatement of alcohol-seeking in rodent models. Critically, it targets the rewarding properties of alcohol without affecting caloric intake or general fluid consumption — demonstrating receptor-specific action on the reward pathway rather than non-specific suppression.",
+          },
+          {
+            eyebrow: "Nicotine",
+            body:
+              "In nicotine self-administration paradigms, MPEP reduces breakpoint responding — the effort an animal will exert to obtain the drug — indicating a blunting of nicotine's motivational value. This makes it a valuable probe for studying the glutamatergic component of tobacco dependence and for evaluating candidate cessation therapies.",
+          },
+          {
+            eyebrow: "Stimulants — cocaine & amphetamine",
+            body:
+              "MPEP blocks the development of conditioned place preference to cocaine, attenuates psychomotor sensitisation, and reduces cue-induced reinstatement. The mechanism involves suppression of AMPA receptor trafficking in the nucleus accumbens — a glutamatergic cascade that normally consolidates drug-associated memories.",
+          },
+        ],
+        callout:
+          "\"mGluR5 antagonism offers a mechanistically distinct approach to addiction research — one that targets the glutamatergic amplification of reward rather than the dopamine signal itself, potentially avoiding the tolerability issues of dopamine-based interventions.\"",
+      },
+      translational: {
+        heading: "Cognitive research — mGluR5 in learning and mental health",
+        paragraphs: [
+          "Beyond addiction, mGluR5 sits at the intersection of synaptic plasticity, mood regulation, and neurodevelopmental disease. MPEP has become the standard pharmacological tool for selectively ablating mGluR5 function in cognitive research — enabling precise interrogation of the receptor's contribution to learning, memory, and emotional processing.",
+        ],
+        cards: [
+          {
+            title: "LTP / LTD — synaptic plasticity",
+            body:
+              "mGluR5 co-activates NMDA receptors and is required for mGluR-dependent long-term depression (mGluR-LTD) at hippocampal and cortical synapses. MPEP allows researchers to selectively eliminate this LTD component while preserving NMDA-dependent LTP — dissecting which arm of plasticity drives a given learning paradigm.",
+          },
+          {
+            title: "Fragile X syndrome",
+            body:
+              "The \"mGluR theory of Fragile X\" proposes that loss of FMRP leads to unchecked mGluR5-driven protein synthesis, causing exaggerated mGluR-LTD. MPEP was the critical pharmacological proof-of-concept: in Fmr1 knockout mice, MPEP rescued audiogenic seizures, normalised dendritic spine morphology, and corrected prepulse inhibition.",
+          },
+          {
+            title: "Anxiety & stress resilience",
+            body:
+              "MPEP produces robust anxiolytic effects in elevated plus-maze and fear-conditioning assays — comparable in magnitude to benzodiazepines, but without sedation or tolerance. mGluR5 activity in the basolateral amygdala gates fear consolidation, and MPEP administration disrupts this without erasing previously acquired memories.",
+          },
+        ],
+      },
+      applications: {
+        heading: "Key research applications",
+        intro:
+          "The breadth of MPEP's utility spans from fundamental synapse biology to translational disease modelling. Below are the primary research domains where MPEP is currently deployed as a pharmacological standard.",
+        cards: [
+          {
+            title: "Neuroprotection & ischaemia",
+            body:
+              "mGluR5 overactivation following stroke or TBI drives excitotoxic calcium influx. MPEP reduces infarct volume and improves neurological outcomes in rodent ischaemia models — serving as a benchmark for neuroprotective candidates.",
+          },
+          {
+            title: "Autism spectrum & Fragile X",
+            body:
+              "MPEP remains the canonical pharmacological test of the mGluR theory of FXS. Beyond FXS, it is used to model and correct social behaviour deficits, repetitive behaviours, and sensory hypersensitivity across diverse ASD models.",
+          },
+          {
+            title: "Addictive behaviour & relapse",
+            body:
+              "MPEP is the workhorse probe in glutamate-addiction research. It enables modelling of cue-induced reinstatement — the most clinically relevant stage of addiction — and evaluation of how mGluR5 blockade modifies extinction learning and stress-induced relapse.",
+          },
+          {
+            title: "Chronic & neuropathic pain",
+            body:
+              "mGluR5 is upregulated in the spinal dorsal horn following nerve injury. MPEP reduces allodynia and thermal hyperalgesia in neuropathic pain models — revealing mGluR5 as a key driver of pain sensitisation and benchmarking novel analgesic candidates.",
+          },
+          {
+            title: "Schizophrenia & psychosis models",
+            body:
+              "MPEP interrogates how mGluR5 modulates prepulse inhibition deficits and hyperlocomotion in PCP/ketamine models — providing a pharmacological bridge between NMDA hypofunction and mGluR5-targeted therapeutic strategies.",
+          },
+          {
+            title: "Synaptic plasticity & memory encoding",
+            body:
+              "Used to isolate mGluR-LTD from NMDA-LTP in hippocampal preparations and in vivo learning paradigms. MPEP has established the temporal and spatial requirements for mGluR5 in fear extinction, spatial navigation, and working memory.",
+          },
+        ],
+      },
     },
   },
   {

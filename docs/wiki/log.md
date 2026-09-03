@@ -527,3 +527,45 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Roles run:** LEAD (orchestrator) → explorer (live inventory) → LEAD reconcile (contract) →
   implementer → verifier (REJECT: comparison cell colors) → implementer (fix) → LEAD browser
   side-by-side + live calculator check (PASS). Work uncommitted on `feat/isrib-original-port`.
+
+## [2026-09-03] gate | MPEP Oxalate faithful port (1.6) — fixed-size order block + deep section, G1(MPEP) closed
+
+- Ported the live MPEP Oxalate page (`product_MPEP.html`) to A15-level fidelity (branch
+  `feat/mpep-port`). MPEP is an mGluR5 negative allosteric modulator — the science is
+  ENTIRELY different from ISRIB (glutamate/addiction/Fragile-X), so all mechanism copy is
+  MPEP-specific and ported verbatim. Explorer produced a 15-block inventory (compliance
+  scan CLEAN); LEAD reconciled; implementer built; verifier APPROVED; LEAD ran the browser
+  side-by-side + live order-block interaction.
+- **New reusable component — fixed-size rich order block:** the live MPEP order block is a
+  SINGLE rich card with a size selector (100mg/500mg/1g, updating price + per-mg, one
+  Add-to-cart), NOT our 3 separate PriceCards. Built `FixedSizeSelector.tsx` + extended
+  `OrderBlock.tsx` to a fixed path (shares the card chrome: header, purity/COA line, perks,
+  free-shipping strip). page.tsx now routes ALL `fixed` products through OrderBlock —
+  so ZZL-7 / Bromantane / N-Acetyl-Bromantane also gained the richer order card (verified
+  no regression: Bromantane 1g→$40.00/$0.04-mg renders correctly). A15/ISRIB keep the
+  per-gram calculator (routing guard on `trials[].mg`). Runtime-verified: MPEP 100mg→$60.00
+  ($0.60/mg), 1g→$200.00 ($0.20/mg); prices unchanged, exact.
+- **Deep "Understanding MPEP" section reused the A15 machinery:** MPEP's structure is identical
+  to A15's, so it maps onto the existing `UnderstandingContent` slots (whatIs / isrWindow /
+  translational / applications) + the dark `MechanismSection` — pure DATA, no new component.
+  All 5 blocks verbatim: What-is + 5-row properties table, anti-addictive mechanism (3 cards
+  Alcohol/Nicotine/Stimulants + callout), cognitive research (3 cards LTP-LTD/Fragile-X/
+  Anxiety), mechanism 3-step (Selective binding/Negative modulation/Cascade inhibition),
+  6 application cards. NOTE (naming debt): the slot keys are A15-named (isrWindow/translational)
+  but hold MPEP content — harmless (renders generically from data), worth a future rename.
+- **NMR fully sourced (no gap, unlike ISRIB Original):** copied the live spectra + FID
+  (`mpep-*`), real meta (400/100 MHz · CDCl₃), Batch-2 badges, verbatim ¹H/¹³C key-signals.
+- Hero: formula SVG + caption, 3 stats (3rd = mGluR5/Selective NAM), single "In stock" badge,
+  chemical-name subheading via new optional `heroSubtitle`, highlights, CTAs (#order/#understanding).
+  Specs +Light/Moisture; COA "On request". No comparison table (MPEP has none).
+- Tokens-only (live amber/purple/red → cyan/blue/success); compliance CLEAN (no rx brand
+  names, no cancer, no guarantee; research-substance/disease-model terms are verbatim
+  preclinical framing). `tsc` clean; `next build` all 6 product routes.
+- **Minor flag (non-blocking):** the fixed order block shows two-decimal prices ("$60.00",
+  matching the live) via a local `usd()`, while the calculator products use `formatCents`
+  ("$60"). Cross-product cosmetic inconsistency — the fixed block is MORE faithful to its
+  live source; consider normalizing later.
+- **Roles run:** LEAD (orchestrator) → explorer (inventory + compliance scan) → LEAD reconcile
+  (contract) → implementer → verifier (fresh context, APPROVE) → LEAD browser side-by-side +
+  live order-block interaction + no-regression check on Bromantane (PASS). Work uncommitted
+  on `feat/mpep-port`.

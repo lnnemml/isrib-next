@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PerGramCalculator } from "./PerGramCalculator";
+import { FixedSizeSelector } from "./FixedSizeSelector";
 import { AddToCartButton } from "./AddToCartButton";
 import { Card } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
@@ -10,14 +11,19 @@ import { formatCents, type Trial, type PerGramTier, type FixedFormat } from "@/l
 // Faithful A15 order block: header + specs, powder/capsule format selector, the per-gram
 // calculator (powder) or capsule variants, perks, and a trust strip near the CTA. Cart
 // writes go through useCart (inside the children).
+//
+// Also serves fixed-size products (MPEP, ZZL-7, Bromantane, N-Acetyl-Bromantane): when
+// `trials`/`tiers` are omitted and `fixedFormats` is given, the body renders the
+// FixedSizeSelector (single rich card mirroring the live page) instead of the calculator.
 interface OrderBlockProps {
   productSlug: string;
   productName: string;
   subtitle: string;
   purity?: string;
-  trials: Trial[];
-  tiers: PerGramTier[];
+  trials?: Trial[];
+  tiers?: PerGramTier[];
   capsules?: FixedFormat[];
+  fixedFormats?: FixedFormat[]; // discrete size SKUs for fixed-kind products
   perks: string[];
 }
 
@@ -90,10 +96,13 @@ export function OrderBlock({
   trials,
   tiers,
   capsules,
+  fixedFormats,
   perks,
 }: OrderBlockProps) {
   const [format, setFormat] = useState<Format>("powder");
   const hasCapsules = !!capsules && capsules.length > 0;
+  // Fixed-size path: no per-gram calculator, a single FixedSizeSelector instead.
+  const isFixed = !!fixedFormats && fixedFormats.length > 0 && (!trials || trials.length === 0);
 
   return (
     <Card accent className="p-6 shadow-md sm:p-7">
@@ -117,7 +126,7 @@ export function OrderBlock({
         </div>
       </div>
 
-      {hasCapsules && (
+      {!isFixed && hasCapsules && (
         <div className="mb-6">
           <h3 className="mb-3 font-mono text-mono-label font-medium uppercase tracking-[0.08em] text-text-faint">
             {"Select format"}
@@ -141,8 +150,10 @@ export function OrderBlock({
         </div>
       )}
 
-      {format === "powder" || !hasCapsules ? (
-        <PerGramCalculator productSlug={productSlug} trials={trials} tiers={tiers} />
+      {isFixed ? (
+        <FixedSizeSelector productSlug={productSlug} formats={fixedFormats!} />
+      ) : format === "powder" || !hasCapsules ? (
+        <PerGramCalculator productSlug={productSlug} trials={trials ?? []} tiers={tiers ?? []} />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {capsules!.map((c, i) => {

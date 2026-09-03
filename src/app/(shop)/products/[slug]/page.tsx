@@ -234,7 +234,10 @@ export default async function ProductPage({
       <ProductHero
         kicker={product.categorySubtitle}
         title={product.name}
-        subtitle={product.heroHighlights ? specValue(product, "Formula") : undefined}
+        subtitle={
+          product.heroSubtitle ??
+          (product.heroHighlights ? specValue(product, "Formula") : undefined)
+        }
         body={product.description}
         cta={
           product.heroCtas && product.heroCtas.length > 0 ? (
@@ -329,7 +332,8 @@ export default async function ProductPage({
       />
 
       {/* Order block — A15 (per-gram-tiered w/ calculator bounds) gets the live calculator;
-          fixed products keep the discrete PriceCard grid. */}
+          fixed products with formats get the rich single-card FixedSizeSelector. Anything
+          OrderBlock can't handle falls back to the discrete PriceCard grid. */}
       <div id="order" className="mx-auto max-w-[--container-page] px-8 py-16">
         <section>
           <h2 className="mb-6 text-h3 font-semibold">{"Order"}</h2>
@@ -343,6 +347,15 @@ export default async function ProductPage({
               trials={product.pricing.trials}
               tiers={product.pricing.tiers}
               capsules={product.pricing.formats}
+              perks={product.trustBullets}
+            />
+          ) : product.pricing.kind === "fixed" && product.pricing.formats.length > 0 ? (
+            <OrderBlock
+              productSlug={product.slug}
+              productName={product.name}
+              subtitle={product.categorySubtitle}
+              purity={purity}
+              fixedFormats={product.pricing.formats}
               perks={product.trustBullets}
             />
           ) : (
