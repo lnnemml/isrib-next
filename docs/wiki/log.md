@@ -758,3 +758,40 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - Owner tweak: the homepage no longer duplicates the full /products catalog — the featured
   section renders only the first 3 cards (A15, ISRIB, MPEP) + a centered "See all products →"
   link to /products. Also brightened the hero free-shipping badge to a filled success-green pill.
+
+## [2026-09-03] gate | About + FAQ pages ported (/about, /faq)
+
+- Ported the live `about.html` + `faq.html` (branch `feat/about-faq`) — both were 404 while
+  nav/footer linked to them. Two explorers (parallel) inventoried; one implementer built both
+  (avoid parallel-write conflicts); verifier APPROVED; LEAD browser gate.
+- **/about** (`(marketing)/about/page.tsx`): 7 sections verbatim — hero (gradient "About ISRIB
+  Shop"), Our Mission (2-col + accent card), Our Story (3 paras: 2020 launch / 2023 first ISRIB
+  A15 synthesis / in-house), Our Quality Commitment (6 cards), Our Values (3 cards), Why
+  Researchers Choose (3 numbered reasons), dark "Browse the catalog" CTA (→ /products, /contact).
+  COA card reframed "included" → "on request" (variant A).
+- **/faq** (`(marketing)/faq/page.tsx`): hero + 3 categories (Product / Ordering & Payment /
+  Shipping) × 6 Q&A + an ADDED "Is there a Certificate of Analysis?" [id="coa"] so the homepage
+  `#coa` deep-link resolves. Reused the locked `FaqAccordion` (extended with optional per-item
+  `id` + hash auto-open — runtime-verified: `/faq#coa` scrolls to + opens the COA item; existing
+  kitchen-sink caller unaffected). All 18 live answers verbatim; COA answer "on request". Homepage
+  FAQ card anchor `shipping-times` → `shipping-time` (matches the live canonical id) so all 8
+  deep-links resolve.
+- **⚠️ COMPLIANCE — 2 items ported verbatim, FLAGGED for Anton (organic page, his call):**
+  (a) the "What is ISRIB A15?" answer says "potentially restoring cognitive function that has
+  been impaired by stress, aging, or injury" (+ "How does ISRIB work?" ends "…potentially restore
+  cognitive abilities") — hedged efficacy, the strongest claim on the site; the safety Q keeps
+  "not been approved for human consumption". (b) the "lost or damaged" answer promises "a
+  replacement at no extra cost" — a RESHIPMENT policy (not money-back/refund), but adjacent to the
+  no-guarantee rule. Both kept verbatim; **one-line removal each if Anton wants them softened.**
+  No cancer/dementia/money-back-refund copy. COA "on request" throughout.
+- **Known follow-ups (non-blocking):** `/contact` links (About + FAQ CTAs) 404 until the contact
+  page is ported. **Nested-`<main>` a11y nit** — the root layout renders `<main>` AND each
+  marketing page also renders `<main>` (pre-existing convention on /, /products, now /about+/faq);
+  a small site-wide cleanup should drop the per-page `<main>` in favor of the layout's.
+- Tokens only (blue→cyan gradient = locked); `tsc` clean; `next build` — /about + /faq SSG; no
+  regression (all routes 200, kitchen-sink intact).
+- **Roles run:** LEAD → 2× explorer (About + FAQ inventories, parallel) → LEAD reconcile +
+  compliance call → implementer (both pages) → verifier (fresh context, APPROVE) → LEAD browser
+  gate (About sections + FAQ accordion + #coa auto-open) PASS. Work uncommitted on `feat/about-faq`.
+- **Static-page progress:** About + FAQ done. Remaining for parity: Contact, Quality, Safety +
+  legal (Terms/Privacy/Research-use/Disclaimer — AI-draft-only per CLAUDE.md).

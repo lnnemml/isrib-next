@@ -91,7 +91,7 @@ const FAQS: { q: string; a: string; anchor: string }[] = [
   {
     q: "How long does shipping take?",
     a: "5–15 business days depending on destination country.",
-    anchor: "shipping-times",
+    anchor: "shipping-time",
   },
   {
     q: "Can I get custom quantities?",
