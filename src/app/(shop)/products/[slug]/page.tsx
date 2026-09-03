@@ -12,6 +12,7 @@ import {
 import { ProductHero, HeroStat, NmrSection, MechanismSection, Card } from "@/components/ui";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { OrderBlock } from "@/components/shop/OrderBlock";
+import { UnderstandingSection } from "@/components/shop/UnderstandingSection";
 import { cn } from "@/lib/utils/cn";
 import type { CartFormat } from "@/lib/cart/types";
 
@@ -37,21 +38,11 @@ function specValue(product: Product, label: string): string | undefined {
   return product.specs.find((s) => s.label === label)?.value;
 }
 
-// Research-application card icons (keyed by ported heading; safe emoji fallback).
-function educationIcon(heading: string): string {
-  const h = heading.toLowerCase();
-  if (h.includes("aging")) return "🧠";
-  if (h.includes("injury")) return "🛡️";
-  if (h.includes("disorder") || h.includes("eif2b")) return "🧬";
-  if (h.includes("window") || h.includes("isr")) return "🔬";
-  return "🔬";
-}
-
 // Specs split into the live page's three columns. Chemical + storage/handling are ported
 // from product.specs; Documentation is a fixed, compliance-safe column (COA framed as
 // "on request", never "included" — ADR 0008 variant A).
 const CHEMICAL_LABELS = ["Formula", "MW", "CAS", "Purity", "Form", "Solubility"];
-const STORAGE_LABELS = ["Storage", "Stability", "Container"];
+const STORAGE_LABELS = ["Storage", "Stability", "Light", "Moisture", "Container"];
 
 function specGroup(product: Product, labels: string[]): SpecRow[] {
   return labels
@@ -229,37 +220,109 @@ export default async function ProductPage({
   const purity = specValue(product, "Purity");
   const mw = specValue(product, "MW");
 
+  // Hero stats are data-driven (A15 ports the live trio); other products fall back to
+  // the Purity/MW pair so they keep working unchanged.
+  const heroStats =
+    product.heroStats ??
+    [
+      ...(purity ? [{ figure: purity, label: "Purity" }] : []),
+      ...(mw ? [{ figure: mw, label: "Molecular weight" }] : []),
+    ];
+
   return (
     <main>
       <ProductHero
         kicker={product.categorySubtitle}
         title={product.name}
+        subtitle={product.heroHighlights ? specValue(product, "Formula") : undefined}
         body={product.description}
+        cta={
+          product.heroStats ? (
+            // A15 hero CTAs. Button renders a <button>; a <button> nested in an <a> is
+            // invalid HTML, so the anchors carry the locked Button variant classes
+            // directly (kept in sync with Button.tsx — the design system is locked).
+            <div className="mb-2 flex flex-wrap gap-3">
+              <a
+                href="#order"
+                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-6 py-3.5 text-[15px] font-semibold text-white shadow-btn transition hover:-translate-y-px hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-blue-600/35"
+              >
+                {"Order ISRIB A15"}
+              </a>
+              <a
+                href="#understanding"
+                className="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-surface px-[22px] py-3 text-[15px] font-semibold text-primary-deep transition hover:border-primary hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-blue-600/35"
+              >
+                {"Learn More"}
+              </a>
+            </div>
+          ) : undefined
+        }
         stats={
-          <div className="mt-8 flex gap-10">
-            {purity && <HeroStat figure={purity} label="Purity" />}
-            {mw && <HeroStat figure={mw} label="Molecular weight" />}
-          </div>
+          <>
+            {product.heroBadges && product.heroBadges.length > 0 && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {product.heroBadges.map((b) => (
+                  <span
+                    key={b.label}
+                    className={cn(
+                      "inline-flex items-center rounded-full px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.06em]",
+                      b.tone === "success"
+                        ? "bg-success/10 text-success"
+                        : "bg-cyan-50 text-accent-strong",
+                    )}
+                  >
+                    {b.label}
+                  </span>
+                ))}
+              </div>
+            )}
+            {heroStats.length > 0 && (
+              <div className="mt-8 flex flex-wrap gap-10">
+                {heroStats.map((s) => (
+                  <HeroStat key={s.label} figure={s.figure} label={s.label} />
+                ))}
+              </div>
+            )}
+            {product.heroHighlights && product.heroHighlights.length > 0 && (
+              <ul className="mt-8 grid grid-cols-1 gap-x-8 gap-y-3 border-t border-border pt-8 sm:grid-cols-2">
+                {product.heroHighlights.map((h) => (
+                  <li key={h} className="flex items-start gap-2.5 text-small text-text-muted">
+                    <span aria-hidden className="mt-px font-semibold text-success">
+                      {"✓"}
+                    </span>
+                    <span>{h}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         }
         formula={
-          product.assets?.formulaSvg ? (
-            // eslint-disable-next-line @next/next/no-img-element -- static SVG asset
-            <img
-              src={product.assets.formulaSvg}
-              alt={`${product.name} molecular structure`}
-              className="block h-auto w-full"
-            />
-          ) : (
-            <div className="flex aspect-video items-center justify-center font-mono text-[13px] text-text-faint">
-              {"Structure diagram — coming soon"}
-            </div>
-          )
+          <>
+            {product.assets?.formulaSvg ? (
+              // eslint-disable-next-line @next/next/no-img-element -- static SVG asset
+              <img
+                src={product.assets.formulaSvg}
+                alt={`${product.name} molecular structure`}
+                className="block h-auto w-full"
+              />
+            ) : (
+              <div className="flex aspect-video items-center justify-center font-mono text-[13px] text-text-faint">
+                {"Structure diagram — coming soon"}
+              </div>
+            )}
+            {product.formulaCaption && (
+              <p className="mt-3 text-center font-mono text-[11px] text-text-faint">
+                {product.formulaCaption}
+              </p>
+            )}
+          </>
         }
       />
 
       {/* Order block — A15 (per-gram-tiered w/ calculator bounds) gets the live calculator;
           fixed products keep the discrete PriceCard grid. */}
-      <div className="mx-auto max-w-[--container-page] px-8 py-16">
+      <div id="order" className="mx-auto max-w-[--container-page] px-8 py-16">
         <section>
           <h2 className="mb-6 text-h3 font-semibold">{"Order"}</h2>
           {product.pricing.kind === "per-gram-tiered" &&
@@ -280,46 +343,54 @@ export default async function ProductPage({
         </section>
       </div>
 
-      {product.mechanism && (
-        <MechanismSection
-          kicker={product.mechanism.kicker}
-          title={product.mechanism.title}
-          body={product.mechanism.body}
-          steps={product.mechanism.steps}
-          quote={product.mechanism.quote}
+      {/* A15: bespoke deep "Understanding" section, with the dark MechanismSection
+          embedded in its live position (block 4D). Other products fall back to the
+          standalone MechanismSection (none currently carry `understanding`). */}
+      {product.understanding && product.mechanism ? (
+        <UnderstandingSection
+          content={product.understanding}
+          mechanism={
+            <MechanismSection
+              kicker={product.mechanism.kicker}
+              title={product.mechanism.title}
+              body={product.mechanism.body}
+              steps={product.mechanism.steps}
+              quote={product.mechanism.quote}
+            />
+          }
         />
+      ) : (
+        product.mechanism && (
+          <MechanismSection
+            kicker={product.mechanism.kicker}
+            title={product.mechanism.title}
+            body={product.mechanism.body}
+            steps={product.mechanism.steps}
+            quote={product.mechanism.quote}
+          />
+        )
       )}
 
       <div className="mx-auto flex max-w-[--container-page] flex-col gap-16 px-8 py-16">
-        {product.education && (
-          <section>
-            <h2 className="mb-6 text-h3 font-semibold">{"Research applications"}</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {product.education.map((b) => (
-                <Card key={b.heading} accent className="flex gap-4">
-                  <span
-                    aria-hidden
-                    className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-[20px]"
-                  >
-                    {educationIcon(b.heading)}
-                  </span>
-                  <div>
-                    <h3 className="text-[16px] font-semibold text-text">{b.heading}</h3>
-                    <p className="mt-2 text-body text-text-muted">{b.body}</p>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </section>
-        )}
-
         {product.assets?.spectra && (
           <section>
             <h2 className="mb-3 text-h3 font-semibold">{"NMR characterization"}</h2>
             <p className="mb-6 max-w-[70ch] text-body text-text-muted">
               {"Every batch is characterised by ¹H and ¹³C NMR. We publish both the processed spectra and the raw FID data so any researcher can independently verify the structure and purity of what they receive — compatible with MestReNova, TopSpin, and other standard NMR software. COA available per batch on request."}
             </p>
-            <NmrSection spectra={product.assets.spectra} downloads={product.assets.downloads} />
+            <NmrSection
+              spectra={product.assets.spectra}
+              downloads={product.assets.downloads}
+              fidBanner={
+                product.assets.downloads && product.assets.downloads.length > 0
+                  ? {
+                      heading: "Download raw FID data",
+                      body:
+                        "We don't just show you pictures. Download the original spectrometer output and process it yourself in MestReNova, TopSpin, or any compatible NMR software. Every peak, every integration — fully verifiable.",
+                    }
+                  : undefined
+              }
+            />
           </section>
         )}
 

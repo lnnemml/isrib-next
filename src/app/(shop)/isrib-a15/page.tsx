@@ -1,7 +1,8 @@
+import { redirect } from "next/navigation";
+
+// Legacy placeholder route. The canonical A15 page is the dynamic product route
+// (/products/isrib-a15); this segment only redirects so no placeholder can ship.
+// `redirect` (next/navigation) throws NEXT_REDIRECT and terminates rendering.
 export default function IsribA15Page() {
-  return (
-    <main className="mx-auto max-w-[--container-page] px-8 py-24">
-      <h1 className="text-h1 font-bold">"ISRIB A15 — placeholder"</h1>
-    </main>
-  );
+  redirect("/products/isrib-a15");
 }

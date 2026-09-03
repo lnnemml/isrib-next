@@ -59,6 +59,29 @@ function FormatOption({
   );
 }
 
+// Derive the live capsule-card detail lines from a "COUNT × MGmg" sizeLabel
+// (e.g. "25 × 20mg"). total = count × per-capsule mg; the powder equivalent is the
+// same mg, shown as "500mg" or "1g".
+function capsuleDetails(sizeLabel: string): {
+  count: string;
+  perCapsule: string;
+  total: string;
+  equivalent: string;
+} | null {
+  const m = sizeLabel.match(/(\d+)\s*×\s*(\d+)\s*mg/i);
+  if (!m) return null;
+  const count = Number(m[1]);
+  const perMg = Number(m[2]);
+  const totalMg = count * perMg;
+  const asWeight = totalMg >= 1000 && totalMg % 1000 === 0 ? `${totalMg / 1000}g` : `${totalMg}mg`;
+  return {
+    count: `${count} Capsules`,
+    perCapsule: `${perMg}mg per capsule`,
+    total: `${asWeight} total`,
+    equivalent: `Equivalent to ${asWeight} powder`,
+  };
+}
+
 export function OrderBlock({
   productSlug,
   productName,
@@ -124,6 +147,7 @@ export function OrderBlock({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {capsules!.map((c, i) => {
             const popular = i === capsules!.length - 1;
+            const d = capsuleDetails(c.sizeLabel);
             return (
               <div
                 key={c.sku}
@@ -142,10 +166,15 @@ export function OrderBlock({
                     {popular && <span aria-hidden>{"⭐"}</span>}
                     {popular ? "Popular" : "Starter"}
                   </span>
-                  <div className="mt-1.5 font-mono text-[14px] text-text">{c.sizeLabel}</div>
-                  <div className="mt-1 font-mono text-[22px] font-semibold text-text">
+                  <div className="mt-1.5 text-[16px] font-semibold text-text">
+                    {d ? d.count : c.sizeLabel}
+                  </div>
+                  {d && <div className="mt-0.5 text-small text-text-subtle">{d.perCapsule}</div>}
+                  {d && <div className="mt-1 font-mono text-[13px] text-text-muted">{d.total}</div>}
+                  <div className="mt-1.5 font-mono text-[22px] font-semibold text-text">
                     {formatCents(c.priceCents)}
                   </div>
+                  {d && <div className="mt-1 text-small text-text-subtle">{d.equivalent}</div>}
                 </div>
                 <div className="mt-3">
                   <AddToCartButton
