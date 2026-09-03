@@ -48,7 +48,7 @@ interface HeroStatProps {
 export function HeroStat({ figure, label }: HeroStatProps) {
   return (
     <div>
-      <div className="font-mono text-[26px] font-semibold tracking-[-0.02em] text-text">{figure}</div>
+      <div className="font-mono text-[26px] font-semibold tracking-[-0.02em] text-primary-deep">{figure}</div>
       <div className="font-mono text-[11px] uppercase tracking-[0.06em] text-text-subtle">{label}</div>
     </div>
   );
