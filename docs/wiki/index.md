@@ -71,6 +71,12 @@ rather than scanning the whole directory.
 - [`roadmap.md`](./roadmap.md) — Track A (safe storefront replacement) + Track B
   (platform fast-follow), phase-by-phase
 
+## Session summaries (read before continuing multi-session work)
+
+- [`sessions_summary/2026-09-03-day1-tail-and-content-migration.md`](./sessions_summary/2026-09-03-day1-tail-and-content-migration.md)
+  — full content migration: all 6 product pages + `/products` + home + About/FAQ/Contact/legal.
+  Decisions, current state, known gaps, next steps.
+
 ## Backlog (sources not yet fully ingested)
 
 - Full research-evidence ingest → flesh out `product/mechanism-and-science.md`
