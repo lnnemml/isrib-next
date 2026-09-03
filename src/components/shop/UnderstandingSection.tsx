@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Card } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
-import type { UnderstandingContent } from "@/lib/copy/products";
+import type { UnderstandingContent, UnderstandingPropertyRow } from "@/lib/copy/products";
 
 // Bespoke "Understanding ISRIB A15" section — a faithful port of the live deep
 // mechanism section (product_isrib_A15.html ~424–627). The locked MechanismSection is
@@ -92,6 +92,43 @@ function Divider() {
   return <hr className="my-14 border-none border-t border-border-soft" />;
 }
 
+// Property/detail table used by the "What is …" block. Extracted so the N-Acetyl
+// second table (safety/toxicity) renders with identical markup to the first.
+function PropertyTable({ rows }: { rows: UnderstandingPropertyRow[] }) {
+  return (
+    <Card className="overflow-hidden p-0">
+      <table className="w-full border-collapse text-small">
+        <thead>
+          <tr className="bg-surface-soft">
+            <th className="w-[38%] border-b border-border px-5 py-3 text-left font-semibold text-success">
+              {"Property"}
+            </th>
+            <th className="border-b border-border px-5 py-3 text-left font-semibold text-success">
+              {"Detail"}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.property} className="border-b border-border-soft last:border-0">
+              <td className="px-5 py-2.5 align-top text-text-subtle">{row.property}</td>
+              <td
+                className={cn(
+                  "px-5 py-2.5 align-top",
+                  row.mono ? "break-words font-mono text-[13px] text-text" : "text-text",
+                  row.strong && "font-semibold text-success",
+                )}
+              >
+                {row.detail}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
+
 export function UnderstandingSection({
   content,
   mechanism,
@@ -122,36 +159,17 @@ export function UnderstandingSection({
               {p}
             </p>
           ))}
-          <Card className="overflow-hidden p-0">
-            <table className="w-full border-collapse text-small">
-              <thead>
-                <tr className="bg-surface-soft">
-                  <th className="w-[38%] border-b border-border px-5 py-3 text-left font-semibold text-success">
-                    {"Property"}
-                  </th>
-                  <th className="border-b border-border px-5 py-3 text-left font-semibold text-success">
-                    {"Detail"}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {whatIs.table.map((row) => (
-                  <tr key={row.property} className="border-b border-border-soft last:border-0">
-                    <td className="px-5 py-2.5 align-top text-text-subtle">{row.property}</td>
-                    <td
-                      className={cn(
-                        "px-5 py-2.5 align-top",
-                        row.mono ? "break-words font-mono text-[13px] text-text" : "text-text",
-                        row.strong && "font-semibold text-success",
-                      )}
-                    >
-                      {row.detail}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+          <PropertyTable rows={whatIs.table} />
+          {whatIs.paragraphs2 && whatIs.paragraphs2.length > 0 && (
+            <div className="mt-6">
+              {whatIs.paragraphs2.map((p, i) => (
+                <p key={i} className="mb-4 text-body text-text-muted last:mb-6">
+                  {p}
+                </p>
+              ))}
+            </div>
+          )}
+          {whatIs.table2 && whatIs.table2.length > 0 && <PropertyTable rows={whatIs.table2} />}
         </div>
 
         <Divider />

@@ -115,6 +115,12 @@ export interface UnderstandingContent {
     heading: string;
     paragraphs: string[];
     table: UnderstandingPropertyRow[];
+    // Optional second paragraph group + second table, rendered (in order) after the
+    // first table. Used by N-Acetyl-Bromantane, whose "What is" block has TWO tables
+    // (properties + safety/toxicity). Backward-compatible: products that omit these
+    // render exactly as before.
+    paragraphs2?: string[];
+    table2?: UnderstandingPropertyRow[];
   };
   // 4B — The ISR Window
   isrWindow: {
@@ -1128,6 +1134,8 @@ const PRODUCTS: Product[] = [
       { label: "Solubility", value: "DMSO, Ethanol" },
       { label: "Storage", value: "2-8°C (or -20°C long-term)" },
       { label: "Stability", value: "2+ years" },
+      { label: "Light", value: "Store in dark" },
+      { label: "Moisture", value: "Keep dry" },
       { label: "Container", value: "Amber glass vial" },
     ],
     pricing: {
@@ -1137,6 +1145,227 @@ const PRODUCTS: Product[] = [
         { format: "powder", sku: "n-acetyl-bromantane-1g", sizeLabel: "1g", priceCents: 7000 },
         { format: "powder", sku: "n-acetyl-bromantane-2g", sizeLabel: "2g", priceCents: 13000 },
       ],
+    },
+    // NMR assets ported from the live page (product_n_acetyl_bromantane.html §NMR).
+    // Solvent CDCl₃, Batch 1. Spectra images + FID zips copied into public/.
+    assets: {
+      formulaSvg: "/images/n-acetyl-bromantane-formula.svg",
+      spectra: [
+        {
+          label: "¹H NMR",
+          hint: "Click to zoom",
+          src: "/images/n-acetyl-bromantane-nmr-h1.png",
+          alt: "¹H NMR spectrum of N-Acetyl-Bromantane — Batch 1",
+          meta: "400 MHz · CDCl₃",
+          batch: "Batch 1",
+          signals:
+            "Key signals: δ 7.61 (d, J=8.5 Hz, 2H, ArH), 7.37 (d, J=8.5 Hz, 2H, ArH), 4.37 (s, 1H, CH), 2.14 (s, 3H, COCH₃), 1.80–1.27 (br m, 15H, adamantane)",
+        },
+        {
+          label: "¹³C NMR",
+          hint: "Click to zoom",
+          src: "/images/n-acetyl-bromantane-nmr-c13.png",
+          alt: "¹³C NMR spectrum of N-Acetyl-Bromantane — Batch 1",
+          meta: "100 MHz · CDCl₃",
+          batch: "Batch 1",
+          signals:
+            "Key signals: δ 174.77 (C=O), 146.12, 138.33, 137.28, 126.34 (ArC), 65.36 (CH-N), 43.47, 42.56, 36.23, 36.09, 32.24, 31.62, 29.13",
+        },
+      ],
+      downloads: [
+        { href: "/files/n-acetyl-bromantane-1h-fid.zip", filename: "¹H FID data (.zip)", label: "↓" },
+        { href: "/files/n-acetyl-bromantane-13c-fid.zip", filename: "¹³C FID data (.zip)", label: "↓" },
+      ],
+    },
+    // Hero enrichment (live product_n_acetyl_bromantane.html hero).
+    heroSubtitle: "N-Acetyl-N-(4-Bromophenyl)adamantan-2-amine",
+    heroStats: [
+      { figure: "98%+", label: "Purity" },
+      { figure: "COA", label: "Per batch" },
+      { figure: "Amide", label: "Tertiary N" },
+    ],
+    heroBadges: [{ label: "✓ In stock", tone: "success" }],
+    heroHighlights: [
+      "Acylated bromantane — tertiary amide",
+      "High BBB permeability (adamantane-amide scaffold)",
+      "¹H / ¹³C NMR verified every batch",
+      "Free worldwide shipping on all orders",
+    ],
+    formulaCaption: "Molecular formula: C₁₈H₂₂BrNO",
+    heroCtas: [
+      { label: "Order N-Acetyl-Bromantane", href: "#order" },
+      { label: "Learn More", href: "#understanding" },
+    ],
+    // Dark MechanismSection (live block 4 "Mechanism of action"). Body drawn faithfully
+    // from the What-is copy; the 3 steps are ported verbatim. Quote omitted (the callout
+    // lives in the isrWindow block).
+    mechanism: {
+      kicker: "The mechanism · amide",
+      title: "An acetyl cap: same actoprotection, far wider safety margin.",
+      body:
+        "N-Acetyl-Bromantane is the N-acylated derivative of bromantane — the labile secondary amine is capped as a stable tertiary amide, markedly reducing susceptibility to N-oxidation while preserving the parent molecule's catecholamine biosynthesis-enhancing mechanism. The result is a compound with one of the highest therapeutic indices in the adamantane-amide series.",
+      steps: [
+        {
+          title: "CNS entry and distribution",
+          body:
+            "The lipophilic adamantane cage combined with the N-acetyl group produces a calculated logP profile suitable for rapid blood-brain barrier penetration by passive diffusion. Tissue distribution follows the pattern of the bromantane class — accumulation in lipid compartments provides a depot effect that extends the pharmacodynamic duration beyond the plasma half-life. The amide modification alters the partitioning profile relative to the amine, potentially improving CNS/plasma ratio.",
+        },
+        {
+          title: "Enzyme induction",
+          body:
+            "Once distributed in dopaminergic and noradrenergic neurons, N-acetyl-bromantane initiates upregulation of TH and DOPA decarboxylase at the gene expression level. This transcriptional mechanism unfolds over hours, producing a sustained increase in catecholaminergic tone that persists well beyond compound clearance. The absence of acute synaptic flooding means autoreceptor downregulation is attenuated — a key advantage over classical stimulant mechanisms.",
+        },
+        {
+          title: "Sustained performance enhancement",
+          body:
+            "The combined dopaminergic and noradrenergic biosynthesis enhancement translates to sustained improvements in physical and cognitive performance under load conditions. In the Morozov paradigm, this manifested as a 3.4× increase in loaded swimming duration — a measure of true fatigue resistance, not mere stimulation. The multi-hour onset and extended duration mirror the compound's enzymatic rather than synaptic mechanism of action.",
+        },
+      ],
+    },
+    // Deep "Understanding N-Acetyl-Bromantane" section — ported VERBATIM from
+    // product_n_acetyl_bromantane.html blocks 1–5 (block 4 "Mechanism of action" is the
+    // dark MechanismSection above, injected into the section's live position). Live
+    // amber/purple/red/indigo/pink card accents map onto the locked cyan/blue/success
+    // rotation. Comparative reference-stimulant names (phenamin, sydnocarb) and structural
+    // comparisons (bromantane) are ported verbatim per the ratified organic-product-page
+    // policy — the "What is" block carries TWO tables (properties + safety/toxicity), via
+    // the whatIs.table2/paragraphs2 slots.
+    understanding: {
+      eyebrow: "Scientific background",
+      title: "Understanding N-Acetyl-Bromantane",
+      intro:
+        "A look at the pharmacology, safety profile, and mechanism behind the acylated derivative of bromantane — a compound that combines superior actoprotective efficacy with an exceptional therapeutic index.",
+      whatIs: {
+        heading: "What is N-Acetyl-Bromantane?",
+        paragraphs: [
+          "N-Acetyl-Bromantane is the N-acylated derivative of bromantane, produced by acetylation of the secondary amine nitrogen with acetic anhydride — a reaction first documented in the 1998 paper by Morozov et al. at the Institute of Pharmacology, Russian Academy of Medical Sciences. The result is a tertiary amide in which the N-H of bromantane is replaced by an N-acetyl group, fundamentally altering the compound's metabolic and pharmacological profile.",
+          "The structural modification has important pharmacological consequences. The parent bromantane contains a secondary amine that is metabolically labile — subject to N-oxidation and rapid phase I metabolism. The N-acetyl group converts this to a tertiary amide with markedly lower susceptibility to N-oxidation, potentially extending the effective pharmacokinetic window and reducing formation of reactive metabolic intermediates. This is the same principle underlying the superior safety profiles of many clinically approved amide drugs compared to their amine precursors.",
+        ],
+        table: [
+          {
+            property: "Chemical name",
+            detail: "N-Acetyl-N-(4-bromophenyl)adamantan-2-amine",
+            mono: true,
+          },
+          { property: "Mechanism class", detail: "Acylated dopaminergic actoprotector" },
+          {
+            property: "Primary target",
+            detail: "TH / DOPA decarboxylase (catecholamine biosynthesis)",
+          },
+          { property: "BBB permeability", detail: "High — lipophilic adamantane-amide scaffold" },
+          {
+            property: "Research status",
+            detail: "Synthesized per Morozov et al. (Pharm. Chem. J., 1998)",
+            strong: true,
+          },
+        ],
+        paragraphs2: [
+          "In the Morozov pharmacological comparison, N-acetyl-bromantane (compound II) showed a loaded swimming duration of 935 ± 42 seconds in the test group versus 275 ± 36 seconds in controls — a 3.4× enhancement that exceeded the reference stimulant phenamin (625 ± 26 seconds). Critically, this was achieved with an LD₅₀ of 5,640 mg/kg in mice, compared to bromantane's 1,020 mg/kg and phenamin's 300 mg/kg — giving N-acetyl-bromantane one of the highest therapeutic indices in the series.",
+        ],
+        table2: [
+          {
+            property: "Acute toxicity (LD₅₀, mice, IP)",
+            detail: "5,640 mg/kg (Morozov et al., 1998)",
+          },
+          { property: "Comparison vs bromantane (Ib)", detail: "LD₅₀ 1,020 mg/kg" },
+          {
+            property: "Comparison vs phenamin",
+            detail: "LD₅₀ 300 mg/kg — 18.8× lower toxicity",
+          },
+          {
+            property: "Acylation source",
+            detail: "Bromantane + Ac₂O / 6h reflux (80% yield)",
+            mono: true,
+          },
+        ],
+      },
+      isrWindow: {
+        heading: "Why the acetyl group changes everything",
+        paragraphs: [
+          "The N-acetyl modification represents a deliberate structural optimization rather than an incremental change. In bromantane, the secondary amine nitrogen is the site of highest metabolic vulnerability: cytochrome P450-mediated N-oxidation and oxidative deamination at this position generate electrophilic intermediates that contribute to the compound's dose-limiting toxicity profile. Acetylation caps this position, replacing the labile N-H with a stable amide bond that is orders of magnitude less reactive toward oxidative metabolism.",
+          "The resulting tertiary amide exhibits markedly altered electronic properties at nitrogen. The lone pair on nitrogen participates in resonance with the carbonyl, reducing its availability for N-oxidation and shifting the compound's polarity and pKa. This translates directly to the exceptional safety data: an LD₅₀ of 5,640 mg/kg places N-acetyl-bromantane well above the parent compound's already-favourable toxicity profile, while preserving the parent molecule's actoprotective efficacy.",
+        ],
+        cards: [
+          {
+            eyebrow: "Metabolic stability",
+            body:
+              "The tertiary amide nitrogen of N-acetyl-bromantane is significantly more resistant to cytochrome P450-mediated N-oxidation than the secondary amine of the parent bromantane. This reduces the generation of reactive N-oxide metabolites, directly contributing to the compound's dramatically improved acute toxicity profile and expected reduction in off-target metabolic effects.",
+          },
+          {
+            eyebrow: "Preserved actoprotective efficacy",
+            body:
+              "Despite the structural modification, N-acetyl-bromantane retains and even enhances the actoprotective activity of the parent compound. In loaded swimming tests, it produced a 240% increase over control — exceeding both bromantane (128% increase) and phenamin (167% increase) in the same paradigm. The core dopaminergic biosynthesis-enhancing mechanism remains intact through the acetylation.",
+          },
+          {
+            eyebrow: "Exceptional safety margin",
+            body:
+              "An LD₅₀ of 5,640 mg/kg is among the highest recorded for any pharmacologically active compound in the adamantane series. For comparison, the reference stimulants phenamin (300 mg/kg) and sydnocarb (1,780 mg/kg) operate at 18.8× and 3.2× greater acute toxicity respectively. This wide safety margin makes N-acetyl-bromantane an ideal candidate for research protocols requiring high-dose or repeated-exposure experimental designs.",
+          },
+        ],
+        callout:
+          "\"The effect of the most active compound II [N-acetyl-bromantane] exceeded that of the reference drug phenamin in loaded swimming tests, while demonstrating substantially lower acute toxicity — a combination rarely achieved in CNS-active compounds.\" — Morozov et al., Pharmaceutical Chemistry Journal, 1998",
+      },
+      translational: {
+        heading: "Dopaminergic and noradrenergic mechanism",
+        paragraphs: [
+          "N-Acetyl-bromantane shares the catecholamine biosynthesis-enhancing mechanism of the parent compound. The adamantane scaffold provides the structural backbone responsible for CNS penetration and receptor interactions, while the 4-bromophenyl group — retained intact through acetylation — maintains the pharmacophore's dopaminergic activity.",
+          "The compound upregulates tyrosine hydroxylase (TH) and DOPA decarboxylase expression, increasing the synthetic capacity of dopaminergic and noradrenergic neurons over hours to days. Unlike reuptake inhibitors or releasers, this biosynthetic enhancement preserves autoreceptor feedback and homeostatic regulation — accounting for the low abuse liability and absence of typical stimulant tolerance observed with the bromantane class. The N-acetyl modification adds a pharmacokinetic dimension: the tertiary amide's altered lipophilicity and metabolic stability profile may extend the duration of central action relative to the parent amine, providing a more sustained and even pharmacodynamic response in actoprotector research paradigms.",
+        ],
+        cards: [
+          {
+            title: "Tyrosine hydroxylase upregulation",
+            body:
+              "The rate-limiting enzyme in catecholamine synthesis, TH converts tyrosine to L-DOPA. N-acetyl-bromantane's mechanism involves enhanced TH expression in striatal and accumbal dopaminergic neurons — increasing the cell's synthetic output capacity over a multi-hour time course rather than depleting stores acutely. This gradual ramp-up profile is associated with lower crash and rebound compared to acute releasers.",
+          },
+          {
+            title: "Noradrenergic co-activation",
+            body:
+              "Parallel upregulation of dopamine-β-hydroxylase (DBH) in noradrenergic neurons contributes to the compound's stress-resilience and anxiolytic profile. The noradrenergic component, combined with dopaminergic enhancement, produces the characteristic actoprotector combination of fatigue resistance plus cognitive stability — without the anxiogenic effects of pure dopaminergic stimulants.",
+          },
+          {
+            title: "Amide pharmacokinetics",
+            body:
+              "The tertiary amide bond undergoes enzymatic hydrolysis substantially more slowly than ester bonds and is resistant to spontaneous hydrolysis at physiological pH. Whether N-acetyl-bromantane acts directly or via partial in vivo hydrolysis to bromantane is an open research question — both pathways are pharmacologically relevant and contribute to the compound's extended action profile.",
+          },
+        ],
+      },
+      applications: {
+        heading: "Key research applications",
+        intro:
+          "N-Acetyl-bromantane's combination of superior actoprotective efficacy and an exceptional safety margin positions it as a premium tool compound across multiple research domains. Below are the primary areas where it offers distinct advantages over the parent compound and classical stimulant controls.",
+        cards: [
+          {
+            title: "Actoprotector benchmark (premium)",
+            body:
+              "N-acetyl-bromantane provides a superior benchmark compound for actoprotector research: equivalent or greater efficacy than bromantane with a substantially wider safety margin. For studies requiring repeated dosing, dose-escalation protocols, or long-duration exposure, its exceptional LD₅₀ allows researchers to explore dose ranges inaccessible with standard actoprotector controls.",
+          },
+          {
+            title: "Metabolic stability studies",
+            body:
+              "The amide vs amine structural comparison between N-acetyl-bromantane and bromantane makes this compound pair ideal for studying how N-acylation affects CNS drug metabolism, N-oxidation pathways, and the relationship between metabolic stability and acute toxicity in the adamantane scaffold series.",
+          },
+          {
+            title: "Catecholamine biosynthesis research",
+            body:
+              "As a potent TH/DOPA decarboxylase upregulator with documented superior efficacy data, N-acetyl-bromantane serves as a high-activity positive control in studies examining catecholamine biosynthetic capacity, dopaminergic circuit function, and the consequences of sustained (rather than acute) monoaminergic enhancement.",
+          },
+          {
+            title: "High-safety-margin CNS research",
+            body:
+              "For experimental designs requiring high-confidence safety margins — chronic dosing, combination studies, or mechanistic work at suprapharmacological concentrations — N-acetyl-bromantane's LD₅₀ of 5.6 g/kg provides substantial experimental latitude without compromising on pharmacological activity.",
+          },
+          {
+            title: "Fatigue and physical performance",
+            body:
+              "The Morozov loaded swimming data places N-acetyl-bromantane at the top of the N-adamantylaniline series for physical performance enhancement — above phenamin at equivalent doses. This makes it a valuable pharmacological tool for fatigue resistance research and a stringent positive control for novel actoprotector candidate evaluation.",
+          },
+          {
+            title: "Amide prodrug mechanistic studies",
+            body:
+              "Whether N-acetyl-bromantane functions as a direct pharmacological agent or undergoes in vivo hydrolysis to bromantane is an open mechanistic question with broad implications for amide prodrug design. Its clear pharmacological activity and tractable analytical profile make it suitable for radiolabeling, metabolite tracking, and structure-activity studies in the CNS amide prodrug field.",
+          },
+        ],
+      },
     },
   },
 ];

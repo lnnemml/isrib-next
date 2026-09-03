@@ -605,3 +605,38 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Roles run:** LEAD (orchestrator) → explorer (inventory + compliance scan) → LEAD reconcile
   + compliance ruling → implementer → verifier (fresh context, APPROVE) → LEAD browser gate
   (hero + deep section + Ladasten present) PASS. Work uncommitted on `feat/bromantane-port`.
+
+## [2026-09-03] gate | N-Acetyl-Bromantane faithful port (1.6) — whatIs 2-table extension, G1(N-Acetyl) closed
+
+- Ported the live N-Acetyl-Bromantane page to A15-level fidelity (branch
+  `feat/n-acetyl-bromantane-port`). `fixed` product, already had the rich order block — mostly
+  DATA + assets, PLUS one small ADDITIVE component extension. Explorer inventory (compliance
+  scan); implementer built; verifier APPROVED (esp. no-regression on the shared component);
+  LEAD ran the browser gate.
+- **Component extension (additive, backward-compatible):** N-Acetyl's "What is" block is richer
+  than the others — it has TWO tables (properties + a safety/toxicity LD₅₀ table) with the
+  Morozov efficacy paragraph between them. Extended `UnderstandingContent.whatIs` with optional
+  `paragraphs2?` + `table2?`, and `UnderstandingSection.tsx` renders heading → paragraphs →
+  table → paragraphs2 → table2 (both guarded). A15/MPEP/Bromantane don't set the new fields →
+  verifier confirmed via Playwright DOM count: 1 table each on those, 2 on N-Acetyl, zero
+  console errors. No amputation of the toxicity table.
+- Deep section verbatim: whatIs (2 tables + Morozov LD₅₀ data), isrWindow (Why-the-acetyl +
+  3 cards + Morozov green callout w/ attribution), translational (dopaminergic mechanism + 3
+  cards), applications (6 cards), mechanism 3-step. NMR fully sourced (n-acetyl-* assets,
+  400/100 MHz · CDCl₃, Batch 1, verbatim key-signals incl. the amide C=O δ 174.77 marker).
+  Hero: formula SVG + caption (C₁₈H₂₂BrNO), 3 stats (3rd = Amide/Tertiary N), "In stock" badge,
+  chem-name subheading, highlights, CTAs. Specs +Light/Moisture; COA "on request".
+- **COMPLIANCE (Anton pre-ruled: port AS-IS, organic page):** copy names **phenamin** (many)
+  and **sydnocarb** (2×) — reference stimulants in comparative Morozov-1998 LD₅₀/efficacy data.
+  Kept VERBATIM (permitted on organic product pages per the 2026-08-31 policy). Explorer +
+  verifier confirmed NO cancer/guarantee/dementia (hard blocks even on organic pages). COA
+  framed "On request" in both order block + Documentation column — an INTENTIONAL divergence
+  from the live source's "Included" (variant A). Standing rule keeps this page off `/go` +
+  Meta ad targets.
+- Tokens-only; `tsc` clean; `next build` all 6 product routes. Other products unchanged
+  (only optional fields + the additive whatIs extension).
+- **Roles run:** LEAD (orchestrator) → explorer (inventory + compliance scan) → LEAD reconcile
+  → implementer → verifier (fresh context, APPROVE — no-regression confirmed) → LEAD browser
+  gate (hero + 2-table whatIs) PASS. Work uncommitted on `feat/n-acetyl-bromantane-port`.
+- **Catalog milestone: 5 of 6 products fully ported** (A15, ISRIB, MPEP, Bromantane,
+  N-Acetyl-Bromantane). Only **ZZL-7** remains for Day-1 tail (1.6).
