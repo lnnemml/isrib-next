@@ -680,3 +680,37 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   Bromantane, N-Acetyl-Bromantane, ZZL-7). Day-1 tail (1.5/1.6, ADR 0008) DONE. Next: the G1
   parity audit (nothing dropped vs the live site) + Day-2 multi-line checkout (Neon/Drizzle
   orders + order_items, submitOrder, payment selector, Resend, NowPayments) → gate G2.
+
+## [2026-09-03] gate | /products catalog page — faithful port, rich inline-purchase cards
+
+- Built the `/products` catalog/listing page (branch `feat/products-page`) — it previously 404'd
+  (only `[slug]` existed) while the footer linked to it. Faithful port of the live `products.html`
+  (hero + FLAT 6-card grid; no categories/filters). Explorer inventory; **Anton chose (via
+  AskUserQuestion) the RICH inline-purchase card** (mini order block per card) over a lighter
+  browse→detail card, per ADR 0008 "never reduce".
+- **Built:** `(shop)/products/page.tsx` (server; hero "ISRIB Shop Products" + subtitle, flat
+  `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`), `ProductCard.tsx` (client mini order block:
+  formula box, name + subtitle, purity/COA line, size `<select>`, price + savings line, inline
+  Add-to-Cart via `useCart`, "View details" link, capsule note), `catalog.ts`
+  (`getCatalogOptions` — fixed products map their formats; per-gram A15/ISRIB generate the live
+  preset ladder 100mg/500mg/1g/2g/5g/10g via `computeTieredPrice`). Added `getAllProducts()`
+  (explicit `CATALOG_ORDER` = live grid order, NOT the array order) + exported `specValue`.
+- **Faithful + compliance-conservative transforms:** grid order matches live (A15, ISRIB, MPEP,
+  N-Acetyl, Bromantane, ZZL-7); prices EXACT to the cent (A15 2g $360 / 5g $850 / 10g $1600 etc.,
+  computed not re-typed); subtitles pulled from `product.categorySubtitle` so ZZL-7 shows
+  "Fast-Onset Research Compound" (NOT the live catalog's "Fast-Onset Antidepressant") and N-Acetyl
+  "Acylated Dopaminergic Actoprotector" (NOT "Premium…"); COA "On request" on every card (live
+  says "Included"); capsule note only on A15/ISRIB. After the verifier flagged it, restored the
+  A15/ISRIB "You save $X (Y%)" savings line + bulk-hint (ADR 0008 don't-reduce) — dynamic per
+  selection, absent on fixed products.
+- **Runtime-verified (LEAD, real Chrome):** grid renders in order; defaults preselected (A15/ISRIB
+  2g "Most popular", MPEP/N-Acetyl/Bromantane 1g, ZZL-7 100mg); **inline Add-to-Cart writes the
+  correct line item** — clicked A15 catalog "2g $360" → cart shows "ISRIB A15 · 2g · powder · $360",
+  badge 2→3, subtotal correct. Savings line + bulk hint show on A15/ISRIB only. `tsc` clean;
+  `next build` all routes incl. `/products` SSG.
+- **Roles run:** LEAD → explorer (inventory) → LEAD reconcile + AskUserQuestion (card richness) →
+  implementer → verifier (fresh context, APPROVE — order + exact prices) → implementer (savings
+  line) → LEAD browser gate + live add-to-cart test (PASS). Work uncommitted on `feat/products-page`.
+- Housekeeping: deleted the 5 merged per-product port branches + the merged `fix/a15-...` branch
+  locally (a stale `origin/fix/a15-port-design-regressions` remains on the REMOTE — flagged, not
+  deleted, since remote deletion is an outward push).

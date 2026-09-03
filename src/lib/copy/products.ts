@@ -1506,8 +1506,30 @@ export function getProduct(slug: string): Product | undefined {
   return PRODUCTS.find((p) => p.slug === slug);
 }
 
+// Look up a spec value by label (e.g. "Purity", "MW"). Shared by the catalog card.
+export function specValue(product: Product, label: string): string | undefined {
+  return product.specs.find((s) => s.label === label)?.value;
+}
+
 export function getAllProductSlugs(): string[] {
   return PRODUCTS.map((p) => p.slug);
+}
+
+// Catalog display order — matches the live products.html grid exactly (A15, ISRIB
+// Original, MPEP, N-Acetyl-Bromantane, Bromantane, ZZL-7). This is DELIBERATELY not the
+// raw PRODUCTS array order (which is A15, isrib, zzl-7, mpep, bromantane, n-acetyl):
+// the /products catalog is a faithful port, so it keeps the live grid ordering.
+const CATALOG_ORDER: string[] = [
+  "isrib-a15",
+  "isrib",
+  "mpep-oxalate",
+  "n-acetyl-bromantane",
+  "bromantane",
+  "zzl-7",
+];
+
+export function getAllProducts(): Product[] {
+  return CATALOG_ORDER.map((slug) => getProduct(slug)).filter((p): p is Product => p != null);
 }
 
 // Integer cents → display string. All catalog prices are whole dollars.
