@@ -24,3 +24,11 @@ schema", "does file Z exist and what's its shape"):
 
 Keep it short. Paths and specifics over prose. If you cannot find something, say so
 plainly rather than guessing.
+
+**Port inventories (faithful ports).** When the LEAD asks for a source-page inventory
+(e.g. the live A15 page before porting it), do NOT summarise or judge importance —
+return a COMPLETE, ordered checklist of EVERY section, subsection, card, table,
+callout, and content block on the page, with its text/role. The whole point is that
+nothing gets silently dropped in the rebuild, so completeness beats brevity here. If
+a section is rich long-form content, say so (it will need a bespoke section, not a
+generic component slot).

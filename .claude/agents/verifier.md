@@ -20,7 +20,11 @@ Review the implementer's diff against:
 3. Compliance copy — no prescription drug names in ad-facing body copy; cancer risk
    answered as an objection, never asserted; no money-back-guarantee language.
 4. Design fidelity — components use the tokens from handoff-spec.md, not invented
-   values.
+   values. **For a faithful port, code review is NOT sufficient: run the page and do a
+   VISUAL side-by-side against the live source page (real browser / screenshots).
+   Confirm — section by section against the explorer's inventory — that nothing is
+   dropped and nothing reads flatter or thinner than the live page. Missing sections or
+   content amputated to fit a generic component = REJECT.**
 5. Correctness — obvious bugs, the named risks actually guarded, error/failure paths
    handled (e.g. an email failure must not lose the order).
 

@@ -5,11 +5,26 @@
 > this page is the human-readable spec. Task prompts are in
 > [`track-a-runbook.md`](./track-a-runbook.md).
 
+## Topology (single-instance LEAD model)
+
+Everything runs inside one Claude Code instance, two levels deep (subagents are leaf
+workers — they don't spawn their own subagents). The main session you type into is the
+**LEAD** = **architect + orchestrator merged**: it holds altitude (decisions, wiki,
+scope, port inventories, gates, side-by-side review) AND orchestrates the build by
+delegating to the four subagents below. The earlier two-session model (a separate web
+architect coordinating only through the wiki) is **retired** — the LEAD now has direct
+local sight and uses it.
+
+**Hard boundary that keeps the LEAD at altitude:** the LEAD writes **only `docs/`**.
+Every `src/` change goes through the **implementer**. The LEAD reads code, runs the app,
+screenshots, greps, inspects git — but never hand-edits source. Local sight without
+hand-coding.
+
 ## The team
 
 | Agent | Model | Writes code? | Role |
 |---|---|---|---|
-| **orchestrator** | Opus 4.8 | coordinates | The main Claude Code session. Not a subagent — it IS the session. Plans, decomposes, delegates, integrates, holds the human-in-the-loop gate. |
+| **LEAD** (architect + orchestrator) | Opus | `docs/` only | The main Claude Code session — it IS the session, not a subagent. Holds altitude (decisions, wiki, port inventories, gates) + orchestrates: plans, decomposes, delegates, integrates, does side-by-side review itself, holds the human gate. Writes only `docs/`; all `src/` via the implementer. |
 | **explorer** | Haiku | no (read-only) | Fast, cheap reconnaissance: how does nootropics do X, where are the call sites of Y, what shape is file Z. Returns findings, never edits. Parallelizable. |
 | **implementer** | Opus 4.8 | yes | Executes ONE precisely-scoped build task from the orchestrator. Touches only the stated files. Ends with `tsc --noEmit`. |
 | **prober** | Sonnet | test scripts only | Runtime verification: runs the build, places test orders, hits endpoints, inspects Neon / logs / Events Manager. Returns pass/fail + evidence. Does not edit app code. |

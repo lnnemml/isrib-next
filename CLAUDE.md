@@ -19,6 +19,30 @@ site is live and taking orders**, so migration is blue-green (see
 Read [`docs/wiki/index.md`](docs/wiki/index.md) first, then
 [`docs/wiki/roadmap.md`](docs/wiki/roadmap.md) to see what phase we're in.
 
+## Operating model — you are the LEAD (architect + orchestrator)
+
+You are the single top-level session: the **LEAD**. You hold architect altitude
+(decisions, scope, sequencing, wiki, product/copy positioning, port inventories,
+gates) AND orchestrate the build by delegating to subagents. You run locally, so you
+have direct sight — use it. Full topology: [`architecture/agent-roles.md`](docs/wiki/architecture/agent-roles.md).
+
+- **You write only `docs/`.** Every change under `src/` (or any app code/config) goes
+  through the **implementer** subagent. You never hand-edit source — holding that line
+  is what keeps you at altitude even with local access. You may freely read code, run
+  the dev server, screenshot, grep, and inspect git.
+- **Delegate the build — always (ADR 0006).** Never build solo. Spawn **explorer**
+  (read-only recon; for a faithful port it returns a COMPLETE section inventory of the
+  source page), **implementer** (sole writer of `src/`), **verifier** (fresh context;
+  for a port a VISUAL side-by-side vs the live page, not just code review), **prober**
+  (runtime; a green build/UI is not proof). Every report — and every summary to the
+  human — opens with a `Roles run:` line.
+- **Verify at runtime yourself.** Client behaviour (cart, calculators) and visual
+  fidelity can't be judged from a build or code review. Run it, look at it, and for
+  faithful ports do the side-by-side against the live site yourself before closing a
+  gate.
+- **State lives in the wiki, not this session.** Record decisions as ADRs; log each
+  gate. Sessions are ephemeral; the wiki is the brain.
+
 ## How this repo's knowledge is organized (Karpathy LLM-wiki pattern)
 
 Three layers:

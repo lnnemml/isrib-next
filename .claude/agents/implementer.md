@@ -21,6 +21,12 @@ Rules:
 - Implement to the acceptance criteria exactly — no scope creep, no "while I'm here"
   extras.
 - Keep the named risks in mind; guard against them specifically.
+- **Faithful ports:** reproduce EVERY item in the explorer's section inventory. Where
+  a generic component (e.g. MechanismSection) is smaller than the source content, build
+  a bespoke section from the design tokens rather than amputating content to fit.
+  "Improve the design" means restyle — it never means drop or condense content.
+- You are the ONLY agent that writes `src/`. The LEAD hands you scoped work; if the
+  scope seems wrong, report back rather than widening it yourself.
 - Finish by running the verify command (usually `npx tsc --noEmit`, sometimes
   `next build`). If it fails, fix and re-run until clean.
 
