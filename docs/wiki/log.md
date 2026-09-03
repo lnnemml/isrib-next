@@ -714,3 +714,41 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - Housekeeping: deleted the 5 merged per-product port branches + the merged `fix/a15-...` branch
   locally (a stale `origin/fix/a15-port-design-regressions` remains on the REMOTE — flagged, not
   deleted, since remote deletion is an outward push).
+
+## [2026-09-03] gate | Homepage (/) faithful port — 6-section marketing page
+
+- Built the homepage `/` (branch `feat/home-page`) — faithful port of the live `index.html`
+  (was a placeholder). Explorer 8-block inventory; implementer built; verifier APPROVED
+  (headless-Chrome side-by-side); LEAD browser gate. Also deleted the stale
+  `origin/fix/a15-port-design-regressions` remote branch (Anton approved the outward push);
+  origin is now just `main`.
+- **6 sections (bespoke marketing components in `src/components/marketing/`):** HERO (gradient
+  headline "Advanced [Research Chemicals] for Scientific Innovation" — blue→cyan clip-text like
+  the old site; 3 stats 50+/98%+/Since-2020; benefit card 4 rows; Browse-products → /products) →
+  FEATURED PRODUCTS (6 cards from `getAllProducts()`, "From $X" via `getCatalogOptions` min price,
+  A15 "Most popular" + N-Acetyl "Premium" badges, → /products/[slug]) → ABOUT "In-house synthesis.
+  Real chemist. Verified purity." (2 paras + 5 bullets verbatim + a real ¹H-NMR proof card) →
+  TRUST (3 indicators verbatim) → HOW-TO-ORDER (3 steps + CTA) → FAQ (8 preview cards → /faq#…).
+  Header/Footer stay global (root layout).
+- **Compliance (LEAD call — homepage is ORGANIC, but conservative):** the live homepage's
+  product-card descriptions carry efficacy/marketing language ("cognitive enhancement",
+  "outperforms phenamin", "performance enhancement", "antidepressant"). Used the CLEAN
+  `product.description`/`categorySubtitle` DATA on the cards instead (consistent with /products;
+  ZZL-7 = "Fast-Onset Research Compound"). COA "on request" everywhere (never "Included").
+  **PayPal omitted** from How-to-order (new flow = crypto + manual arrangement; kept
+  Bitcoin/USDT/Wise/SWIFT). "guaranteed purity" (quality claim) kept verbatim. No
+  cancer/guarantee/dementia/human-efficacy claim in any rendered sentence.
+  **FLAG (opt-in):** if Anton wants the live homepage's richer efficacy card copy, it's a
+  follow-up — I defaulted conservative.
+- Tokens only (blue→cyan gradient = locked blue-800/cyan-500; the hero radial wash is the
+  sanctioned handoff-spec gradient). `tsc` clean; `next build` — `/` now SSG (placeholder gone);
+  all routes intact (no regression on /products or detail pages).
+- **Known downstream gap (not a regression):** the FAQ preview `/faq#…` deep-links + nav/footer
+  About/FAQ/Contact/Quality/Safety/legal links 404 until those static pages are ported.
+- **Roles run:** LEAD (orchestrator) → explorer (inventory + compliance scan) → LEAD reconcile
+  + compliance call → implementer → verifier (fresh context, APPROVE) → LEAD browser gate
+  (all 6 sections) PASS. Work uncommitted on `feat/home-page`.
+- **Progress:** all 6 product pages + `/products` catalog + `/` homepage ported. Remaining
+  static pages for parity: About, FAQ, Contact, Quality, Safety, Terms, Privacy, Research-use,
+  Disclaimer (mostly legal/templated — some are AI-draft-only per CLAUDE.md). Then G1 parity
+  audit + Day-2 checkout (G2).
