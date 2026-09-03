@@ -569,3 +569,39 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   (contract) → implementer → verifier (fresh context, APPROVE) → LEAD browser side-by-side +
   live order-block interaction + no-regression check on Bromantane (PASS). Work uncommitted
   on `feat/mpep-port`.
+
+## [2026-09-03] gate | Bromantane faithful port (1.6) — data-only reuse, G1(Bromantane) closed
+
+- Ported the live Bromantane page (`product_bromantane.html`) to A15/MPEP-level fidelity
+  (branch `feat/bromantane-port`). Bromantane is a dopaminergic-noradrenergic actoprotector —
+  its deep section maps EXACTLY onto the existing `UnderstandingContent` machinery, so the
+  port was PURE DATA + assets (no new components; the fixed rich order block already existed
+  from the MPEP work). Explorer produced a 9-block inventory + compliance scan; LEAD ruled
+  compliance; implementer populated data; verifier APPROVED; LEAD ran the browser gate.
+- **Reused everything:** `understanding` (whatIs = What-is + 5-row table; isrWindow =
+  Actoprotective mechanism + 3 cards + callout; translational = Neurochemical profile + 3
+  cards; applications = 6 cards) + dark `MechanismSection` (3 steps: Enzymatic upregulation /
+  Sustained monoaminergic tone / Multi-system resilience). All verbatim. NMR fully sourced
+  from the live page (real spectra + FID `bromantane-*`, 400/100 MHz · CDCl₃, **Batch 1**,
+  verbatim ¹H/¹³C key-signals). Hero: formula SVG + caption (C₁₆H₂₀BrN), 3 stats, single
+  "In stock" badge, chem-name subheading, highlights, CTAs. Specs +Light/Moisture. No
+  comparison table. Order block (fixed 1g $40 / 2g $70 / 5g $160) untouched.
+- **COMPLIANCE (LEAD ruling):** the copy names **"Ladasten"** once, in "What is Bromantane?"
+  ("...evaluated in multiple clinical trials … under the trade name Ladasten."). Ladasten is
+  the rx brand of bromantane itself. Per the ratified 2026-08-31 policy, rx/brand names are
+  PERMITTED on organic product pages (forbidden only on paid-traffic destinations) — kept
+  VERBATIM. `memantine`/`amantadine` also appear (verbatim scaffold-family mention in the
+  neurochemical block) — generic, non-ad body copy, fine. No cancer/guarantee. COA framed
+  "on request" (never "Included"). Standing rule keeps this page off `/go` + Meta ad targets.
+- **Faithful-port tension flagged (copy decision for Anton, NOT fixed):** the live hero 3rd
+  stat is "DA+NE / Reuptake", but the mechanism copy explicitly says bromantane does NOT block
+  reuptake (it upregulates catecholamine SYNTHESIS). Ported the live stat verbatim (faithful);
+  if Anton wants it corrected for accuracy (e.g. "DA+NE / Synthesis"), that's a one-line copy
+  change. Same posture as A15's efficacy-copy override — port what the live page shows, surface
+  the tension.
+- Tokens-only (live amber/purple/red/indigo/rose → cyan/blue/success via the locked
+  components); `tsc` clean; `next build` all 6 product routes. Other products unchanged
+  (only optional fields on `bromantane`).
+- **Roles run:** LEAD (orchestrator) → explorer (inventory + compliance scan) → LEAD reconcile
+  + compliance ruling → implementer → verifier (fresh context, APPROVE) → LEAD browser gate
+  (hero + deep section + Ladasten present) PASS. Work uncommitted on `feat/bromantane-port`.

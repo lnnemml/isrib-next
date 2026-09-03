@@ -429,8 +429,8 @@ export default async function ProductPage({
       <div className="mx-auto flex max-w-[--container-page] flex-col gap-16 px-8 py-16">
         {product.assets?.spectra && (
           <section>
-            <h2 className="mb-3 text-h3 font-semibold">{"NMR characterization"}</h2>
-            <p className="mb-6 max-w-[70ch] text-body text-text-muted">
+            <h2 className="mb-3 text-center text-h3 font-semibold">{"NMR characterization"}</h2>
+            <p className="mb-6 mx-auto max-w-[70ch] text-center text-body text-text-muted">
               {"Every batch is characterised by ¹H and ¹³C NMR. We publish both the processed spectra and the raw FID data so any researcher can independently verify the structure and purity of what they receive — compatible with MestReNova, TopSpin, and other standard NMR software. COA available per batch on request."}
             </p>
             <NmrSection
@@ -484,7 +484,7 @@ export default async function ProductPage({
         </section>
 
         <section>
-          <ul className="flex flex-wrap gap-x-8 gap-y-2">
+          <ul className="flex flex-wrap justify-center gap-x-8 gap-y-2">
             {product.trustBullets.map((b) => (
               <li key={b} className="flex items-center gap-2 text-small text-text-muted">
                 <span className="size-1.5 rounded-full bg-accent" />

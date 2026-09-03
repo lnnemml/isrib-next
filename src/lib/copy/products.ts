@@ -900,6 +900,8 @@ const PRODUCTS: Product[] = [
       { label: "Solubility", value: "DMSO, Ethanol" },
       { label: "Storage", value: "2-8°C (or -20°C long-term)" },
       { label: "Stability", value: "2+ years" },
+      { label: "Light", value: "Store in dark" },
+      { label: "Moisture", value: "Keep dry" },
       { label: "Container", value: "Amber glass vial" },
     ],
     pricing: {
@@ -909,6 +911,205 @@ const PRODUCTS: Product[] = [
         { format: "powder", sku: "bromantane-2g", sizeLabel: "2g", priceCents: 7000 },
         { format: "powder", sku: "bromantane-5g", sizeLabel: "5g", priceCents: 16000 },
       ],
+    },
+    // NMR assets ported from the live page (product_bromantane.html §NMR). Solvent CDCl₃,
+    // Batch 1. Spectra images + FID zips copied into public/.
+    assets: {
+      formulaSvg: "/images/bromantane-formula.svg",
+      spectra: [
+        {
+          label: "¹H NMR",
+          hint: "Click to zoom",
+          src: "/images/bromantane-nmr-h1.png",
+          alt: "¹H NMR spectrum of Bromantane — Batch 1",
+          meta: "400 MHz · CDCl₃",
+          batch: "Batch 1",
+          signals:
+            "Key signals: δ 7.14 (d, J=8.6 Hz, 2H, ArH), 6.57 (d, J=8.6 Hz, 2H, ArH), 5.74 (s, 1H, NH), 3.40–3.33 (m, 1H, CH), 2.50 (br s, 2H), 1.81 (br m, 15H)",
+        },
+        {
+          label: "¹³C NMR",
+          hint: "Click to zoom",
+          src: "/images/bromantane-nmr-c13.png",
+          alt: "¹³C NMR spectrum of Bromantane — Batch 1",
+          meta: "100 MHz · CDCl₃",
+          batch: "Batch 1",
+          signals:
+            "Key signals: δ 147.20, 131.24, 114.27, 105.58, 55.88, 39.53, 37.24, 36.74, 30.84, 26.95, 26.81",
+        },
+      ],
+      downloads: [
+        { href: "/files/bromantane-1h-fid.zip", filename: "¹H FID data (.zip)", label: "↓" },
+        { href: "/files/bromantane-13c-fid.zip", filename: "¹³C FID data (.zip)", label: "↓" },
+      ],
+    },
+    // Hero enrichment (live product_bromantane.html hero) — Bromantane's real data. The
+    // "DA+NE" stat label was corrected to "Synthesis" to match the mechanism (bromantane
+    // upregulates catecholamine synthesis; it does not block reuptake), per Anton's
+    // 2026-09-03 decision. Figure kept as "DA+NE".
+    heroSubtitle: "N-(4-Bromophenyl)adamantan-2-amine",
+    heroStats: [
+      { figure: "98%+", label: "Purity" },
+      { figure: "COA", label: "Per batch" },
+      { figure: "DA+NE", label: "Synthesis" },
+    ],
+    heroBadges: [{ label: "✓ In stock", tone: "success" }],
+    heroHighlights: [
+      "Dopaminergic-noradrenergic actoprotector",
+      "High BBB permeability (adamantane scaffold)",
+      "¹H / ¹³C NMR verified every batch",
+      "Free worldwide shipping on all orders",
+    ],
+    formulaCaption: "Molecular formula: C₁₆H₂₀BrN",
+    heroCtas: [
+      { label: "Order Bromantane", href: "#order" },
+      { label: "Learn More", href: "#understanding" },
+    ],
+    // Dark MechanismSection (live block 4 "Mechanism of action"). Body drawn faithfully
+    // from the What-is copy; the 3 steps are ported verbatim. Quote omitted (the callout
+    // lives in the isrWindow block).
+    mechanism: {
+      kicker: "The mechanism · catecholamines",
+      title: "Bromantane raises catecholamine output, not synaptic flooding.",
+      body:
+        "Unlike classical stimulants that deplete monoamine stores or block reuptake acutely, bromantane operates through a fundamentally different mechanism: upregulation of the biosynthetic enzymes responsible for dopamine and norepinephrine synthesis. This results in a gradual, sustained increase in monoaminergic tone rather than a sharp pharmacokinetic spike — a profile associated with lower abuse liability and attenuated tolerance development.",
+      steps: [
+        {
+          title: "Enzymatic upregulation",
+          body:
+            "Bromantane enters the CNS rapidly via passive diffusion across the blood-brain barrier, facilitated by its highly lipophilic adamantane core. Once in dopaminergic and noradrenergic neurons, it upregulates tyrosine hydroxylase (TH) and DOPA decarboxylase at the gene expression level — increasing the cell's synthetic capacity for catecholamines rather than depleting existing stores.",
+        },
+        {
+          title: "Sustained monoaminergic tone",
+          body:
+            "Unlike reuptake inhibitors or releasers, bromantane does not produce acute synaptic flooding. Instead, enhanced enzyme expression gradually increases the resting catecholaminergic output over hours to days. This mechanism preserves autoreceptor feedback, reducing the likelihood of compensatory downregulation and tolerance development observed with classical stimulants.",
+        },
+        {
+          title: "Multi-system resilience",
+          body:
+            "The combined dopaminergic, noradrenergic, and GABAergic actions converge to produce a multi-axis stress-resilience profile. Under experimental conditions of physical or cognitive load, bromantane-treated subjects demonstrate preserved performance parameters that decline in controls — a hallmark of true actoprotector action distinguishable from simple stimulation.",
+        },
+      ],
+    },
+    // Deep "Understanding Bromantane" section — ported VERBATIM from product_bromantane.html
+    // blocks 1–5 (block 4 "Mechanism of action" is the dark MechanismSection above, injected
+    // into the section's live position). Live amber/purple/red/indigo/rose card accents map
+    // onto the locked cyan/blue/success rotation. The single "Ladasten" trade-name mention
+    // is ported verbatim per the ratified 2026-08-31 organic-product-page policy.
+    understanding: {
+      eyebrow: "Scientific background",
+      title: "Understanding Bromantane",
+      intro:
+        "A look at the pharmacology, research applications, and mechanism behind one of the most studied actoprotectors and dopaminergic-noradrenergic modulators in neuroscience.",
+      whatIs: {
+        heading: "What is Bromantane?",
+        paragraphs: [
+          "Bromantane is a unique hybrid compound that combines the adamantane scaffold — a rigid, highly lipophilic cage structure — with a 4-bromoaniline pharmacophore. First developed and studied in the Soviet Union as part of the actoprotector research program, it has been evaluated in multiple clinical trials as a performance-enhancing and stress-protective agent under the trade name Ladasten.",
+          "Unlike classical stimulants that deplete monoamine stores or block reuptake acutely, bromantane operates through a fundamentally different mechanism: upregulation of the biosynthetic enzymes responsible for dopamine and norepinephrine synthesis. This results in a gradual, sustained increase in monoaminergic tone rather than a sharp pharmacokinetic spike — a profile associated with lower abuse liability and attenuated tolerance development.",
+        ],
+        table: [
+          {
+            property: "Chemical name",
+            detail: "N-(4-Bromophenyl)adamantan-2-amine",
+            mono: true,
+          },
+          { property: "Mechanism class", detail: "Dopaminergic/noradrenergic actoprotector" },
+          { property: "Primary target", detail: "DAT, NET (synthesis upregulation)" },
+          { property: "BBB permeability", detail: "High — lipophilic adamantane scaffold" },
+          {
+            property: "Research status",
+            detail: "Clinically studied actoprotector (Russia/CIS)",
+            strong: true,
+          },
+        ],
+      },
+      isrWindow: {
+        heading: "Actoprotective and dopaminergic mechanism",
+        paragraphs: [
+          "The actoprotector concept, developed within Soviet pharmacology, describes compounds that increase physical and mental performance under extreme conditions — heat, hypoxia, high workload — without the depletion characteristic of classical stimulants. Bromantane is the prototypical member of this class.",
+          "Its primary dopaminergic action involves upregulation of tyrosine hydroxylase (TH) and DOPA decarboxylase expression in the striatum and nucleus accumbens. Rather than flooding the synapse acutely, bromantane increases the cell's capacity to synthesise catecholamines over hours to days. In rodent studies, this translated to sustained increases in locomotor activity, improved resistance to fatigue under physical load, and enhanced performance in cognitive tasks requiring sustained attention. Parallel noradrenergic effects — via upregulation of dopamine-β-hydroxylase — contribute to the compound's anxiolytic and stress-resilience profile, distinct from its stimulatory component.",
+        ],
+        cards: [
+          {
+            eyebrow: "Physical performance",
+            body:
+              "In rodent forced-swim and rotarod models, bromantane extended performance duration and reduced error rates under thermal and hypoxic stress. The effect is dose-dependent and observed at doses that do not produce overt stimulation — consistent with a fatigue-resistance mechanism rather than simple CNS activation.",
+          },
+          {
+            eyebrow: "Cognitive & anxiolytic effects",
+            body:
+              "Clinical studies in patients with asthenic syndrome showed improvements in attention, memory consolidation, and psychomotor speed alongside reduction in anxiety scores. The compound's noradrenergic component appears to mediate anxiolysis, while the dopaminergic action drives cognitive and motivational improvement.",
+          },
+          {
+            eyebrow: "Immunomodulation",
+            body:
+              "Bromantane exhibits immunostimulatory properties in rodent models, including enhanced natural killer cell activity and increased antibody production under stress conditions. This immune-supportive profile distinguishes it from classical stimulants, which typically suppress immune function under chronic use.",
+          },
+        ],
+        callout:
+          "\"Bromantane's mechanism of enhancing catecholamine biosynthesis rather than blocking reuptake represents a pharmacologically distinct strategy for sustaining dopaminergic tone — one that preserves homeostatic feedback while increasing the system's output capacity.\"",
+      },
+      translational: {
+        heading: "Neurochemical profile and receptor interactions",
+        paragraphs: [
+          "Beyond its primary action on catecholamine synthesis, bromantane has a multifaceted receptor interaction profile. It functions as a mild GABA-A positive allosteric modulator at certain subunit combinations — a property that may underlie the anxiolytic effects observed clinically without the sedation associated with benzodiazepines.",
+          "Bromantane also interacts weakly with sigma-1 receptors, a site implicated in neuroprotection and stress-response modulation. The adamantane scaffold itself — shared with memantine and amantadine — confers mild NMDA receptor antagonism at higher concentrations, though this is not considered the primary mechanism at typical research doses. The compound accumulates in adipose tissue due to its high lipophilicity, resulting in a prolonged effective half-life despite a relatively short plasma half-life. This tissue reservoir effect produces sustained activity that outlasts plasma concentration — relevant for protocol design in research applications.",
+        ],
+        cards: [
+          {
+            title: "GABA-A modulation",
+            body:
+              "Electrophysiological studies suggest bromantane potentiates GABA-A receptor currents at select subunit compositions, contributing to its anxiolytic-without-sedation profile. This partial GABAergic action does not appear to produce tolerance or dependence at doses used in actoprotector research paradigms.",
+          },
+          {
+            title: "Sigma-1 interaction",
+            body:
+              "Sigma-1 receptors are located at the endoplasmic reticulum-mitochondria interface and play roles in cellular stress resistance and neuroplasticity. Bromantane's affinity for this site may contribute to its neuroprotective properties observed in hypoxia models and provide synergistic support to its catecholaminergic effects.",
+          },
+          {
+            title: "Adipose accumulation & kinetics",
+            body:
+              "Bromantane's logP and tissue distribution profile result in pronounced accumulation in lipid compartments. While plasma half-life is measured in hours, pharmacodynamic effects persist considerably longer. This kinetic behaviour must be accounted for in wash-out period design and dose-interval selection in research protocols.",
+          },
+        ],
+      },
+      applications: {
+        heading: "Key research applications",
+        intro:
+          "The breadth of bromantane's utility spans from actoprotector benchmarking to dopamine biosynthesis studies and neuroprotection models. Below are the primary research domains where bromantane is currently deployed as a pharmacological standard.",
+        cards: [
+          {
+            title: "Fatigue & physical performance research",
+            body:
+              "Bromantane is a standard pharmacological tool for actoprotector studies — research examining resistance to physical exhaustion, hypoxic performance, and recovery from exertion. It provides a benchmark for novel compounds targeting fatigue pathways and a positive control in catecholamine biosynthesis paradigms.",
+          },
+          {
+            title: "Asthenic syndrome models",
+            body:
+              "Clinical and pre-clinical asthenia research employs bromantane to model and counteract low-energy, low-motivation states associated with chronic stress or illness. Its documented clinical efficacy in asthenic patients provides a validated translational bridge between rodent models and human endpoint data.",
+          },
+          {
+            title: "Anxiolytic mechanism research",
+            body:
+              "Bromantane's combination of anxiolytic efficacy without sedation makes it a valuable comparator in studies investigating non-benzodiazepine anxiolytic mechanisms. Researchers use it to dissect the relative contributions of GABAergic versus monoaminergic pathways to anxiety reduction.",
+          },
+          {
+            title: "Dopamine biosynthesis studies",
+            body:
+              "As a relatively clean upregulator of TH and DOPA decarboxylase, bromantane is used to examine the consequences of enhanced dopamine synthetic capacity on circuit function, reward sensitivity, and motor behaviour — without the confounds of reuptake blockade or vesicular release enhancement.",
+          },
+          {
+            title: "Neuroprotection & hypoxia models",
+            body:
+              "Bromantane has demonstrated protective effects in rodent models of cerebral hypoxia and ischaemia. It serves as a comparator compound in neuroprotection studies and a tool for examining how enhanced catecholaminergic tone interacts with stress-induced neuronal vulnerability.",
+          },
+          {
+            title: "Immunopharmacology",
+            body:
+              "Bromantane's immunostimulatory profile — documented in rodent stress-immunosuppression models — makes it a relevant tool compound for research examining the interface between catecholaminergic signalling and immune function, particularly NK cell activity and humoral immune response under physical stress.",
+          },
+        ],
+      },
     },
   },
   {
