@@ -752,3 +752,9 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   static pages for parity: About, FAQ, Contact, Quality, Safety, Terms, Privacy, Research-use,
   Disclaimer (mostly legal/templated — some are AI-draft-only per CLAUDE.md). Then G1 parity
   audit + Day-2 checkout (G2).
+
+## [2026-09-03] lint | Homepage featured-products → 3 cards + "See all products"
+
+- Owner tweak: the homepage no longer duplicates the full /products catalog — the featured
+  section renders only the first 3 cards (A15, ISRIB, MPEP) + a centered "See all products →"
+  link to /products. Also brightened the hero free-shipping badge to a filled success-green pill.

@@ -117,9 +117,17 @@ export default function HomePage() {
           </p>
         </div>
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((p) => (
+          {products.slice(0, 3).map((p) => (
             <HomeProductCard key={p.slug} product={p} />
           ))}
+        </div>
+        <div className="mt-10 flex justify-center">
+          <a
+            href="/products"
+            className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-surface px-[22px] py-3 text-[15px] font-semibold text-primary-deep transition hover:border-primary hover:bg-surface-soft"
+          >
+            {"See all products →"}
+          </a>
         </div>
       </section>
 
