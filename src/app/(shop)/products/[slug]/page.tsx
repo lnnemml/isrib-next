@@ -396,6 +396,33 @@ export default async function ProductPage({
         )
       )}
 
+      {/* "Key research findings" (ZZL-7) — a lightweight heading + icon-card grid.
+          Sits between the science/mechanism section and the comparison, matching the
+          live order (science → findings → comparison). Other products omit `findings`. */}
+      {product.findings && (
+        <section className="mx-auto max-w-[--container-page] px-8 py-16">
+          <h2 className="mb-8 text-center text-h2 font-bold">{product.findings.heading}</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {product.findings.cards.map((c) => (
+              <Card key={c.title} className="flex flex-col items-start gap-3.5 border-l-4 border-l-accent">
+                <span
+                  aria-hidden
+                  className="flex size-9 shrink-0 items-center justify-center rounded-md bg-cyan-50 text-[18px] leading-none"
+                >
+                  {c.icon ?? "🔬"}
+                </span>
+                <div>
+                  <strong className="mb-1.5 block text-[15px] font-semibold text-text">
+                    {c.title}
+                  </strong>
+                  <p className="text-small leading-[1.7] text-text-subtle">{c.body}</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
       {product.comparison && (
         <section className="mx-auto max-w-[--container-page] px-8 py-16">
           <h2 className="mb-8 text-center text-h2 font-bold">{product.comparison.heading}</h2>

@@ -640,3 +640,43 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   gate (hero + 2-table whatIs) PASS. Work uncommitted on `feat/n-acetyl-bromantane-port`.
 - **Catalog milestone: 5 of 6 products fully ported** (A15, ISRIB, MPEP, Bromantane,
   N-Acetyl-Bromantane). Only **ZZL-7** remains for Day-1 tail (1.6).
+
+## [2026-09-03] gate | ZZL-7 faithful port — CATALOG COMPLETE (6/6), G1(ZZL-7) closed
+
+- Ported the live ZZL-7 page (`product_zzl_7.html`) — the LAST product. ZZL-7 is a
+  SERT–nNOS-interaction fast-onset research compound; its live page is SIMPLER than
+  A15/MPEP (like ISRIB Original): no deep "Understanding" section, no NMR. Explorer
+  inventory + compliance scan; implementer built; verifier APPROVED; LEAD browser gate.
+- **What was ported:** single-size order block (100mg $50, unchanged — the live HTML renders
+  only 100mg despite stale JS for 500/1000mg); hero (formula SVG + caption C₁₁H₂₀N₂O₄, 3 stats
+  incl. Fast/Onset, TWO badges "Fast Onset"+"In stock", highlights, CTAs); science via the dark
+  `mechanism` 3-step (SERT-nNOS binding / Rapid BBB crossing / Fast-onset response) + the
+  "Fast-Acting Breakthrough" intro as body; a new lightweight **`findings`** section ("Key
+  research findings", 3 icon-cards ⚡/🧠/🔬) — verbatim; the `comparison` table "ZZL-7 vs
+  Traditional Antidepressants" (reused ComparisonTable). Specs +Light/Moisture.
+- **New optional field:** `Product.findings?` + a minimal token render in page.tsx (gated on
+  presence; verifier confirmed the other 5 products show zero findings sections). This is the
+  simpler-page counterpart to the deep `understanding` machinery.
+- **NMR correctly ABSENT:** ZZL-7 has no spectra assets, so no NMR section renders AND the
+  Documentation column omits the ¹H/¹³C NMR rows — the live page CLAIMS "¹H NMR Available /
+  Mass Spec Available" but we have no files, so we do NOT assert them (compliance-safe default,
+  same principle as COA variant A). COA "On request".
+- **⚠️ COMPLIANCE — flagged for Anton (ported as-is, awaiting veto):** the comparison table is
+  titled "ZZL-7 vs Traditional Antidepressants" and the copy uses "serotonergic signaling"
+  language — explorer rated this HIGH CONTEXTUAL RISK (positions ZZL-7 near depression
+  treatment). Ported AS-IS per Anton's N-Acetyl "organic-page port-as-is" stance because: it
+  uses a CATEGORY term (not a brand — CLAUDE.md-compliant), carries "research use only" /
+  "research models" framing throughout, makes NO human cure/efficacy claim, and is an ORGANIC
+  product page (not a paid-traffic/Meta destination). NO cancer/guarantee/dementia. **If Anton
+  wants the antidepressant comparison softened or removed, it's a one-line change** (drop the
+  `comparison` field from the zzl-7 object). Standing rule keeps this page off `/go` + Meta.
+- Tokens-only (live purple/red/amber → success/accent/danger/neutral); `tsc` clean;
+  `next build` all 6 product routes. Other products unchanged (optional fields only).
+- **Roles run:** LEAD (orchestrator) → explorer (inventory + compliance scan) → LEAD reconcile
+  + compliance call → implementer → verifier (fresh context, APPROVE — no-regression + NMR-
+  absent confirmed) → implementer (distinct findings icons) → LEAD browser gate (hero +
+  single-size order + science + findings + comparison) PASS.
+- **🎯 CATALOG COMPLETE — all 6 products faithfully ported** (ISRIB A15, ISRIB, MPEP Oxalate,
+  Bromantane, N-Acetyl-Bromantane, ZZL-7). Day-1 tail (1.5/1.6, ADR 0008) DONE. Next: the G1
+  parity audit (nothing dropped vs the live site) + Day-2 multi-line checkout (Neon/Drizzle
+  orders + order_items, submitOrder, payment selector, Resend, NowPayments) → gate G2.

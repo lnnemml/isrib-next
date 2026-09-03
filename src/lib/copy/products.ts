@@ -205,6 +205,9 @@ export interface Product {
   formulaCaption?: string; // mono caption under the hero SVG (A15)
   heroCtas?: HeroCta[]; // data-driven hero CTA anchors (A15: Order/Learn More; Original: Order/The Science)
   comparison?: ComparisonContent; // "ISRIB vs ISRIB A15" table (Original-only)
+  // Lightweight "Key research findings" block (ZZL-7) — a heading + simple icon-cards.
+  // NOT the deep `understanding` structure; rendered after mechanism, before comparison.
+  findings?: { heading: string; cards: { icon?: string; title: string; body: string }[] };
 }
 
 // Identical across all six legacy pages — ported verbatim. COA line framed per variant A
@@ -654,13 +657,142 @@ const PRODUCTS: Product[] = [
       { label: "Solubility", value: "DMSO, Water" },
       { label: "Storage", value: "-20°C" },
       { label: "Stability", value: "2+ years" },
+      { label: "Light", value: "Store in dark" },
+      { label: "Moisture", value: "Keep dry" },
       { label: "Container", value: "Amber glass vial" },
     ],
+    // Single 100mg SKU — the live product_zzl_7.html renders only 100mg / $50. Do NOT
+    // add sizes or change the price. Renders via OrderBlock → FixedSizeSelector.
     pricing: {
       kind: "fixed",
       formats: [
         { format: "powder", sku: "zzl-7-100mg", sizeLabel: "100mg", priceCents: 5000 },
       ],
+    },
+    // Formula SVG only — ZZL-7 has NO NMR spectra/FID data (none exist), so `assets.spectra`
+    // is intentionally omitted (no NMR section, no fabricated NMR claims).
+    assets: {
+      formulaSvg: "/images/zzl7-formula.svg",
+    },
+    // Hero enrichment (live product_zzl_7.html hero) — ported verbatim. No heroSubtitle:
+    // it falls back to the Formula spec (C₁₁H₂₀N₂O₄), matching the live formula subheading.
+    heroStats: [
+      { figure: "98%+", label: "Purity" },
+      { figure: "COA", label: "Per batch" },
+      { figure: "Fast", label: "Onset" },
+    ],
+    heroBadges: [
+      { label: "Fast Onset", tone: "accent" },
+      { label: "✓ In stock", tone: "success" },
+    ],
+    heroHighlights: [
+      "Disrupts the SERT–nNOS interaction",
+      "Fast-onset in research models",
+      "High blood–brain-barrier permeability",
+      "Free worldwide shipping on all orders",
+    ],
+    formulaCaption: "Molecular formula: C₁₁H₂₀N₂O₄",
+    heroCtas: [
+      { label: "Order ZZL-7", href: "#order" },
+      { label: "The Science", href: "#science" },
+    ],
+    // "The ZZL-7 Discovery" — ported verbatim from product_zzl_7.html ("Fast-Acting
+    // Breakthrough" intro + the 3-step "Mechanism of Action"). Renders via the dark
+    // standalone MechanismSection (id="science" so the hero "The Science" CTA anchors).
+    mechanism: {
+      kicker: "The discovery · SERT–nNOS",
+      title: "ZZL-7 disrupts SERT–nNOS for fast-onset research.",
+      body:
+        "ZZL-7 represents a breakthrough in rapid-acting research compounds. Unlike traditional approaches that can take weeks to show effects, ZZL-7 disrupts the SERT-nNOS protein interaction in the dorsal raphe nucleus, leading to fast-onset responses in research models. This compound has opened new avenues for understanding rapid-acting mechanisms and has become an essential tool for researchers studying fast-onset behavioral and neurochemical changes.",
+      steps: [
+        {
+          title: "SERT-nNOS binding",
+          body:
+            "ZZL-7 targets the SERT-nNOS protein complex in the dorsal raphe nucleus, disrupting their interaction.",
+        },
+        {
+          title: "Rapid BBB crossing",
+          body:
+            "High blood-brain barrier permeability allows quick access to target brain regions.",
+        },
+        {
+          title: "Fast-onset response",
+          body:
+            "Rapid modulation of serotonergic signaling leads to fast-onset behavioral and neurochemical changes.",
+        },
+      ],
+    },
+    // "Key research findings" — ported verbatim from product_zzl_7.html (the 3 icon-cards).
+    // Lightweight block (not the deep `understanding` structure).
+    findings: {
+      heading: "Key research findings",
+      cards: [
+        {
+          title: "Rapid onset",
+          body: "Fast-acting responses observed within hours in research models",
+          icon: "⚡",
+        },
+        {
+          title: "BBB permeability",
+          body: "Excellent blood-brain barrier penetration for effective brain targeting",
+          icon: "🧠",
+        },
+        {
+          title: "SERT selectivity",
+          body: "Selective disruption of SERT-nNOS interaction without off-target effects",
+          icon: "🔬",
+        },
+      ],
+    },
+    // "ZZL-7 vs Traditional Antidepressants" — ported verbatim from product_zzl_7.html.
+    // Category term (compliant — no brand name), research-use framing. Live green/red cell
+    // colors map to locked tokens (favorable→success, competitor weakness→danger, neutral→
+    // default). Callout uses the token accent border (not the live purple).
+    comparison: {
+      heading: "ZZL-7 vs Traditional Antidepressants",
+      columns: [
+        { label: "ZZL-7", highlight: true },
+        { label: "Traditional Antidepressants" },
+      ],
+      rows: [
+        {
+          label: "Onset time",
+          cells: [
+            { value: "Hours", tone: "favorable" },
+            { value: "Days to weeks", tone: "neutral" },
+          ],
+        },
+        {
+          label: "BBB permeability",
+          cells: [
+            { value: "High", tone: "favorable" },
+            { value: "Variable", tone: "unfavorable" },
+          ],
+        },
+        {
+          label: "Mechanism",
+          cells: [
+            { value: "SERT-nNOS disruption", tone: "favorable" },
+            { value: "Various", tone: "neutral" },
+          ],
+        },
+        {
+          label: "Research value",
+          cells: [
+            { value: "Novel target", tone: "favorable" },
+            { value: "Established", tone: "neutral" },
+          ],
+        },
+        {
+          label: "Selectivity",
+          cells: [
+            { value: "High", tone: "favorable" },
+            { value: "Variable", tone: "unfavorable" },
+          ],
+        },
+      ],
+      callout:
+        "ZZL-7 offers a unique tool for studying rapid-acting mechanisms via SERT-nNOS disruption. Its fast onset and high brain permeability make it ideal for time-sensitive research applications.",
     },
   },
   {
