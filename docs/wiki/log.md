@@ -795,3 +795,36 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   gate (About sections + FAQ accordion + #coa auto-open) PASS. Work uncommitted on `feat/about-faq`.
 - **Static-page progress:** About + FAQ done. Remaining for parity: Contact, Quality, Safety +
   legal (Terms/Privacy/Research-use/Disclaimer — AI-draft-only per CLAUDE.md).
+
+## [2026-09-03] gate | Contact + 4 legal pages ported (/contact, /terms, /privacy, /research, /disclaimer)
+
+- Ported the live contact.html + the 4 legal pages (branch `feat/contact-legal`) — all were 404
+  while nav/footer linked to them. Explorer inventoried contact.html (form/interactivity); the 4
+  legal pages ported as verbatim linear text. Implementer built all 5; verifier APPROVED; LEAD
+  browser gate.
+- **/contact** (`(marketing)/contact/page.tsx` + `ContactForm.tsx` client): hero (gradient
+  "Contact Our Research Team") + 3 method cards (Email / Live-chat / Place-an-order) + the message
+  form + informational payment-methods band (crypto/bank/Wise; NO card/Stripe/Pay-Now). **Form
+  submit = mailto interim:** validates Name/Email/Subject/Message + the REQUIRED "research use
+  only" checkbox, then opens a `mailto:isrib.shop@protonmail.com` (no POST to a non-existent
+  backend, no personal data sent anywhere). Live-chat "Start Chat" → static "Live chat — coming
+  soon" (Tawk.to not wired). **Day-2 follow-ups:** POST /api/contact + Resend backend; Tawk
+  live-chat integration.
+- **/terms, /privacy, /research, /disclaimer** via a shared `LegalPage` prose layout (gradient
+  title + "Last updated" + token prose). All sections VERBATIM from the live files (Terms 14
+  sections, "Last updated 2025-09-22"; Privacy 13 sections, 2025-09-27; Research 5 sections;
+  Disclaimer 7 sections). **AI-DRAFT FLAG (CLAUDE.md hard constraint):** each legal page carries a
+  top-of-file `/* AI-DRAFTED TEMPLATE — not legal advice; requires real legal review before launch */`
+  comment. **These 4 pages are NOT launch-ready without real legal review.**
+- **Compliance:** no money-back/refund guarantee, no cancer/dementia/medical claim introduced.
+  Terms "returns generally not accepted" (no-returns stance) + Terms §9 "No Warranties" + Disclaimer
+  §6 "No guarantees of efficacy" are DISCLAIMERS (allowed, not asserted guarantees). Disclaimer
+  disclaims medical use. Contact research-use checkbox required. Two live placeholder links (a
+  Telegram `@your_handle`, `/unsubscribe`) rendered as plain text (no broken hrefs).
+- Tokens only; `tsc` clean; `next build` — all 5 SSG; no regression.
+- **Roles run:** LEAD → explorer (contact inventory) → LEAD reconcile (contact-form mailto interim
+  decision) → implementer (5 pages) → verifier (fresh context, APPROVE) → LEAD browser gate
+  (/contact + /terms) PASS. Work uncommitted on `feat/contact-legal`.
+- **Site-map progress:** home, /products, all 6 product pages, About, FAQ, Contact, Terms, Privacy,
+  Research-use, Disclaimer — DONE. Remaining static pages: **Quality Control (/quality)** +
+  **Safety Guidelines (/safety)** (still 404). Then G1 parity audit + Day-2 checkout (G2).
