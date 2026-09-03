@@ -147,6 +147,39 @@ export interface HeroBadge {
   tone: "accent" | "success"; // maps onto locked palette (cyan / green)
 }
 
+export interface HeroCta {
+  label: string;
+  href: string;
+}
+
+// --- "ISRIB vs ISRIB A15" comparison table (Original-only; renders via ComparisonTable) ---
+// `tone` maps each cell value onto the locked palette: favorable→success, unfavorable→
+// danger, neutral→default. Ported verbatim from product_isrib.html (live green/amber/red;
+// amber is dropped — the locked system has no amber).
+export type ComparisonTone = "favorable" | "unfavorable" | "neutral";
+
+export interface ComparisonCellData {
+  value: string;
+  tone?: ComparisonTone;
+}
+
+export interface ComparisonColumnData {
+  label: string;
+  highlight?: boolean;
+}
+
+export interface ComparisonRowData {
+  label: string;
+  cells: ComparisonCellData[];
+}
+
+export interface ComparisonContent {
+  heading: string;
+  columns: ComparisonColumnData[];
+  rows: ComparisonRowData[];
+  callout: string;
+}
+
 export interface Product {
   slug: string; // canonical (redirect target)
   name: string;
@@ -163,6 +196,8 @@ export interface Product {
   heroBadges?: HeroBadge[]; // hero pills e.g. "Most Popular" / "In stock" (A15)
   heroHighlights?: string[]; // hero "key highlights" checklist filling the left column (A15)
   formulaCaption?: string; // mono caption under the hero SVG (A15)
+  heroCtas?: HeroCta[]; // data-driven hero CTA anchors (A15: Order/Learn More; Original: Order/The Science)
+  comparison?: ComparisonContent; // "ISRIB vs ISRIB A15" table (Original-only)
 }
 
 // Identical across all six legacy pages — ported verbatim. COA line framed per variant A
@@ -310,6 +345,10 @@ const PRODUCTS: Product[] = [
       "Free worldwide shipping on all orders",
     ],
     formulaCaption: "Molecular formula: C₂₂H₂₂Cl₄N₂O₄",
+    heroCtas: [
+      { label: "Order ISRIB A15", href: "#order" },
+      { label: "Learn More", href: "#understanding" },
+    ],
     // Deep "Understanding ISRIB A15" section — ported VERBATIM from
     // product_isrib_A15.html lines ~424–627 (blocks 4A/4B/4C/4E; 4D is the dark
     // MechanismSection rendered separately). Research-efficacy + disease-model copy
@@ -436,7 +475,7 @@ const PRODUCTS: Product[] = [
     },
   },
   {
-    slug: "isrib-original",
+    slug: "isrib",
     name: "ISRIB",
     categorySubtitle: "Original Molecule",
     description:
@@ -451,24 +490,145 @@ const PRODUCTS: Product[] = [
       { label: "Solubility", value: "DMSO" },
       { label: "Storage", value: "-20°C" },
       { label: "Stability", value: "2+ years" },
+      { label: "Light", value: "Store in dark" },
+      { label: "Moisture", value: "Keep dry" },
       { label: "Container", value: "Amber glass vial" },
     ],
+    // Per-gram calculator (live page). mg/minMg/maxMg gate + drive OrderBlock's calculator
+    // (src/lib/copy/pricing.ts). Prices unchanged, verified to the cent vs product_isrib.html.
     pricing: {
       kind: "per-gram-tiered",
       trials: [
-        { sizeLabel: "100mg", priceCents: 2700 },
-        { sizeLabel: "500mg", priceCents: 6000 },
+        { sizeLabel: "100mg", priceCents: 2700, mg: 100, badge: "Trial" },
+        { sizeLabel: "500mg", priceCents: 6000, mg: 500, badge: "Trial" },
       ],
       tiers: [
-        { rangeLabel: "1g", perGramCents: 10000, discountPct: 0 },
-        { rangeLabel: "2–4g", perGramCents: 9000, discountPct: 10 },
-        { rangeLabel: "5–9g", perGramCents: 8500, discountPct: 15 },
-        { rangeLabel: "10–30g", perGramCents: 8000, discountPct: 20 },
+        { rangeLabel: "1g", perGramCents: 10000, discountPct: 0, minMg: 1000, maxMg: 1000, tierName: "Standard" },
+        { rangeLabel: "2–4g", perGramCents: 9000, discountPct: 10, minMg: 2000, maxMg: 4000, tierName: "Popular", popular: true },
+        { rangeLabel: "5–9g", perGramCents: 8500, discountPct: 15, minMg: 5000, maxMg: 9000, tierName: "Serious Users" },
+        { rangeLabel: "10–30g", perGramCents: 8000, discountPct: 20, minMg: 10000, maxMg: 30000, tierName: "Bulk" },
       ],
       formats: [
         { format: "capsules", sku: "isrib-original-caps-25", sizeLabel: "25 × 20mg", priceCents: 10000 },
         { format: "capsules", sku: "isrib-original-caps-50", sizeLabel: "50 × 20mg", priceCents: 14000 },
       ],
+    },
+    // NMR assets are an owner-added improvement (the live Original page has no NMR
+    // section). FLAG: no source exists for Original's MHz / solvent / batch / peak δ
+    // values, so meta/batch/signals are intentionally OMITTED (must not be fabricated).
+    assets: {
+      formulaSvg: "/images/isrib-original-formula.svg",
+      spectra: [
+        {
+          label: "¹H NMR",
+          hint: "Click to zoom",
+          src: "/images/isrib-original-nmr-h1.png",
+          alt: "¹H NMR spectrum of ISRIB",
+        },
+        {
+          label: "¹³C NMR",
+          hint: "Click to zoom",
+          src: "/images/isrib-original-nmr-c13.png",
+          alt: "¹³C NMR spectrum of ISRIB",
+        },
+      ],
+      downloads: [
+        { href: "/files/isrib-original-1h-fid.zip", filename: "¹H FID data (.zip)", label: "↓" },
+        { href: "/files/isrib-original-13c-fid.zip", filename: "¹³C FID data (.zip)", label: "↓" },
+      ],
+    },
+    // Hero enrichment (live product_isrib.html hero) — Original's real data.
+    heroStats: [
+      { figure: "98%+", label: "Purity" },
+      { figure: "COA", label: "Per batch" },
+      { figure: "2013", label: "UCSF discovery" },
+    ],
+    heroBadges: [
+      { label: "Original Formula", tone: "accent" },
+      { label: "✓ In stock", tone: "success" },
+    ],
+    heroHighlights: [
+      "Discovered at UCSF (2013)",
+      "≥98% HPLC purity, COA per batch",
+      "¹H / ¹³C NMR verified every batch",
+      "Free worldwide shipping on all orders",
+    ],
+    formulaCaption: "Molecular formula: C₂₂H₂₄Cl₂N₂O₄",
+    heroCtas: [
+      { label: "Order ISRIB", href: "#order" },
+      { label: "The Science", href: "#science" },
+    ],
+    // "The Science behind ISRIB" — ported verbatim from product_isrib.html (Discovery at
+    // UCSF + Published Research + the "How ISRIB Works" 3-step). Renders via the dark
+    // MechanismSection. Efficacy copy ratified for organic product pages (Anton 2026-08-31).
+    mechanism: {
+      kicker: "The science · eIF2B",
+      title: "ISRIB — the original ISR inhibitor.",
+      body:
+        "ISRIB was reported by Peter Walter's group at UCSF to restore learning & memory in brain-injured and elderly mice by modulating the Integrated Stress Response via eIF2B. Featured in peer-reviewed journals (Science, eLife, Nature).",
+      steps: [
+        {
+          title: "ISR activation",
+          body: "Stress triggers eIF2α phosphorylation and translation shut-down.",
+        },
+        {
+          title: "eIF2B modulation",
+          body: "ISRIB binds eIF2B to counteract the inhibition.",
+        },
+        {
+          title: "Cognitive restoration",
+          body: "Protein synthesis resumes to support plasticity & memory.",
+        },
+      ],
+    },
+    // "ISRIB vs ISRIB A15" — ported verbatim from product_isrib.html. Live green/amber/red
+    // cell colors map to locked tokens (favorable→success, unfavorable→danger, neutral→
+    // default); the live amber is dropped (no amber in the locked system).
+    comparison: {
+      heading: "ISRIB vs ISRIB A15",
+      columns: [
+        { label: "ISRIB", highlight: true },
+        { label: "ISRIB A15" },
+      ],
+      rows: [
+        {
+          label: "Research history",
+          cells: [
+            { value: "Original discovery", tone: "favorable" },
+            { value: "Optimized analog", tone: "neutral" },
+          ],
+        },
+        {
+          label: "Effective dose",
+          cells: [
+            { value: "50+ mg", tone: "neutral" },
+            { value: "5–15 mg", tone: "favorable" },
+          ],
+        },
+        {
+          label: "Bioavailability",
+          cells: [
+            { value: "Moderate", tone: "neutral" },
+            { value: "Enhanced", tone: "favorable" },
+          ],
+        },
+        {
+          label: "Research applications",
+          cells: [
+            { value: "Extensive", tone: "favorable" },
+            { value: "Growing", tone: "favorable" },
+          ],
+        },
+        {
+          label: "Cost per study",
+          cells: [
+            { value: "Lower", tone: "favorable" },
+            { value: "Higher", tone: "unfavorable" },
+          ],
+        },
+      ],
+      callout:
+        "ISRIB remains the gold standard for research applications where established protocols and extensive literature support are essential.",
     },
   },
   {

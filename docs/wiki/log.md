@@ -485,3 +485,45 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   (MechanismSection centering; ProductHero `subtitle` slot + `heroHighlights`; hero H1 →
   mono/46px/500). Still flagged as pending on the next design-doc pass.
   **Roles run:** LEAD → AskUserQuestion (font direction) → implementer → LEAD browser check (PASS).
+
+## [2026-09-03] gate | ISRIB Original faithful port (1.6) — inventory-driven, G1(Original) closed
+
+- Ported the live ISRIB Original page (`product_isrib.html`) onto the new stack using the
+  same inventory-driven method as A15 (branch `feat/isrib-original-port`). Prior state was
+  the hollow generic render (display-only price cards, placeholder hero, no science/comparison/
+  NMR). Explorer produced a 14-block inventory; LEAD reconciled to a per-item contract;
+  implementer built; verifier REJECTED once (fixed); LEAD ran the browser side-by-side + a
+  live calculator interaction.
+- **Commerce core = A15 pattern, zero new logic:** Original's prices already matched to the
+  cent, so wiring the calculator was pure data — added `mg`/`badge` to trials + `minMg/maxMg/
+  tierName`/`popular` to tiers, and page.tsx's existing gate routes it through the shared
+  `OrderBlock`/`PerGramCalculator`. Runtime-verified: default 1g→$100 (Standard); Popular
+  2g→$180 ($90/g, save $20/10%). Capsules 25×20mg $100 / 50×20mg $140 (unchanged).
+- **Ported what EXISTS (no A15-style over-build):** Original's science is one modest section,
+  not A15's deep 5-block. Ported via the dark `MechanismSection` — "ISRIB — the original ISR
+  inhibitor" + Discovery/Published-Research body + 3 "How ISRIB Works" steps (verbatim). NO
+  fabricated `understanding` section.
+- **New section type reused a locked component:** the live "ISRIB vs A15" table → locked
+  `ComparisonTable` (new optional `comparison` field). CELL-COLOR fix after verifier REJECT:
+  the live AMBER cells (ISRIB "50+ mg", "Moderate") are NEUTRAL/moderate, not bad — first pass
+  mapped them to red (`text-danger`), which inverted the sell-ISRIB intent. Corrected to
+  neutral (default text); only A15's "Higher" cost stays red (the one live-red cell). Favorable
+  = success/green. Gold-standard callout on tokens (accent left border), NO amber.
+- **Hero enrich (mirrors A15):** formula SVG (`isrib-original-formula.svg`, copied from legacy)
+  + caption, 3 mini-stats, badges (Original Formula / In stock), mono subheading, Original-
+  specific highlights, data-driven CTAs (Order→#order, The Science→#science). CTAs made
+  data-driven on `Product.heroCtas` (A15 keeps its pair; no product hardcodes anymore).
+- **Specs:** CAS/MW/Light/Moisture rows; COA "On request" (variant A, never "Included");
+  ¹H/¹³C NMR "Available".
+- **NMR section — OWNER-ADDED (assets provided), with a data gap:** the live Original page has
+  NO NMR section, but Anton supplied ¹H/¹³C spectra PNGs + FID zips "for the Original port".
+  Renamed the 4 stray files to `isrib-original-*` convention + wired `assets.spectra`/`downloads`
+  → renders 2 spectra + dark FID banner. **FLAG (pre-ship gate):** we have NO source for
+  Original's MHz / solvent / batch / key-signal δ values, so `meta`/`batch`/`signals` were
+  OMITTED (not fabricated). Anton must supply these (like A15 has) before ship, or the spectra
+  ship without peak-assignment footers.
+- Tokens-only; efficacy copy ratified (organic page); no rx/cancer/guarantee. `tsc` clean;
+  `next build` all routes. A15 + the other 4 products untouched (only optional fields added).
+- **Roles run:** LEAD (orchestrator) → explorer (live inventory) → LEAD reconcile (contract) →
+  implementer → verifier (REJECT: comparison cell colors) → implementer (fix) → LEAD browser
+  side-by-side + live calculator check (PASS). Work uncommitted on `feat/isrib-original-port`.

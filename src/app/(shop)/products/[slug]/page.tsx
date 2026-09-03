@@ -9,7 +9,7 @@ import {
   type FixedFormat,
   type SpecRow,
 } from "@/lib/copy/products";
-import { ProductHero, HeroStat, NmrSection, MechanismSection, Card } from "@/components/ui";
+import { ProductHero, HeroStat, NmrSection, MechanismSection, ComparisonTable, Card } from "@/components/ui";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { OrderBlock } from "@/components/shop/OrderBlock";
 import { UnderstandingSection } from "@/components/shop/UnderstandingSection";
@@ -237,23 +237,31 @@ export default async function ProductPage({
         subtitle={product.heroHighlights ? specValue(product, "Formula") : undefined}
         body={product.description}
         cta={
-          product.heroStats ? (
-            // A15 hero CTAs. Button renders a <button>; a <button> nested in an <a> is
-            // invalid HTML, so the anchors carry the locked Button variant classes
-            // directly (kept in sync with Button.tsx — the design system is locked).
+          product.heroCtas && product.heroCtas.length > 0 ? (
+            // Data-driven hero CTAs (per product). Button renders a <button>; a <button>
+            // nested in an <a> is invalid HTML, so the anchors carry the locked Button
+            // variant classes directly (kept in sync with Button.tsx — system is locked).
+            // First CTA = primary, remaining = ghost.
             <div className="mb-2 flex flex-wrap gap-3">
-              <a
-                href="#order"
-                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-6 py-3.5 text-[15px] font-semibold text-white shadow-btn transition hover:-translate-y-px hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-blue-600/35"
-              >
-                {"Order ISRIB A15"}
-              </a>
-              <a
-                href="#understanding"
-                className="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-surface px-[22px] py-3 text-[15px] font-semibold text-primary-deep transition hover:border-primary hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-blue-600/35"
-              >
-                {"Learn More"}
-              </a>
+              {product.heroCtas.map((c, i) =>
+                i === 0 ? (
+                  <a
+                    key={c.href}
+                    href={c.href}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-6 py-3.5 text-[15px] font-semibold text-white shadow-btn transition hover:-translate-y-px hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-blue-600/35"
+                  >
+                    {c.label}
+                  </a>
+                ) : (
+                  <a
+                    key={c.href}
+                    href={c.href}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-300 bg-surface px-[22px] py-3 text-[15px] font-semibold text-primary-deep transition hover:border-primary hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-blue-600/35"
+                  >
+                    {c.label}
+                  </a>
+                ),
+              )}
             </div>
           ) : undefined
         }
@@ -361,14 +369,48 @@ export default async function ProductPage({
         />
       ) : (
         product.mechanism && (
-          <MechanismSection
-            kicker={product.mechanism.kicker}
-            title={product.mechanism.title}
-            body={product.mechanism.body}
-            steps={product.mechanism.steps}
-            quote={product.mechanism.quote}
-          />
+          // `id="science"` anchors the hero "The Science" CTA (Original). MechanismSection
+          // renders its own <section>, so the id lives on a wrapper here.
+          <div id="science">
+            <MechanismSection
+              kicker={product.mechanism.kicker}
+              title={product.mechanism.title}
+              body={product.mechanism.body}
+              steps={product.mechanism.steps}
+              quote={product.mechanism.quote}
+            />
+          </div>
         )
+      )}
+
+      {product.comparison && (
+        <section className="mx-auto max-w-[--container-page] px-8 py-16">
+          <h2 className="mb-8 text-center text-h2 font-bold">{product.comparison.heading}</h2>
+          <ComparisonTable
+            columns={product.comparison.columns}
+            rows={product.comparison.rows.map((r) => ({
+              label: r.label,
+              cells: r.cells.map((cell) => ({
+                value:
+                  cell.tone === "favorable" ? (
+                    <span className="font-semibold text-success">{cell.value}</span>
+                  ) : cell.tone === "unfavorable" ? (
+                    <span className="font-semibold text-danger">{cell.value}</span>
+                  ) : (
+                    cell.value
+                  ),
+              })),
+            }))}
+          />
+          <Card className="mt-8 border-l-4 border-l-accent">
+            <p className="text-body text-text-muted">
+              <span aria-hidden className="mr-2">
+                {"💡"}
+              </span>
+              {product.comparison.callout}
+            </p>
+          </Card>
+        </section>
       )}
 
       <div className="mx-auto flex max-w-[--container-page] flex-col gap-16 px-8 py-16">
