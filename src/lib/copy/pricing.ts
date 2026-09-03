@@ -21,6 +21,7 @@ export type TieredPriceResult =
       savingsCents: number; // 0 unless > 0 (trials show none, matching live)
       savingsPct: number;
       sizeLabel: string;
+      tierName: string; // breakdown tier label (e.g. "Trial", "Standard", "Bulk")
     }
   | { status: "below-min" }
   | { status: "gap" } // between tier ranges — live returns invalid
@@ -48,7 +49,14 @@ export function computeTieredPrice(mg: number, pricing: TieredPricing): TieredPr
   // Exact-match trial (fixed price) — e.g. 100mg $60, 500mg $130.
   const trial = pricing.trials.find((t) => t.mg === mg);
   if (trial) {
-    return finish(mg, grams, trial.priceCents, Math.round(trial.priceCents / grams), baseTotal);
+    return finish(
+      mg,
+      grams,
+      trial.priceCents,
+      Math.round(trial.priceCents / grams),
+      baseTotal,
+      trial.badge ?? "Trial",
+    );
   }
 
   // Range-match per-gram tier — faithful findTier: mg within [minMg, maxMg].
@@ -56,7 +64,14 @@ export function computeTieredPrice(mg: number, pricing: TieredPricing): TieredPr
     (t) => t.minMg != null && t.maxMg != null && mg >= t.minMg && mg <= t.maxMg,
   );
   if (tier) {
-    return finish(mg, grams, Math.round(grams * tier.perGramCents), tier.perGramCents, baseTotal);
+    return finish(
+      mg,
+      grams,
+      Math.round(grams * tier.perGramCents),
+      tier.perGramCents,
+      baseTotal,
+      tier.tierName ?? "Standard",
+    );
   }
 
   // Between ranges (e.g. 1.5g, 4.5g) — live returns null → invalid.
@@ -69,6 +84,7 @@ function finish(
   totalCents: number,
   perGramCents: number,
   baseTotal: number,
+  tierName: string,
 ): TieredPriceResult {
   const rawSavings = baseTotal - totalCents;
   const savingsCents = rawSavings > 0 ? rawSavings : 0;
@@ -82,5 +98,6 @@ function finish(
     savingsCents,
     savingsPct,
     sizeLabel: formatQuantity(mg),
+    tierName,
   };
 }

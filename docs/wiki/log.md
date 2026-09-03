@@ -343,6 +343,44 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   hydrated + surfacing saveCart/loadCart failures (currently silently swallowed) when the
   A15 order block is built.
 
+## [2026-09-03] lint | A15 port design-regression fix + mandatory visual gate
+
+- Fixed design regressions in the A15 port (7e1f744): it computed correctly but had
+  DROPPED live-page elements and under-used the locked component library. Brought each
+  section up to the live page's richness THROUGH the handoff-spec §4 components (no
+  hand-rolled blocks where a component exists):
+  - **Order block** (`OrderBlock.tsx`): now the accent `Card` (top cyan rule, matching the
+    live card's gradient rule). Restored the order-card header (name + subtitle + purity/COA
+    line — COA framed "available per batch (on request)", NOT the live's "Included", per
+    variant A), the perks list (from `trustBullets`), and a free-shipping/trust strip beside
+    the CTA. Format options gained icons; capsule cards route through the same highlighted-
+    card pattern (popular = accent).
+  - **Price breakdown** (`PerGramCalculator.tsx`): restored the full Total / Quantity /
+    price-per-gram / You-save / tier-label rows as a prominent dark panel via the locked
+    `Card inverse` variant (mirrors the live dark Total Price card). A default 1g result is
+    computed on mount so the breakdown + a prominent, always-visible Add-to-Cart (label
+    reflects selection) show immediately — the live page's persistent-CTA behaviour.
+  - **Tier grid**: restored hierarchy — tier-name badges (Trial/Standard/Popular/Serious
+    Users/Bulk), the Popular tier accent-highlighted (cyan, star), save-badges in accent
+    green. Kept the design-system tokens (cyan accent + green success) rather than copying
+    the live's amber — design system is locked.
+  - **Research applications** (`page.tsx`): plain base cards → accent `Card`s with icon
+    chips (live's icon-card treatment).
+  - **Technical specifications**: single flat `<dl>` → the live's 3-part treatment
+    (Chemical properties / Storage & handling / **Documentation** column) as three `Card`s;
+    Documentation COA framed "On request" (compliance-safe), NMR "Available", Safety
+    "Provided". Hero + dark mechanism section left as-is.
+- Data: added optional `Trial.badge`, `PerGramTier.tierName`/`popular` (A15 only); threaded
+  `tierName` through `computeTieredPrice` result for the breakdown label. Prices UNCHANGED.
+- **Mandatory NEW gate — VISUAL side-by-side in a real browser** (Chrome, dev on :3000 vs
+  the live page served on :8080): confirmed nothing dropped and no element reads flatter
+  than the live one. Popular-tier click verified live: 2g → $360, per-gram $180/g, You save
+  $40 (10%), POPULAR TIER label, CTA "Add to cart — 2g for $360" (matches live math to the
+  cent). `tsc` clean; `next build` all 15 routes. Code-review fidelity alone is NOT
+  sufficient for future ports — the browser side-by-side is now required.
+- **Roles run:** orchestrator (inline: read live page + port + handoff-spec §4, edited,
+  ran the browser visual gate directly). No subagents — single-file-cluster fix.
+
 ## [2026-08-31] setup | A15 faithful port (reference product port, ADR 0008)
 
 - Ported the live A15 product page onto the new stack — the reference every other product

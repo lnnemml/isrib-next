@@ -22,6 +22,7 @@ export interface Trial {
   sizeLabel: string;
   priceCents: number;
   mg?: number; // exact mg — set when a per-gram calculator is wired (A15)
+  badge?: string; // tier badge shown in the order grid (e.g. "Trial")
 }
 
 export interface PerGramTier {
@@ -30,6 +31,8 @@ export interface PerGramTier {
   discountPct: number;
   minMg?: number; // inclusive range bounds — set when a calculator is wired (A15)
   maxMg?: number;
+  tierName?: string; // grid/breakdown label (e.g. "Standard", "Serious Users")
+  popular?: boolean; // highlighted (accent) tier — one per product
 }
 
 export interface PricingFixed {
@@ -132,14 +135,14 @@ const PRODUCTS: Product[] = [
     pricing: {
       kind: "per-gram-tiered",
       trials: [
-        { sizeLabel: "100mg", priceCents: 6000, mg: 100 },
-        { sizeLabel: "500mg", priceCents: 13000, mg: 500 },
+        { sizeLabel: "100mg", priceCents: 6000, mg: 100, badge: "Trial" },
+        { sizeLabel: "500mg", priceCents: 13000, mg: 500, badge: "Trial" },
       ],
       tiers: [
-        { rangeLabel: "1g", perGramCents: 20000, discountPct: 0, minMg: 1000, maxMg: 1000 },
-        { rangeLabel: "2–4g", perGramCents: 18000, discountPct: 10, minMg: 2000, maxMg: 4000 },
-        { rangeLabel: "5–9g", perGramCents: 17000, discountPct: 15, minMg: 5000, maxMg: 9000 },
-        { rangeLabel: "10–30g", perGramCents: 16000, discountPct: 20, minMg: 10000, maxMg: 30000 },
+        { rangeLabel: "1g", perGramCents: 20000, discountPct: 0, minMg: 1000, maxMg: 1000, tierName: "Standard" },
+        { rangeLabel: "2–4g", perGramCents: 18000, discountPct: 10, minMg: 2000, maxMg: 4000, tierName: "Popular", popular: true },
+        { rangeLabel: "5–9g", perGramCents: 17000, discountPct: 15, minMg: 5000, maxMg: 9000, tierName: "Serious Users" },
+        { rangeLabel: "10–30g", perGramCents: 16000, discountPct: 20, minMg: 10000, maxMg: 30000, tierName: "Bulk" },
       ],
       formats: [
         { format: "capsules", sku: "isrib-a15-caps-25", sizeLabel: "25 × 20mg", priceCents: 17000 },

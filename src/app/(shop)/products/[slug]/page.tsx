@@ -7,10 +7,12 @@ import {
   type Product,
   type Pricing as ProductPricing,
   type FixedFormat,
+  type SpecRow,
 } from "@/lib/copy/products";
 import { ProductHero, HeroStat, NmrSection, MechanismSection, Card } from "@/components/ui";
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { OrderBlock } from "@/components/shop/OrderBlock";
+import { cn } from "@/lib/utils/cn";
 import type { CartFormat } from "@/lib/cart/types";
 
 export function generateStaticParams() {
@@ -33,6 +35,62 @@ export async function generateMetadata({
 
 function specValue(product: Product, label: string): string | undefined {
   return product.specs.find((s) => s.label === label)?.value;
+}
+
+// Research-application card icons (keyed by ported heading; safe emoji fallback).
+function educationIcon(heading: string): string {
+  const h = heading.toLowerCase();
+  if (h.includes("aging")) return "🧠";
+  if (h.includes("injury")) return "🛡️";
+  if (h.includes("disorder") || h.includes("eif2b")) return "🧬";
+  if (h.includes("window") || h.includes("isr")) return "🔬";
+  return "🔬";
+}
+
+// Specs split into the live page's three columns. Chemical + storage/handling are ported
+// from product.specs; Documentation is a fixed, compliance-safe column (COA framed as
+// "on request", never "included" — ADR 0008 variant A).
+const CHEMICAL_LABELS = ["Formula", "MW", "CAS", "Purity", "Form", "Solubility"];
+const STORAGE_LABELS = ["Storage", "Stability", "Container"];
+
+function specGroup(product: Product, labels: string[]): SpecRow[] {
+  return labels
+    .map((label) => product.specs.find((s) => s.label === label))
+    .filter((s): s is SpecRow => s != null);
+}
+
+function SpecCard({
+  icon,
+  title,
+  rows,
+}: {
+  icon: string;
+  title: string;
+  rows: { label: string; value: string; strong?: boolean }[];
+}) {
+  return (
+    <Card className="flex flex-col">
+      <div className="mb-4 flex items-center gap-2.5">
+        <span aria-hidden className="text-[18px] leading-none">
+          {icon}
+        </span>
+        <h3 className="text-[16px] font-semibold text-text">{title}</h3>
+      </div>
+      <dl className="flex flex-col gap-y-2.5">
+        {rows.map((r) => (
+          <div
+            key={r.label}
+            className="flex items-baseline justify-between gap-4 border-b border-border-soft pb-2 last:border-0 last:pb-0"
+          >
+            <dt className="text-small text-text-subtle">{r.label}</dt>
+            <dd className={cn("font-mono text-[13px]", r.strong ? "font-semibold text-success" : "text-text")}>
+              {r.value}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </Card>
+  );
 }
 
 // --- presentational pricing cells (design tokens only) ---
@@ -208,9 +266,13 @@ export default async function ProductPage({
           product.pricing.trials.some((t) => t.mg != null) ? (
             <OrderBlock
               productSlug={product.slug}
+              productName={product.name}
+              subtitle={product.categorySubtitle}
+              purity={purity}
               trials={product.pricing.trials}
               tiers={product.pricing.tiers}
               capsules={product.pricing.formats}
+              perks={product.trustBullets}
             />
           ) : (
             <Pricing pricing={product.pricing} productSlug={product.slug} />
@@ -234,9 +296,17 @@ export default async function ProductPage({
             <h2 className="mb-6 text-h3 font-semibold">{"Research applications"}</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {product.education.map((b) => (
-                <Card key={b.heading}>
-                  <h3 className="text-h3 font-semibold">{b.heading}</h3>
-                  <p className="mt-2 text-body text-text-muted">{b.body}</p>
+                <Card key={b.heading} accent className="flex gap-4">
+                  <span
+                    aria-hidden
+                    className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-cyan-50 text-[20px]"
+                  >
+                    {educationIcon(b.heading)}
+                  </span>
+                  <div>
+                    <h3 className="text-[16px] font-semibold text-text">{b.heading}</h3>
+                    <p className="mt-2 text-body text-text-muted">{b.body}</p>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -254,19 +324,36 @@ export default async function ProductPage({
         )}
 
         <section>
-          <h2 className="mb-6 text-h3 font-semibold">{"Specifications"}</h2>
-          <div className="rounded-xl border border-border bg-surface p-[26px] shadow-sm">
-            <dl className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2">
-              {product.specs.map((s) => (
-                <div
-                  key={s.label}
-                  className="flex items-baseline justify-between gap-4 border-b border-border-soft pb-2"
-                >
-                  <dt className="text-small text-text-subtle">{s.label}</dt>
-                  <dd className="font-mono text-[13px] text-text">{s.value}</dd>
-                </div>
-              ))}
-            </dl>
+          <h2 className="mb-6 text-h3 font-semibold">{"Technical specifications"}</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <SpecCard
+              icon="🧪"
+              title="Chemical properties"
+              rows={specGroup(product, CHEMICAL_LABELS).map((s) => ({
+                label: s.label,
+                value: s.value,
+                strong: s.label === "Purity",
+              }))}
+            />
+            <SpecCard
+              icon="📦"
+              title="Storage & handling"
+              rows={specGroup(product, STORAGE_LABELS)}
+            />
+            <SpecCard
+              icon="📋"
+              title="Documentation"
+              rows={[
+                { label: "COA", value: "On request", strong: true },
+                ...(product.assets?.spectra
+                  ? [
+                      { label: "¹H NMR", value: "Available", strong: true },
+                      { label: "¹³C NMR", value: "Available", strong: true },
+                    ]
+                  : []),
+                { label: "Safety data", value: "Provided", strong: true },
+              ]}
+            />
           </div>
         </section>
 

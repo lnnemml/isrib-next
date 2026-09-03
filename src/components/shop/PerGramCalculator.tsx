@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useCart } from "@/lib/cart/CartProvider";
 import { formatCents, type Trial, type PerGramTier } from "@/lib/copy/products";
 import {
@@ -10,7 +10,8 @@ import {
   MIN_MG,
   type TieredPriceResult,
 } from "@/lib/copy/pricing";
-import { Button } from "@/components/ui";
+import { Button, Card } from "@/components/ui";
+import { cn } from "@/lib/utils/cn";
 
 // Faithful port of the live A15 per-gram calculator. Powder path only (capsules are a
 // separate selector in OrderBlock). All cart writes go through useCart().addLine.
@@ -24,33 +25,44 @@ type Unit = "mg" | "g";
 
 // Reference rows (trials + tiers) — clicking prefills the input, matching the live page.
 interface RefRow {
-  label: string;
-  price: string;
-  discount?: string;
+  badge: string;
+  range: string;
+  rate: string;
+  savings?: string;
+  popular?: boolean;
   mg: number;
 }
 
 export function PerGramCalculator({ productSlug, trials, tiers }: PerGramCalculatorProps) {
   const { addLine } = useCart();
-  const [mounted, setMounted] = useState(false);
+  const pricing = useMemo(() => ({ trials, tiers }), [trials, tiers]);
+
+  // Default to the standard 1g tier so the breakdown + CTA are visible immediately,
+  // matching the live page (which opens on "1g for $200"). Deterministic on server/client.
   const [value, setValue] = useState("1");
   const [unit, setUnit] = useState<Unit>("g");
-  const [result, setResult] = useState<TieredPriceResult | null>(null);
-
-  useEffect(() => setMounted(true), []);
-
-  const pricing = useMemo(() => ({ trials, tiers }), [trials, tiers]);
+  const [selectedMg, setSelectedMg] = useState(1000);
+  const [result, setResult] = useState<TieredPriceResult | null>(() =>
+    computeTieredPrice(1000, pricing),
+  );
 
   const refRows: RefRow[] = useMemo(() => {
     const trialRows: RefRow[] = trials
       .filter((t) => t.mg != null)
-      .map((t) => ({ label: t.sizeLabel, price: formatCents(t.priceCents), mg: t.mg as number }));
+      .map((t) => ({
+        badge: t.badge ?? "Trial",
+        range: t.sizeLabel,
+        rate: formatCents(t.priceCents),
+        mg: t.mg as number,
+      }));
     const tierRows: RefRow[] = tiers
       .filter((t) => t.minMg != null)
       .map((t) => ({
-        label: t.rangeLabel,
-        price: `${formatCents(t.perGramCents)}/g`,
-        discount: t.discountPct > 0 ? `Save ${t.discountPct}%` : undefined,
+        badge: t.tierName ?? "Standard",
+        range: t.rangeLabel,
+        rate: `${formatCents(t.perGramCents)}/g`,
+        savings: t.discountPct > 0 ? `Save ${t.discountPct}%` : undefined,
+        popular: t.popular,
         mg: t.minMg as number,
       }));
     return [...trialRows, ...tierRows];
@@ -67,7 +79,9 @@ export function PerGramCalculator({ productSlug, trials, tiers }: PerGramCalcula
   }
 
   function handleCalculate() {
-    calculate(toMg(value, unit));
+    const mg = toMg(value, unit);
+    setSelectedMg(mg);
+    calculate(mg);
   }
 
   function handleRefClick(mg: number) {
@@ -78,6 +92,7 @@ export function PerGramCalculator({ productSlug, trials, tiers }: PerGramCalcula
       setValue(String(mg));
       setUnit("mg");
     }
+    setSelectedMg(mg);
     calculate(mg);
   }
 
@@ -92,26 +107,53 @@ export function PerGramCalculator({ productSlug, trials, tiers }: PerGramCalcula
     });
   }
 
+  const ok = result?.status === "ok" ? result : null;
+
   return (
-    <div className="flex flex-col gap-5">
-      {/* Reference tiers — click to prefill */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {refRows.map((r) => (
-          <button
-            key={r.label}
-            type="button"
-            onClick={() => handleRefClick(r.mg)}
-            className="flex flex-col items-start rounded-lg border border-border bg-surface p-3 text-left transition hover:border-primary"
-          >
-            <span className="font-mono text-[13px] text-text">{r.label}</span>
-            <span className="mt-1 font-mono text-[15px] font-semibold text-text">{r.price}</span>
-            {r.discount && (
-              <span className="mt-1 rounded-full bg-success/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-success">
-                {r.discount}
-              </span>
-            )}
-          </button>
-        ))}
+    <div className="flex flex-col gap-6">
+      {/* Tier grid — click to prefill. Popular tier is accent-highlighted. */}
+      <div>
+        <h3 className="mb-3 font-mono text-mono-label font-medium uppercase tracking-[0.08em] text-text-faint">
+          {"Select quantity"}
+        </h3>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {refRows.map((r) => {
+            const active = r.mg === selectedMg;
+            return (
+              <button
+                key={r.range}
+                type="button"
+                onClick={() => handleRefClick(r.mg)}
+                aria-pressed={active}
+                className={cn(
+                  "relative flex flex-col items-start rounded-xl border-2 p-4 text-left transition",
+                  r.popular
+                    ? "border-accent bg-cyan-50 shadow-sm ring-1 ring-accent/30"
+                    : active
+                      ? "border-primary bg-blue-50"
+                      : "border-border bg-surface hover:border-primary hover:bg-surface-soft",
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 font-mono text-[10px] font-semibold uppercase tracking-[0.06em]",
+                    r.popular ? "text-accent-strong" : "text-text-faint",
+                  )}
+                >
+                  {r.popular && <span aria-hidden>{"⭐"}</span>}
+                  {r.badge}
+                </span>
+                <span className="mt-1.5 font-mono text-[15px] font-semibold text-text">{r.range}</span>
+                <span className="mt-0.5 font-mono text-[13px] text-text-muted">{r.rate}</span>
+                {r.savings && (
+                  <span className="mt-2 rounded-full bg-success/10 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-success">
+                    {r.savings}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Custom quantity */}
@@ -138,45 +180,80 @@ export function PerGramCalculator({ productSlug, trials, tiers }: PerGramCalcula
             <option value="mg">{"mg"}</option>
             <option value="g">{"g"}</option>
           </select>
-          <Button type="button" variant="secondary" onClick={handleCalculate} disabled={!mounted}>
+          <Button type="button" variant="secondary" onClick={handleCalculate}>
             {"Calculate"}
           </Button>
         </div>
         <p className="mt-2 font-mono text-[11px] text-text-faint">
-          {`Min ${formatQuantity(MIN_MG)} · Max ${formatQuantity(MAX_MG)}`}
+          {`Min ${formatQuantity(MIN_MG)} · Max ${formatQuantity(MAX_MG)} · larger orders arranged individually`}
         </p>
       </div>
 
-      {/* Result */}
-      {result && result.status === "ok" && (
-        <div className="rounded-xl border border-border bg-surface-soft p-5">
-          <div className="flex items-baseline justify-between">
-            <span className="text-small text-text-subtle">{result.sizeLabel}</span>
-            <span className="font-mono text-[26px] font-semibold text-text">{formatCents(result.totalCents)}</span>
+      {/* Price breakdown — prominent dark panel (total / quantity / per-gram / savings / tier),
+          mirroring the live page's Total Price card via the locked inverse Card variant. */}
+      {ok && (
+        <Card inverse className="p-6">
+          <div className="flex items-baseline justify-between border-b border-border-inverse pb-4">
+            <span className="text-[15px] font-semibold text-slate-300">{"Total Price"}</span>
+            <span className="font-mono text-[28px] font-semibold tracking-[-0.02em] text-cyan-400">
+              {formatCents(ok.totalCents)}
+            </span>
           </div>
-          <div className="mt-1 flex items-center justify-between font-mono text-[12px] text-text-subtle">
-            <span>{`${formatCents(result.perGramCents)}/g`}</span>
-            {result.savingsCents > 0 && (
-              <span className="text-success">{`Save ${formatCents(result.savingsCents)} (${result.savingsPct}%)`}</span>
+          <dl className="mt-4 flex flex-col gap-2.5 font-mono text-[13px]">
+            <div className="flex items-center justify-between">
+              <dt className="text-slate-400">{"Quantity"}</dt>
+              <dd className="text-white">{`${ok.sizeLabel} (${ok.mg}mg)`}</dd>
+            </div>
+            <div className="flex items-center justify-between">
+              <dt className="text-slate-400">{"Price per gram"}</dt>
+              <dd className="text-white">{`${formatCents(ok.perGramCents)}/g`}</dd>
+            </div>
+            {ok.savingsCents > 0 && (
+              <div className="flex items-center justify-between">
+                <dt className="text-success">{"You save"}</dt>
+                <dd className="font-semibold text-success">{`${formatCents(ok.savingsCents)} (${ok.savingsPct}%)`}</dd>
+              </div>
             )}
+          </dl>
+          <div className="mt-4 border-t border-border-inverse pt-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-border-inverse bg-surface-inverse-card px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.06em] text-cyan-400">
+              {`${ok.tierName} tier`}
+            </span>
           </div>
-          <div className="mt-4">
-            <Button type="button" variant="primary" onClick={handleAdd} disabled={!mounted} className="w-full">
-              {`Add to cart — ${result.sizeLabel} for ${formatCents(result.totalCents)}`}
-            </Button>
-          </div>
-        </div>
+        </Card>
       )}
 
-      {result && result.status === "below-min" && (
+      {/* Prominent, always-visible Add-to-Cart (reflects current selection) */}
+      <div className="flex flex-col gap-2">
+        <Button
+          type="button"
+          variant="primary"
+          onClick={handleAdd}
+          disabled={!ok}
+          className="w-full"
+        >
+          {ok
+            ? `Add to cart — ${ok.sizeLabel} for ${formatCents(ok.totalCents)}`
+            : "Choose a valid quantity"}
+        </Button>
+        <a
+          href="/checkout"
+          className="inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2.5 text-[14px] font-semibold text-slate-700 transition hover:text-primary"
+        >
+          {"View cart →"}
+        </a>
+      </div>
+
+      {/* Invalid-state guidance */}
+      {result?.status === "below-min" && (
         <p className="text-small text-danger">{`Minimum quantity is ${formatQuantity(MIN_MG)}.`}</p>
       )}
-      {result && result.status === "gap" && (
+      {result?.status === "gap" && (
         <p className="text-small text-danger">
           {"Please choose a valid quantity — 100mg, 500mg, or within a listed gram range (1g, 2–4g, 5–9g, 10–30g)."}
         </p>
       )}
-      {result && result.status === "bulk" && (
+      {result?.status === "bulk" && (
         <p className="text-small text-text-muted">
           {"Orders over 30g are arranged individually — "}
           <a href="/contact" className="text-primary transition hover:text-primary-hover">
