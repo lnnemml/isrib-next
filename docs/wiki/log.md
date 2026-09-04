@@ -862,3 +862,38 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **🎯 STATIC SITE-MAP COMPLETE** — every page a visitor can reach from nav/footer is now
   ported (no remaining 404s). Next: **G1 parity audit** (nothing dropped vs the live site,
   across all pages + chrome + cart) → **Day-2 checkout (G2)**.
+- Committed to `main` (933133f) + pushed to origin at Anton's request.
+
+## [2026-09-04] gate | G1 parity audit — nothing dropped vs live → G1 CLOSED
+
+- Ran the consolidated Track A gate G1 ("nothing dropped vs the live site"). Per-page CONTENT
+  parity was already established by the browser side-by-side gate on every page during the
+  migration; this pass is the consolidated route/link/asset integrity + scope ledger.
+- **Live→new page ledger** (31 live `.html` files enumerated). All 18 visitor-facing pages ported:
+  index→`/`, products→`/products`, 6 `product_*`→`/products/[slug]`, about/faq/contact/quality/
+  safety/terms/privacy/research/disclaimer→`/[same]`, checkout→`/checkout` (cart shell; full flow
+  = Day-2 G2). `/isrib-a15` 307-redirects → `/products/isrib-a15`.
+- **Intentionally out of Track A content scope (NOT silent drops — verified none are linked from
+  any ported page body or the chrome):** `buy-1g/500mg/25-capsules/50-capsules` + `campaign` +
+  `campaign-tracker` (paid/DR landings → Track B `/go`); `admin-resubscribe`/`admin-unsubscribe`/
+  `unsubscribe` (email lead-gen → Track B); `batch-splitter` (admin tool → Track B);
+  `confirm-purchase`/`success` (post-order → Day-2 G2 checkout); `404.html` (Next default
+  not-found; custom 404 port is a minor non-blocking follow-up).
+- **prober runtime crawl (dev server):** all 19 visitor routes return 200 (redirect 307→200);
+  **36 unique internal links all 200 — zero broken links** across header/footer chrome + every
+  page body; all 8 `/faq#…` hash anchors have matching `id=`; all 26 referenced static assets
+  (16 images + 10 FID zips) resolve 200.
+- **prober-flagged "gap" — dismissed after LEAD check:** zzl-7 has no NMR spectra/FID. Confirmed
+  this is CORRECT parity — the live `product_zzl_7.html` has NO NMR section either (grep: 1 stray
+  "NMR" word = the live "¹H NMR Available" doc-claim, which we intentionally did NOT assert since
+  no files exist — the port is the more compliant/conservative baseline, per the ZZL-7 port entry).
+- **Minor non-blocking follow-ups (do NOT block G1):** (1) custom 404 page not ported (Next
+  default in use); (2) scaffold-orphan SVGs in `public/` (`file/globe/next/vercel/window.svg`) —
+  harmless leftovers, tidy anytime; (3) pre-existing nested-`<main>` a11y nit (root layout + per-
+  page `<main>`) — carried from earlier sessions, site-wide cleanup.
+- **Roles run:** LEAD (orchestrator) → LEAD live-page enumeration + scope ledger → prober
+  (runtime route/link/asset crawl, PASS) → LEAD dismiss zzl-7 NMR flag (live-baseline check).
+- **✅ G1 CLOSED** — full visitor site-map ported, faithful per-page (content gates) + zero broken
+  links/assets (this audit). Next: **Day-2 checkout (G2, highest risk)** — Neon/Drizzle `orders`+
+  `order_items`, `submitOrder` from cart, payment selector, Resend emails, NowPayments invoice +
+  webhook. **No DNS/domain move until a real multi-item test order is green** (ADR 0003/0004).
