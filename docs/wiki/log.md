@@ -933,3 +933,34 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   reconciled `data-model.md` (two tables + driver + new columns), `manual-payment-flow.md` (nurture
   emails), ADR 0003 (forward-pointer: revisited/extended), `index.md`. **Direction fixed — ready to
   implement G2** (schema first, then submitOrder + webhook + emails + QStash, runtime-verified).
+
+## [2026-09-04] gate | G2 Step 1 — DB foundation built + runtime-verified against real Neon
+
+- Built the checkout DB foundation per ADR 0009 / `checkout-architecture.md`. **Roles run:** LEAD →
+  explorer (NORA mirror-recon: exact schema/client/config/submitOrder/webhook/email source) → LEAD
+  reconcile (spec) → implementer → LEAD direct schema review → Anton (created Neon DB + `.env.local`)
+  → LEAD `db:push` → prober (runtime verification, PASS 5/5).
+- **Built (`src/lib/db/schema.ts`, `index.ts`, `drizzle.config.ts`, `src/lib/order-number.ts`,
+  package.json deps+scripts, `.env.example`):** `orders` + `order_items` two-table schema with 3
+  enums (order_status / payment_method / item_format); all ADR 0009 columns (idempotency_key +
+  order_number unique, abandoned_email1/2_sent_at, confirmation_email_sent_at, nowpayments_*,
+  subtotal/total cents); `order_items` FK → orders.id ON DELETE CASCADE. **neon-serverless `Pool`
+  driver** (NOT neon-http) — verified against installed @neondatabase/serverless v1.1.0 README;
+  `ws` webSocketConstructor set for Node<22 portability. `ISR-`-prefixed order number.
+- **Deps:** @neondatabase/serverless ^1.1.0, drizzle-orm ^0.45.2, nanoid ^5.1.16, ws ^8.21.3;
+  dev drizzle-kit ^0.31.10, @types/ws. Scripts `db:push` / `db:studio` (node --env-file=.env.local).
+- **Neon env:** Vercel Neon integration provisioned the full var set; we use `POSTGRES_URL` (pooled,
+  runtime) + `POSTGRES_URL_NON_POOLING` (drizzle-kit push). QStash keys already in `.env.local`;
+  Resend + NowPayments keys pending (their steps).
+- **`db:push` → "Changes applied".** prober runtime verification (real Neon, all PASS): (1) schema
+  shape — tables + enums + ADR 0009 columns + both unique indexes + cascade FK confirmed via
+  information_schema; (2) **transactional atomic multi-line insert** (order + 2 items) works via
+  `db.transaction()` — the whole reason for the driver choice; (3) **rollback** on in-callback throw
+  leaves zero rows (real atomicity, not autocommit); (4) **idempotency** — duplicate idempotency_key
+  rejected with PG `23505`; (5) cleanup + cascade-delete confirmed.
+- **Flag for Step 2 (non-blocker):** `db.query.*` relational queries (`with: { orderItems }`) need a
+  `relations()` export not yet defined. G2 needs only inserts + direct SELECTs (NORA's style), so
+  optional; add `relations()` if we want join-loading in the webhook/emails/admin.
+- `tsc` clean; `next build` all routes intact. **Next: G2 Step 2 — `submitOrder`** (transactional
+  insert from the client cart, idempotency key, server-side price recompute) + checkout form +
+  payment selector. No new creds needed; runtime order-lands-in-Neon test.
