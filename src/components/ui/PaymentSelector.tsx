@@ -14,9 +14,24 @@ const SELECTED =
 const UNSELECTED =
   "flex cursor-pointer items-start gap-3 rounded-xl border border-border bg-surface p-5 transition hover:border-primary";
 
-export function PaymentSelector() {
-  const [method, setMethod] = useState("crypto");
-  const cardClass = (value: string) => (method === value ? SELECTED : UNSELECTED);
+// Backward-compatible: when both `value` and `onChange` are supplied the component is
+// controlled (checkout uses this to feed `paymentMethod` into the server action). With
+// neither prop it keeps its own state, so existing usages (e.g. the kitchen-sink page)
+// render unchanged.
+interface PaymentSelectorProps {
+  value?: string;
+  onChange?: (value: string) => void;
+}
+
+export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) {
+  const [internal, setInternal] = useState("crypto");
+  const controlled = value !== undefined && onChange !== undefined;
+  const method = controlled ? value : internal;
+  const setMethod = (next: string) => {
+    if (controlled) onChange(next);
+    else setInternal(next);
+  };
+  const cardClass = (v: string) => (method === v ? SELECTED : UNSELECTED);
 
   return (
     <div className="flex flex-col gap-3">

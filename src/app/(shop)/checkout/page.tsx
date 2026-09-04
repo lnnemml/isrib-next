@@ -1,20 +1,50 @@
 "use client";
 
-// Cart shell only — lists the cart's line items with qty/remove controls and a subtotal.
-// NO card fields, NO "Pay Now", NO Stripe, NO order submission — payment is manual
-// arrangement + crypto (NowPayments), wired in a later session. See CLAUDE.md.
+// Real checkout (gate G2, Step 2). Keeps the cart line list + subtotal, and adds the
+// checkout form wired to the `submitOrder` server action via `useActionState`. Server is
+// authoritative on price (the recompute lives in the action); the client only PREVIEWS
+// the crypto discount. NO card fields, NO "Pay Now", NO Stripe — payment is manual
+// arrangement + crypto (NowPayments), by design. See CLAUDE.md.
 
+import { useActionState, useState } from "react";
 import Link from "next/link";
+import { nanoid } from "nanoid";
 import { useCart } from "@/lib/cart/CartProvider";
 import { getProduct, formatCents } from "@/lib/copy/products";
 import { Button } from "@/components/ui";
+import { PaymentSelector } from "@/components/ui";
+import { submitOrder, type SubmitState } from "@/app/actions/submitOrder";
 
 function productName(slug: string): string {
   return getProduct(slug)?.name ?? slug;
 }
 
+const CRYPTO_DISCOUNT_PCT = 10;
+
+// Field styling reused verbatim from ContactForm.tsx so inputs match the rest of the site.
+const FIELD_CLASS =
+  "w-full rounded-md border border-border bg-surface px-3.5 py-2.5 text-body text-text transition placeholder:text-text-faint focus-visible:border-primary focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-blue-600/25";
+const LABEL_CLASS = "mb-1.5 block text-small font-medium text-text";
+
 export default function CheckoutPage() {
   const { lines, count, subtotalCents, updateQuantity, removeLine } = useCart();
+
+  // Stable per-attempt keys generated once on mount (idempotency + analytics dedup).
+  const [idem] = useState(() => nanoid());
+  const [eventId] = useState(() => nanoid());
+  const [method, setMethod] = useState("crypto");
+
+  const [state, formAction, pending] = useActionState<SubmitState, FormData>(submitOrder, null);
+
+  const cryptoTotalCents = subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100);
+  const cartPayload = JSON.stringify(
+    lines.map((l) => ({
+      productSlug: l.productSlug,
+      format: l.format,
+      quantity: l.quantity,
+      sizeLabel: l.sizeLabel,
+    })),
+  );
 
   if (lines.length === 0) {
     return (
@@ -90,15 +120,103 @@ export default function CheckoutPage() {
         <span className="text-body text-text-muted">{"Subtotal"}</span>
         <span className="font-mono text-[20px] font-semibold text-text">{formatCents(subtotalCents)}</span>
       </div>
+      {method === "crypto" ? (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-small text-success">{"Crypto total (−10%)"}</span>
+          <span className="font-mono text-[16px] font-semibold text-success">
+            {formatCents(cryptoTotalCents)}
+          </span>
+        </div>
+      ) : null}
 
-      <div className="mt-8">
-        <Button variant="primary" disabled className="w-full sm:w-auto">
-          {"Continue — payment next"}
-        </Button>
-        <p className="mt-3 text-caption text-text-faint">
-          {"Checkout and manual/crypto payment arrive in a later session. No card payment, by design."}
-        </p>
-      </div>
+      {/* Checkout form — posts to the server action, which recomputes every price. */}
+      <form action={formAction} className="mt-12 flex flex-col gap-8">
+        <section className="flex flex-col gap-5">
+          <h2 className="text-h4 font-semibold text-text">{"Shipping details"}</h2>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="name" className={LABEL_CLASS}>
+                {"Full name *"}
+              </label>
+              <input id="name" name="name" type="text" required autoComplete="name" className={FIELD_CLASS} />
+            </div>
+            <div>
+              <label htmlFor="email" className={LABEL_CLASS}>
+                {"Email *"}
+              </label>
+              <input id="email" name="email" type="email" required autoComplete="email" className={FIELD_CLASS} />
+            </div>
+            <div>
+              <label htmlFor="phone" className={LABEL_CLASS}>
+                {"Phone *"}
+              </label>
+              <input id="phone" name="phone" type="tel" required autoComplete="tel" className={FIELD_CLASS} />
+            </div>
+            <div>
+              <label htmlFor="country" className={LABEL_CLASS}>
+                {"Country *"}
+              </label>
+              <input id="country" name="country" type="text" required autoComplete="country-name" className={FIELD_CLASS} />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="address" className={LABEL_CLASS}>
+                {"Address *"}
+              </label>
+              <input id="address" name="address" type="text" required autoComplete="street-address" className={FIELD_CLASS} />
+            </div>
+            <div>
+              <label htmlFor="city" className={LABEL_CLASS}>
+                {"City *"}
+              </label>
+              <input id="city" name="city" type="text" required autoComplete="address-level2" className={FIELD_CLASS} />
+            </div>
+            <div>
+              <label htmlFor="postalCode" className={LABEL_CLASS}>
+                {"Postal code *"}
+              </label>
+              <input id="postalCode" name="postalCode" type="text" required autoComplete="postal-code" className={FIELD_CLASS} />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="stateRegion" className={LABEL_CLASS}>
+                {"State / region"}
+              </label>
+              <input id="stateRegion" name="stateRegion" type="text" autoComplete="address-level1" className={FIELD_CLASS} />
+            </div>
+            <div className="sm:col-span-2">
+              <label htmlFor="note" className={LABEL_CLASS}>
+                {"Order note"}
+              </label>
+              <textarea id="note" name="note" rows={3} className={`${FIELD_CLASS} resize-y`} />
+            </div>
+          </div>
+        </section>
+
+        <section className="flex flex-col gap-5">
+          <h2 className="text-h4 font-semibold text-text">{"Payment method"}</h2>
+          <PaymentSelector value={method} onChange={setMethod} />
+        </section>
+
+        {/* Hidden fields consumed by the server action. */}
+        <input type="hidden" name="paymentMethod" value={method} />
+        <input type="hidden" name="idempotencyKey" value={idem} />
+        <input type="hidden" name="eventId" value={eventId} />
+        <input type="hidden" name="cart" value={cartPayload} />
+
+        {state && "error" in state ? (
+          <p role="alert" aria-live="assertive" className="text-small font-medium text-red-600">
+            {state.error}
+          </p>
+        ) : null}
+
+        <div>
+          <Button type="submit" variant="primary" disabled={pending || lines.length === 0} className="w-full sm:w-auto">
+            {pending ? "Placing order…" : "Place order — arrange payment"}
+          </Button>
+          <p className="mt-3 text-caption text-text-faint">
+            {"No card payment, by design. We arrange manual or crypto payment after you place the order."}
+          </p>
+        </div>
+      </form>
     </main>
   );
 }

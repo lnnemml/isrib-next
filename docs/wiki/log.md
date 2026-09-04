@@ -964,3 +964,42 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - `tsc` clean; `next build` all routes intact. **Next: G2 Step 2 — `submitOrder`** (transactional
   insert from the client cart, idempotency key, server-side price recompute) + checkout form +
   payment selector. No new creds needed; runtime order-lands-in-Neon test.
+
+## [2026-09-04] gate | G2 Step 2 — submitOrder + checkout form built + runtime-verified (order lands in Neon)
+
+- Built the checkout order-submission path per `checkout-architecture.md` §3 / ADR 0009. **Roles run:**
+  LEAD → explorer (recon: cart API, pricing helpers, PaymentSelector, analytics, what's missing) →
+  LEAD reconcile (spec + 2 Anton-approved technical calls: server-authoritative pricing; controlled
+  PaymentSelector) → implementer → verifier (fresh context, APPROVE + 1 follow-up) → LEAD browser
+  runtime order + prober DB verification (22/22 PASS) → implementer (TOCTOU hardening) .
+- **Built:** `src/app/actions/submitOrder.ts` (server action, `useActionState` shape); refactored
+  `src/components/ui/PaymentSelector.tsx` to CONTROLLED (optional `value`/`onChange`, backward-compatible
+  — prop-less kitchen-sink unaffected); extended `src/app/(shop)/checkout/page.tsx` (cart shell → real
+  form: shipping fields + payment selector + hidden cart JSON + client-generated idempotency key +
+  crypto −10% preview); new `src/app/(shop)/checkout/success/page.tsx` (server component, fetches order
+  + items from Neon by order_number, direct SELECTs) + `ClearCartOnMount.tsx` (clears client cart post-order).
+- **Security core — server-authoritative price recompute (client price NEVER trusted):** the posted
+  cart JSON carries only {productSlug, format, quantity, sizeLabel} (no price). Per line: capsules OR
+  fixed-kind → `pricing.formats.find(format+sizeLabel).priceCents`; powder + per-gram-tiered →
+  `sizeLabel`→mg → `computeTieredPrice` → `totalCents`, with below-min/gap/bulk REJECTING the whole
+  order. Verifier tested tampering vectors (crafted sizeLabel → null/NaN → rejected; quantity guarded
+  integer≥1). Crypto discount = subtotal − round(subtotal×10/100), integer cents.
+- **Idempotency:** SELECT-by-key before insert (sequential double-submit → redirect to existing order).
+  **TOCTOU race closed** (verifier follow-up applied): the transaction insert now catches PG 23505 on
+  the idempotency-key unique constraint and re-resolves to the existing order's success page (gated on
+  the re-SELECT result, not a fragile constraint-name check); `isRedirectError` re-thrown on both
+  redirect paths.
+- **RUNTIME GATE (LEAD, real Chrome + prober DB):** added A15 2g ($360, per-gram-tiered) + MPEP 1g
+  ($200, fixed) to the cart via /products, filled the checkout form, crypto method, placed order →
+  redirected to `/checkout/success?order=ISR-AG3N2BRS` showing both items, Subtotal $560, Crypto
+  discount −$56, **Total $504**; header cart badge cleared. prober confirmed in Neon (22/22): order row
+  subtotal_price=56000 / total_price=50400 / crypto_discount_pct=10 / status pending / all customer
+  fields; **2 order_items with server-recomputed line_price (a15 36000, mpep 20000)** — NOT client
+  values; exactly 1 order (no dup); Step 3/4 fields NULL; cascade-delete on cleanup. Test order deleted.
+- **Scope boundaries (marked TODO in submitOrder.ts):** Resend emails = Step 3 (needs RESEND creds);
+  NowPayments invoice + crypto redirect = Step 4 (needs NOWPAYMENTS creds). Both paths currently just
+  create the order + fire `order_submitted` analytics + redirect to success.
+- **Compliance held:** no card fields, card slot disabled ("coming soon"), no Pay-Now/Stripe, no
+  money-back/guarantee copy; JSX double-quoted. `tsc` clean; `next build` all 26 routes (/checkout/success
+  dynamic). **Next: G2 Step 3 — Resend order emails** (confirmation + ops alert, stamp
+  confirmation_email_sent_at). Needs RESEND_API_KEY + FROM_EMAIL + ADMIN_EMAIL in `.env.local`.
