@@ -16,6 +16,7 @@ import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { getCryptoRates } from "@/lib/email/rates";
 import { orderReceivedManual, orderReceivedCrypto, opsAlert, type EmailItem } from "@/lib/email/templates";
 import { createInvoice } from "@/lib/nowpayments";
+import { Client } from "@upstash/qstash";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { headers } from "next/headers";
@@ -321,6 +322,23 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       console.error("Order email step failed (non-fatal):", emailErr);
     }
 
+    // 11b. Abandoned-checkout nurture (Step 5). Enqueue two delayed follow-ups via QStash
+    // for ANY unpaid order (both payment methods) — T+2h and T+24h. NON-FATAL: a QStash
+    // failure must never break the order or the redirect, and this block is deliberately
+    // placed BEFORE the crypto branch's redirect() so it never sits between a redirect()
+    // and its own try/catch. baseUrl is computed once here and reused by the crypto branch.
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+    try {
+      const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
+      const abandonedUrl = `${baseUrl}/api/abandoned-checkout`;
+      const base = { orderNumber, email: raw.email, firstName: raw.name };
+      // delay is in SECONDS per the QStash PublishRequest type.
+      await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 1 }, delay: 7200 });  // T+2h
+      await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 2 }, delay: 86400 }); // T+24h
+    } catch (e) {
+      console.error("QStash enqueue failed (non-fatal):", e);
+    }
+
     // 12. Crypto path (Step 4): create the NowPayments hosted invoice, stamp its id/url
     // on the order, send the customer the invoice-link email, then redirect the buyer to
     // the hosted invoice to pay. The order is ALREADY saved + ops-alerted above, so if
@@ -328,7 +346,6 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // order — ops can follow up manually. isRedirectError guards our own redirect().
     if (paymentMethod === "crypto") {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
         const invoice = await createInvoice({
           orderNumber,
           amountUsd: totalUsd,

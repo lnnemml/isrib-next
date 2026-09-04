@@ -1138,3 +1138,39 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
      receive; ops alerts to a non-owner ADMIN_EMAIL fail non-fatally (or set ADMIN_EMAIL=owner now).
   4. **Cutover:** point the NowPayments dashboard IPN URL (or rely on per-invoice callback) at the new
      `/api/webhooks/nowpayments`; set the production `NEXT_PUBLIC_BASE_URL`.
+
+## [2026-09-04] gate | G2 Step 5 — QStash abandoned-checkout nurture built + runtime-verified (producer + 401 + template)
+
+- Built the abandoned-checkout nurture per checkout-architecture.md §5 / ADR 0009. **Roles run:** LEAD
+  (verified @upstash/qstash v2.11.3 API against the installed types) → implementer → verifier (APPROVE,
+  2 non-blocking follow-ups) → LEAD runtime (publish + 401 + template render).
+- **Built:** producer in `submitOrder.ts` (2 `qstash.publishJSON` to `{BASE_URL}/api/abandoned-checkout`,
+  `delay: 7200`/`86400` SECONDS, emailNumber 1/2, wrapped non-fatal, fires for both payment methods,
+  `baseUrl` hoisted/deduped); `abandonedCheckout` template in templates.ts (2 variants; crypto+invoiceUrl
+  → "Complete crypto payment" button + manual blocks, else manual only; multi-item; light theme) + a
+  refactor extracting `manualPaymentBlocks()` shared by orderReceivedManual + abandonedCheckout;
+  consumer `src/app/api/abandoned-checkout/route.ts` (`Receiver.verify({signature,body,url})` → 401 on
+  missing/invalid; Neon guards → 200 for not-found / paid / already-stamped; send then stamp
+  `abandoned_emailN_sent_at`; robust — side-effect failure logs + still 200 so QStash doesn't hammer,
+  and the un-stamped column lets a retry still deliver).
+- **RUNTIME (localhost-feasible parts):** (1) **producer publish** — a direct `Client.publishJSON` with
+  `QSTASH_TOKEN` returned a `messageId` (token + SDK + publish work); (2) **consumer 401** — unsigned POST
+  → 401 (signature guard live); (3) **template render** — abandonedCheckout #1 (crypto) + #2 (manual)
+  rendered + reviewed in-browser: light theme, multi-item table, crypto button + manual PayPal/USDT/BTC/LTC
+  blocks, correct addresses.
+- **Deferred to preview/pre-cutover (localhost limitation):** the full QStash→consumer round-trip
+  (delayed delivery + verified signature + guarded send + stamp) can't run on localhost — QStash cloud
+  can't reach it and the signed URL is the localhost BASE_URL. Verify on a Vercel preview (public URL)
+  before cutover.
+- `tsc` clean; `next build` all routes incl. `ƒ /api/abandoned-checkout`. Verifier's non-blocking
+  follow-ups (cleanup pass): (a) templates.ts inlines the payment addresses instead of importing the
+  `payment-details.ts` constants — single-source them (fund-safety) to prevent silent divergence; (b) the
+  consumer's `JSON.parse` sits just outside the try/catch (a malformed-but-signed body → 500 not 200);
+  (c) minor copy nit — abandoned #1 renders "Danylo, You placed…" (capital Y after the comma).
+- **🎯 ALL 5 G2 BUILD STEPS DONE.** Full flows working (runtime-verified): short-form multi-item order →
+  Neon; order-received + pay-instructions email (manual, delivery-tested to delivered@resend.dev); crypto
+  invoice → IPN webhook → paid → payment-confirmed/shipping email; /shipping token flow; QStash nurture
+  (producer + guard). **Remaining to CLOSE G2 (not code-complete):** manual-order admin-confirm (paid
+  transition); real Resend domain (`send.isrib.shop`) for live delivery; QStash round-trip on preview;
+  the small cleanup follow-ups; then a real end-to-end multi-item test order on a preview deploy → G2
+  green → cutover (ADR 0003/0004: no DNS move until green).

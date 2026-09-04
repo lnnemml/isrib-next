@@ -182,29 +182,18 @@ function payRow(label: string, valueHtml: string, last = false): string {
     </tr>`;
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// 1. orderReceivedManual — manual-transfer instructions (PayPal / USDT / BTC / LTC)
-// ════════════════════════════════════════════════════════════════════════════
-export function orderReceivedManual({
-  firstName,
-  orderNumber,
-  items,
-  subtotalUsd,
-  totalUsd,
-  btcEquivalent,
-  ltcEquivalent,
-}: {
-  firstName: string;
-  orderNumber: string;
-  items: EmailItem[];
-  subtotalUsd: number;
-  totalUsd: number;
-  btcEquivalent?: string;
-  ltcEquivalent?: string;
-}): { subject: string; html: string } {
-  const subject = "Your ISRIB Shop order — transfer details inside";
-  const amount = totalUsd; // manual path charges the (undiscounted) total
-
+// ── Manual-payment blocks (shared) ────────────────────────────────────────────
+// PayPal / USDT (TRC-20) / BTC / LTC / "other methods" panels, built once and reused
+// by BOTH orderReceivedManual AND abandonedCheckout so the real payment addresses,
+// recipient name, and network warnings live in exactly one place (no duplicated
+// addresses — funds to a mistyped address are unrecoverable). Amounts and BTC/LTC
+// equivalents are passed in; nothing here is hardcoded per-product.
+function manualPaymentBlocks(
+  orderNumber: string,
+  amount: number,
+  btcEquivalent?: string,
+  ltcEquivalent?: string,
+): string {
   // PayPal — RECOMMENDED
   const paypal = paymentBlock(
     "PayPal",
@@ -296,6 +285,32 @@ export function orderReceivedManual({
       </td></tr>
     </table>`;
 
+  return `${paypal}${usdt}${btc}${ltc}${otherMethods}`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 1. orderReceivedManual — manual-transfer instructions (PayPal / USDT / BTC / LTC)
+// ════════════════════════════════════════════════════════════════════════════
+export function orderReceivedManual({
+  firstName,
+  orderNumber,
+  items,
+  subtotalUsd,
+  totalUsd,
+  btcEquivalent,
+  ltcEquivalent,
+}: {
+  firstName: string;
+  orderNumber: string;
+  items: EmailItem[];
+  subtotalUsd: number;
+  totalUsd: number;
+  btcEquivalent?: string;
+  ltcEquivalent?: string;
+}): { subject: string; html: string } {
+  const subject = "Your ISRIB Shop order — transfer details inside";
+  const amount = totalUsd; // manual path charges the (undiscounted) total
+
   const closing = `
     <div style="border-top:1px solid ${C.hairline};padding-top:16px;">
       <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
@@ -310,11 +325,7 @@ export function orderReceivedManual({
       Send payment using one of the methods below. Once received, we will confirm and start preparing your order.
     </p>
     ${itemsTable(items, subtotalUsd, totalUsd)}
-    ${paypal}
-    ${usdt}
-    ${btc}
-    ${ltc}
-    ${otherMethods}
+    ${manualPaymentBlocks(orderNumber, amount, btcEquivalent, ltcEquivalent)}
     ${closing}`;
 
   return {
@@ -453,5 +464,87 @@ export function paymentConfirmed({
   return {
     subject,
     html: layout(inner, "Payment confirmed — provide your shipping details."),
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 5. abandonedCheckout — delayed nurture for an unpaid order (QStash T+2h / T+24h)
+// ════════════════════════════════════════════════════════════════════════════
+// Two variants keyed by emailNumber. Ported from the lander's abandoned-checkout.ts
+// but generalized to our MULTI-ITEM cart (renders the shared itemsTable — no hardcoded
+// "ISRIB A15") and re-skinned to the light theme. Reuses layout(), itemsTable() and
+// the shared manualPaymentBlocks() — same addresses/warnings as the confirmation email.
+// COMPLIANCE: payment-coordination copy only; no card fields / Pay-Now / Stripe; no
+// efficacy / guarantee / money-back language.
+export function abandonedCheckout({
+  firstName,
+  orderNumber,
+  items,
+  totalUsd,
+  paymentMethod,
+  invoiceUrl,
+  emailNumber,
+  btcEquivalent,
+  ltcEquivalent,
+}: {
+  firstName: string;
+  orderNumber: string;
+  items: EmailItem[];
+  totalUsd: number;
+  paymentMethod: "crypto" | "manual";
+  invoiceUrl?: string | null;
+  emailNumber: 1 | 2;
+  btcEquivalent?: string;
+  ltcEquivalent?: string;
+}): { subject: string; html: string } {
+  const subject =
+    emailNumber === 1
+      ? `${firstName}, your order is still waiting`
+      : `Last reminder — order ${orderNumber}`;
+
+  const intro =
+    emailNumber === 1
+      ? "You placed an order a few hours ago but we haven't received payment yet."
+      : "This is a final reminder about your pending order.";
+
+  const eyebrow = emailNumber === 1 ? "Reminder — payment pending" : "Final reminder";
+
+  // Payment section: crypto orders with a live invoice get the "Complete crypto
+  // payment" button first, then the manual fallback; everyone else gets just the
+  // manual blocks. Same shared blocks either way.
+  const manualBlocks = manualPaymentBlocks(orderNumber, totalUsd, btcEquivalent, ltcEquivalent);
+  const paymentSection =
+    paymentMethod === "crypto" && invoiceUrl
+      ? `
+        <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 16px;">
+          Your crypto payment invoice is still active:
+        </p>
+        ${button(invoiceUrl, "Complete crypto payment →")}
+        <p style="color:${C.faint};font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 12px;">
+          Or pay manually — no login required
+        </p>
+        ${manualBlocks}`
+      : `
+        <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 20px;">
+          Send payment using any of the methods below:
+        </p>
+        ${manualBlocks}`;
+
+  const closing = `
+    <div style="border-top:1px solid ${C.hairline};padding-top:16px;">
+      <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
+        Had a question or changed your mind? Just reply — we respond within a few hours.
+      </p>
+    </div>`;
+
+  const inner = `
+    ${heading(eyebrow, C.brand, `${firstName}, ${intro}`, orderNumber)}
+    ${itemsTable(items, totalUsd, totalUsd)}
+    ${paymentSection}
+    ${closing}`;
+
+  return {
+    subject,
+    html: layout(inner, intro),
   };
 }
