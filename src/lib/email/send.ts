@@ -1,7 +1,10 @@
 // Resend transport (G2 Step 3). Mirrors the lander's lib/resend.ts: a lazily-created
-// Resend client from RESEND_API_KEY, and two thin senders. Neither sender swallows the
-// underlying Resend promise rejection — the CALLER (submitOrder) wraps every send in
-// Promise.allSettled so a mail failure never breaks the order or the redirect.
+// Resend client from RESEND_API_KEY, and two thin senders. Resend's emails.send()
+// resolves with { data, error } instead of rejecting on API errors (403, validation,
+// etc.), so each sender inspects that error and throws — neither swallows a failed send.
+// The CALLER (submitOrder) wraps every send in Promise.allSettled so a mail failure
+// never breaks the order or the redirect, and only a genuine success stamps the
+// confirmation_email_sent_at column.
 
 import { Resend } from "resend";
 
@@ -28,13 +31,14 @@ function getAdminEmails(): string[] {
 // Customer-facing transactional mail. replyTo routes buyer replies (payment
 // screenshots, shipping details) to the ops inbox regardless of the FROM sender.
 export async function sendToCustomer(email: string, subject: string, html: string): Promise<void> {
-  await getResend().emails.send({
+  const { error } = await getResend().emails.send({
     from: `ISRIB Shop <${getFrom()}>`,
     to: email,
     replyTo: "isrib.shop@protonmail.com",
     subject,
     html,
   });
+  if (error) throw new Error(`Resend send failed: ${error.message ?? JSON.stringify(error)}`);
 }
 
 // Internal ops alert. No-op when ADMIN_EMAIL is unset/empty so local/dev runs and
@@ -42,10 +46,11 @@ export async function sendToCustomer(email: string, subject: string, html: strin
 export async function sendToAdmin(subject: string, html: string): Promise<void> {
   const adminEmails = getAdminEmails();
   if (adminEmails.length === 0) return;
-  await getResend().emails.send({
+  const { error } = await getResend().emails.send({
     from: `ISRIB Shop <${getFrom()}>`,
     to: adminEmails,
     subject,
     html,
   });
+  if (error) throw new Error(`Resend send failed: ${error.message ?? JSON.stringify(error)}`);
 }

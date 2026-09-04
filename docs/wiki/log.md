@@ -1062,3 +1062,41 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   pay-instructions with real manual-payment details ported from the lander's `buyer-confirmation.ts`;
   payment-confirmed email carrying the `/shipping/<token>` link). Test now via `onboarding@resend.dev`
   (delivers only to Anton's account email); verify real `send.isrib.shop` domain pre-cutover.
+
+## [2026-09-04] gate | G2 Step 3 — Resend order emails built + runtime-verified (send accepted + stamp)
+
+- Built the transactional emails per ADR 0010. **Roles run:** LEAD → explorer (lander email templates
+  + payment addresses) → implementer (email module + templates + submitOrder wiring) → verifier (APPROVE)
+  → LEAD (Resend API probe → found the false-stamp latent bug) → implementer (throw-on-error fix) → LEAD
+  browser runtime (manual order) + DB + dev-log verification.
+- **Built `src/lib/email/`:** `send.ts` (Resend client; `sendToCustomer`/`sendToAdmin`; **throws on the
+  Resend `{error}` response** so failures are real, not silently swallowed — the fix below); `payment-
+  details.ts` (Anton's real PayPal/USDT/BTC/LTC ported verbatim from the lander); `rates.ts` (CoinGecko
+  btc/ltc equivalents); `templates.ts` (LIGHT-theme, inline-styled, multi-item items-table; orderReceived
+  Manual/Crypto, opsAlert, paymentConfirmed with the `/shipping/<token>` link — NOT a mailto). Wired the
+  MANUAL submit path into submitOrder (customer order-received + ops alert, stamp confirmation_email_sent_at
+  after a genuine send); crypto customer email left `// TODO(step 4)` (needs the invoice URL).
+- **Latent bug found + fixed (LEAD probe):** the Resend SDK does NOT throw on API errors — it resolves
+  `{ data, error }`. `sendToCustomer`/`sendToAdmin` originally ignored `error` (a faithful port of the
+  lander's same issue) → `confirmation_email_sent_at` would stamp even on a failed send. Fix: both senders
+  now `throw` when `error` is present → the caller's `Promise.allSettled` records the failure (non-fatal)
+  and the stamp only lands on a real success.
+- **VISUAL gate:** rendered all 4 templates (via `tsx`, sample multi-item A15 2g + MPEP 1g order) and
+  reviewed in-browser — light theme (white/blue "ISRIB Shop", NOT the lander's dark/amber), multi-item
+  table, PayPal/USDT(⚠TRC-20)/BTC/LTC blocks with exact addresses, payment-confirmed "Provide shipping
+  details →" button → /shipping/<token>. Sent the 4 HTML renders to Anton.
+- **RUNTIME gate (real Chrome + Resend + DB):** placed a MANUAL order (customer email `delivered@resend.dev`,
+  Resend's test recipient) → order `ISR-LCA5QX9J` ($200) created; success page "check your email" copy.
+  DB: `confirmation_email_sent_at` stamped (the customer email was **accepted by Resend** — `data.id`
+  returned, `error:null`). dev log: the **ops alert threw** ("can only send testing emails to your own
+  address isrib.shop@protonmail.com" — ADMIN_EMAIL is a non-owner while the domain is unverified) and was
+  **caught non-fatally** ("Order email failed (non-fatal)") — order intact + redirected. The throw-on-error
+  fix makes such failures visible instead of silent. Test order deleted.
+- **Findings for pre-cutover:** the Resend account owner is `isrib.shop@protonmail.com` (revealed by the
+  API error). Interim: set `ADMIN_EMAIL=isrib.shop@protonmail.com` (owner) → ops alerts deliver now.
+  Full delivery to arbitrary customer emails requires verifying `send.isrib.shop` in Resend + swapping
+  `FROM_EMAIL` (pre-cutover checklist item; email DNS is independent of the website cutover).
+- `tsc` clean; `next build` all routes. **Next: G2 Step 4 — NowPayments** (invoice on crypto submit +
+  the `// TODO(step 4)` crypto customer email with the invoice link; HMAC-SHA512 IPN webhook → status
+  paid → payment-confirmed email with the /shipping link). Needs `NOWPAYMENTS_API_KEY` +
+  `NOWPAYMENTS_IPN_SECRET` + `NEXT_PUBLIC_BASE_URL` in `.env.local`.
