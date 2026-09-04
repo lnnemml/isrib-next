@@ -828,3 +828,37 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Site-map progress:** home, /products, all 6 product pages, About, FAQ, Contact, Terms, Privacy,
   Research-use, Disclaimer — DONE. Remaining static pages: **Quality Control (/quality)** +
   **Safety Guidelines (/safety)** (still 404). Then G1 parity audit + Day-2 checkout (G2).
+
+## [2026-09-04] gate | Quality + Safety pages ported (/quality, /safety) — static site-map COMPLETE
+
+- Ported the live `quality.html` + `safety.html` (the last two 404s in nav/footer) using the
+  inventory-driven method. Two explorers (parallel) produced complete ordered inventories +
+  compliance scans; LEAD reconciled to per-item contracts; ONE implementer built both pages
+  (avoids parallel-write conflict, per the about+faq precedent); verifier (fresh context)
+  APPROVED; LEAD ran the browser side-by-side (dev :3000 vs live :8080) on both.
+- **/quality** (`(marketing)/quality/page.tsx`): gradient hero ("Quality Control" + subtitle) →
+  3-card grid (Batch Testing w/ 4-item bullet list LC-MS/NMR/Melting-point/Visual-inspection;
+  Retention & Documentation; Packaging & Handling) → Research-Use-Only callout → CTA row
+  ("← Back to Products" → /products, "Request CoA" → /contact). All copy verbatim.
+- **/safety** (`(marketing)/safety/page.tsx`): gradient hero → 4 stacked cards (General
+  Laboratory Safety w/ 4 bullets + RUO notice; Spill & Exposure; Storage Conditions;
+  Responsibility) → CTA row (→ /products, /quality, /disclaimer). All copy verbatim.
+- **Design (locked-palette mapping):** the live pages use a blue "Research Use Only" pill
+  (quality) and an ORANGE notice box (safety). Both reframed to ONE consistent site-wide RUO
+  treatment — a `bg-blue-50` / `text-primary-deep` pill + `border-l-primary` left-border panel.
+  NO invented amber (design system locked); gradient h1 = the locked blue-800→cyan-500 signature.
+- **Compliance (LEAD ruling):** both pages clean. Explorer's one MEDIUM flag on safety — the
+  Spill & Exposure line "In case of accidental exposure, rinse the affected area with water and
+  seek professional medical assistance" — is standard OCCUPATIONAL lab-safety (GLP) language for
+  trained personnel handling the substance as a hazardous lab material; it is the opposite of
+  human-use positioning. No rx brand names, no cancer/dementia/efficacy/guarantee. Kept VERBATIM.
+  COA framing safe: quality keeps the neutral live "CoA or batch ID" + a "Request CoA" CTA
+  (never "Included").
+- `tsc --noEmit` clean; `next build` — both prerender as static. Other routes untouched.
+- **Roles run:** LEAD (orchestrator) → 2× explorer (quality + safety inventories, parallel) →
+  LEAD reconcile + compliance ruling → implementer (both pages) → verifier (fresh context,
+  APPROVE) → LEAD browser side-by-side (both pages, PASS). Work uncommitted on `main`
+  (Anton commits/deploys).
+- **🎯 STATIC SITE-MAP COMPLETE** — every page a visitor can reach from nav/footer is now
+  ported (no remaining 404s). Next: **G1 parity audit** (nothing dropped vs the live site,
+  across all pages + chrome + cart) → **Day-2 checkout (G2)**.
