@@ -14,7 +14,8 @@ import { generateOrderNumber, generateShippingToken, deriveTrafficType } from "@
 import { trackServerEvent } from "@/lib/analytics/server";
 import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { getCryptoRates } from "@/lib/email/rates";
-import { orderReceivedManual, opsAlert, type EmailItem } from "@/lib/email/templates";
+import { orderReceivedManual, orderReceivedCrypto, opsAlert, type EmailItem } from "@/lib/email/templates";
+import { createInvoice } from "@/lib/nowpayments";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { headers } from "next/headers";
@@ -292,8 +293,8 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           ),
         );
       }
-      // TODO(step 4): crypto customer email — after NowPayments invoice creation,
-      //   sendToCustomer(raw.email, ...orderReceivedCrypto({ ..., invoiceUrl })).
+      // Crypto customer email is sent AFTER invoice creation (below), since it carries
+      // the NowPayments invoice link.
 
       // Both paths: internal ops alert (no-op if ADMIN_EMAIL is unset).
       const ops = opsAlert({
@@ -320,10 +321,52 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       console.error("Order email step failed (non-fatal):", emailErr);
     }
 
-    // TODO(step 4): if crypto → createInvoice(), db.update({ nowpaymentsInvoiceId,
-    //   nowpaymentsPaymentUrl }), then redirect(invoice.invoice_url) instead of the line below.
+    // 12. Crypto path (Step 4): create the NowPayments hosted invoice, stamp its id/url
+    // on the order, send the customer the invoice-link email, then redirect the buyer to
+    // the hosted invoice to pay. The order is ALREADY saved + ops-alerted above, so if
+    // invoice creation throws we fall through to the success page rather than losing the
+    // order — ops can follow up manually. isRedirectError guards our own redirect().
+    if (paymentMethod === "crypto") {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+        const invoice = await createInvoice({
+          orderNumber,
+          amountUsd: totalUsd,
+          successUrl: `${baseUrl}/checkout/success?order=${orderNumber}`,
+          cancelUrl: `${baseUrl}/checkout`,
+          ipnCallbackUrl: `${baseUrl}/api/webhooks/nowpayments`,
+        });
+        await db
+          .update(orders)
+          .set({ nowpaymentsInvoiceId: invoice.id, nowpaymentsPaymentUrl: invoice.invoice_url })
+          .where(eq(orders.id, orderId));
+        // Crypto customer "order received" email with the invoice link (non-fatal;
+        // stamp confirmationEmailSentAt only on a genuine successful send).
+        try {
+          const crypto = orderReceivedCrypto({
+            firstName: raw.name,
+            orderNumber,
+            items: emailItems,
+            totalUsd,
+            invoiceUrl: invoice.invoice_url,
+          });
+          await sendToCustomer(raw.email, crypto.subject, crypto.html);
+          await db
+            .update(orders)
+            .set({ confirmationEmailSentAt: new Date() })
+            .where(eq(orders.id, orderId));
+        } catch (e) {
+          console.error("Crypto order email failed (non-fatal):", e);
+        }
+        redirect(invoice.invoice_url);
+      } catch (err) {
+        if (isRedirectError(err)) throw err;
+        console.error("NowPayments invoice creation failed:", err);
+        // order is saved + ops alerted — fall through to the success page
+      }
+    }
 
-    // 13. Both paths land on the success page this step.
+    // 13. Manual path (and the crypto fall-through above) land on the success page.
     redirect("/checkout/success?order=" + orderNumber);
   } catch (err) {
     // redirect() signals success by throwing NEXT_REDIRECT — must be re-thrown so Next

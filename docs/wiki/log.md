@@ -1100,3 +1100,41 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   the `// TODO(step 4)` crypto customer email with the invoice link; HMAC-SHA512 IPN webhook → status
   paid → payment-confirmed email with the /shipping link). Needs `NOWPAYMENTS_API_KEY` +
   `NOWPAYMENTS_IPN_SECRET` + `NEXT_PUBLIC_BASE_URL` in `.env.local`.
+
+## [2026-09-04] gate | G2 Step 4 — NowPayments invoice + IPN webhook built + runtime-verified (crypto flow end-to-end)
+
+- Built the crypto payment path per checkout-architecture.md §3–§4 / ADR 0009. **Roles run:** LEAD →
+  implementer (nowpayments.ts + webhook + submitOrder crypto wiring) → verifier (fresh context, APPROVE,
+  no blockers) → LEAD browser runtime (real crypto order → real invoice) + IPN simulation (valid/replay/
+  forged) + DB verification.
+- **Built `src/lib/nowpayments.ts`:** `createInvoice()` (POST /v1/invoice, x-api-key, order_id=orderNumber,
+  is_fixed_rate) + `verifyIpnSignature()` (HMAC-SHA512 over recursively key-sorted JSON, **timing-safe
+  compare** via `crypto.timingSafeEqual` with null/length guards — hardening over NORA's `!==`). Wired the
+  crypto branch in submitOrder (createInvoice → update order invoice id/url → crypto order-received email w/
+  invoice link + stamp confirmation_email_sent_at → redirect to invoice_url; on failure isRedirectError
+  re-thrown, falls through to success). New `src/app/api/webhooks/nowpayments/route.ts` (idempotent,
+  always-200, side effects in allSettled, never throws out of POST).
+- **RUNTIME GATE (real Chrome + real NowPayments API + IPN simulation + DB):**
+  - **Crypto invoice (real API):** placed a crypto order → redirected to a REAL NowPayments hosted invoice
+    (`nowpayments.io/payment?iid=6087864889`). DB: order `ISR-2MH8DNZQ` got `nowpayments_invoice_id`
+    6087864889 + `nowpayments_payment_url`; `confirmation_email_sent_at` stamped (crypto order-received
+    email accepted by Resend).
+  - **IPN webhook (signed simulation — computed valid HMAC with the real IPN secret):** valid `finished`
+    IPN → **200**, status → **paid**; idempotent replay → **200**, still paid (no double-process); forged
+    signature → **401**. The paid-side-effect email failure (ops alert → non-owner ADMIN_EMAIL, unverified
+    domain) was **caught non-fatally**, webhook still returned 200 — proving robustness. Test order deleted.
+- `tsc` clean; `next build` all 27 routes incl. `ƒ /api/webhooks/nowpayments`. Analytics: webhook fires
+  `order_confirmed → Purchase` (server.ts map) as the paid conversion; `order_submitted` remains the
+  primary at submit (ADR 0005).
+- **G2 CORE ESSENTIALLY COMPLETE:** multi-item order → Neon (Step 2); confirmation + pay-instructions
+  emails (Step 3); crypto invoice → webhook → paid → shipping-request email (Step 4); idempotency at both
+  submit and webhook. **Remaining for full G2 close:**
+  1. **Step 5 — QStash abandoned-checkout nurture** (2 delayed emails, Neon-guarded; QStash keys already set).
+  2. **Manual-order "paid" transition** — currently only the crypto webhook flips `paid`; MANUAL orders need
+     an admin-confirm action (mark paid + fire the payment-confirmed/shipping email) — a minimal
+     `/api/admin/confirm-order` (lander parity) or the Track-B admin panel. FLAG: not yet built.
+  3. **Real email delivery** — verify `send.isrib.shop` in Resend + swap `FROM_EMAIL` (pre-cutover; email
+     DNS independent of the website cutover). Until then only `delivered@resend.dev` / the account owner
+     receive; ops alerts to a non-owner ADMIN_EMAIL fail non-fatally (or set ADMIN_EMAIL=owner now).
+  4. **Cutover:** point the NowPayments dashboard IPN URL (or rely on per-invoice callback) at the new
+     `/api/webhooks/nowpayments`; set the production `NEXT_PUBLIC_BASE_URL`.
