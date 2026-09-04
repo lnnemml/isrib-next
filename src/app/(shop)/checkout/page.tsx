@@ -129,16 +129,18 @@ export default function CheckoutPage() {
         </div>
       ) : null}
 
-      {/* Checkout form — posts to the server action, which recomputes every price. */}
+      {/* Checkout form — posts to the server action, which recomputes every price.
+          ADR 0010: minimal fields at checkout (first name / email / country); the
+          shipping address is collected after payment via /shipping/<token>. */}
       <form action={formAction} className="mt-12 flex flex-col gap-8">
         <section className="flex flex-col gap-5">
-          <h2 className="text-h4 font-semibold text-text">{"Shipping details"}</h2>
+          <h2 className="text-h4 font-semibold text-text">{"Your details"}</h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
               <label htmlFor="name" className={LABEL_CLASS}>
-                {"Full name *"}
+                {"First name *"}
               </label>
-              <input id="name" name="name" type="text" required autoComplete="name" className={FIELD_CLASS} />
+              <input id="name" name="name" type="text" required autoComplete="given-name" className={FIELD_CLASS} />
             </div>
             <div>
               <label htmlFor="email" className={LABEL_CLASS}>
@@ -146,49 +148,16 @@ export default function CheckoutPage() {
               </label>
               <input id="email" name="email" type="email" required autoComplete="email" className={FIELD_CLASS} />
             </div>
-            <div>
-              <label htmlFor="phone" className={LABEL_CLASS}>
-                {"Phone *"}
-              </label>
-              <input id="phone" name="phone" type="tel" required autoComplete="tel" className={FIELD_CLASS} />
-            </div>
-            <div>
+            <div className="sm:col-span-2">
               <label htmlFor="country" className={LABEL_CLASS}>
                 {"Country *"}
               </label>
               <input id="country" name="country" type="text" required autoComplete="country-name" className={FIELD_CLASS} />
             </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="address" className={LABEL_CLASS}>
-                {"Address *"}
-              </label>
-              <input id="address" name="address" type="text" required autoComplete="street-address" className={FIELD_CLASS} />
-            </div>
-            <div>
-              <label htmlFor="city" className={LABEL_CLASS}>
-                {"City *"}
-              </label>
-              <input id="city" name="city" type="text" required autoComplete="address-level2" className={FIELD_CLASS} />
-            </div>
-            <div>
-              <label htmlFor="postalCode" className={LABEL_CLASS}>
-                {"Postal code *"}
-              </label>
-              <input id="postalCode" name="postalCode" type="text" required autoComplete="postal-code" className={FIELD_CLASS} />
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="stateRegion" className={LABEL_CLASS}>
-                {"State / region"}
-              </label>
-              <input id="stateRegion" name="stateRegion" type="text" autoComplete="address-level1" className={FIELD_CLASS} />
-            </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="note" className={LABEL_CLASS}>
-                {"Order note"}
-              </label>
-              <textarea id="note" name="note" rows={3} className={`${FIELD_CLASS} resize-y`} />
-            </div>
           </div>
+          <p className="text-caption text-text-faint">
+            {"Shipping details are collected after payment is confirmed."}
+          </p>
         </section>
 
         <section className="flex flex-col gap-5">
@@ -210,7 +179,7 @@ export default function CheckoutPage() {
 
         <div>
           <Button type="submit" variant="primary" disabled={pending || lines.length === 0} className="w-full sm:w-auto">
-            {pending ? "Placing order…" : "Place order — arrange payment"}
+            {pending ? "Placing order…" : "Place order — get payment details"}
           </Button>
           <p className="mt-3 text-caption text-text-faint">
             {"No card payment, by design. We arrange manual or crypto payment after you place the order."}

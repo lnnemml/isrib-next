@@ -16,8 +16,7 @@ insert must be **atomic** (`db.transaction()`), which only the serverless driver
 (NORA uses neon-http and has no transactions; we diverge for order integrity.)
 
 **`orders`** — customer + payment + totals, one row per order:
-`id` (nanoid), `created_at`, `status` (enum), `name`, `email`, `phone`, `address`,
-`city`, `postal_code`, `state_region` (nullable), `country`, `payment_method`
+`id` (nanoid), `created_at`, `status` (enum), `name`, `email`, `country`, `payment_method`
 (crypto|manual), `crypto_discount_pct` (nullable), `subtotal_price` (cents),
 `total_price` (cents), `promo_code` (nullable), `note` (nullable),
 `nowpayments_invoice_id` (nullable), `nowpayments_payment_url` (nullable),
@@ -25,6 +24,11 @@ insert must be **atomic** (`db.transaction()`), which only the serverless driver
 UTM fields, `confirmation_email_sent_at` (**actually written**, ADR 0009),
 `abandoned_email1_sent_at` / `abandoned_email2_sent_at` (nullable — QStash nurture state
 machine, ADR 0009), `user_id` (nullable — guest checkout stays supported).
+**Shipping — collected post-payment ([ADR 0010](../decisions/0010-frictionless-dr-checkout.md)),
+so all NULLABLE:** `phone`, `address`, `city`, `postal_code`, `state_region`. Plus
+`shipping_token` (unique, unguessable — the `/shipping/<token>` link) + `shipping_details_at`
+(nullable timestamp, stamped when the post-payment form is submitted). **Checkout collects
+only `name`/`email`/`country`** — the rest of the shipping fields fill in later.
 
 **`order_items`** — one row per cart line: `id`, `order_id` (FK), `product_slug`,
 `format` (powder|capsules), `quantity`, `size_label` (e.g. "2g", "50 × 20mg"),

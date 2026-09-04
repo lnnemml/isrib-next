@@ -69,6 +69,7 @@ rather than scanning the whole directory.
 - [`decisions/0007-pricing-model-shape.md`](./decisions/0007-pricing-model-shape.md)
 - [`decisions/0008-full-migration-and-cart.md`](./decisions/0008-full-migration-and-cart.md)
 - [`decisions/0009-checkout-backend-neon-qstash.md`](./decisions/0009-checkout-backend-neon-qstash.md)
+- [`decisions/0010-frictionless-dr-checkout.md`](./decisions/0010-frictionless-dr-checkout.md)
 
 ## Planning
 

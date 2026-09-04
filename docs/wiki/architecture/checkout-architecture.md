@@ -34,27 +34,35 @@ the column-level list. G2-relevant additions beyond the data-model stub:
 - `orders.confirmation_email_sent_at` — actually written (unlike NORA).
 - `order_items` — one row per cart line (`order_id` FK, `product_slug`, `format`,
   `quantity`, `size_label`, `line_price_cents`). `format` explicit — no mg→g conversion.
+- **[ADR 0010] friction-less DR deltas:** shipping columns (`address`, `city`,
+  `postal_code`, `state_region`, `phone`) are **nullable** — not collected at checkout,
+  filled by the post-payment `/shipping` form. Added `shipping_token` (unique, unguessable
+  nanoid — the `/shipping/<token>` link) + `shipping_details_at` (stamped when the form is
+  submitted).
 
 Migrations: `drizzle-kit push` for dev; `DATABASE_URL_NON_POOLING` (or Neon's direct
 endpoint) for schema ops, pooled endpoint for runtime.
 
-## 3. Order-submit flow (server action `submitOrder`)
+## 3. Order-submit flow (server action `submitOrder`) — minimal form ([ADR 0010](../decisions/0010-frictionless-dr-checkout.md))
 
-1. **Idempotency:** if an order with this `idempotency_key` exists → return it (no new row).
-2. Validate required fields + `payment_method` enum server-side. Never trust client prices.
+Checkout collects only **first name, email, country + payment method**; the cart supplies
+line items. No shipping fields (deferred to §6 `/shipping`).
+
+1. **Idempotency:** if an order with this `idempotency_key` exists → redirect to its success.
+2. Validate name/email/country + `payment_method` enum server-side. Never trust client prices.
 3. **Recompute** every line price + subtotal + total server-side from `products.ts` /
    `pricing.ts` (the same helpers the UI uses) — the client cart is untrusted input.
 4. Apply crypto discount (10%) if `payment_method === "crypto"`.
-5. **Atomic write (transaction):** `insert orders` + `insert order_items[]` in one
-   `db.transaction()`. `order_number` = `NR-`/`ISR-`-style 8-char nanoid with a `unique`
-   constraint as the collision backstop.
+5. **Atomic write (transaction):** `insert orders` (name/email/country + a generated
+   `shipping_token`; shipping fields NULL) + `insert order_items[]` in one `db.transaction()`.
+   `order_number` = `ISR-`-style 8-char nanoid, `unique`.
 6. `trackServerEvent("order_submitted" → Meta InitiateCheckout)` — primary conversion
    (ADR 0005). Non-fatal.
-7. **Immediate emails (inline, `Promise.allSettled`, non-fatal):** customer confirmation +
-   ops alert. Stamp `confirmation_email_sent_at` on success.
+7. **Immediate emails (inline, `Promise.allSettled`, non-fatal):** order-received +
+   pay-instructions (customer) + ops alert. Stamp `confirmation_email_sent_at`.
 8. **Enqueue nurture (QStash, wrapped/non-fatal):** publish two delayed callbacks (§5).
 9. **Crypto:** `createInvoice()` → `update orders` with invoice id/url → `redirect(invoice_url)`.
-   **Manual:** `redirect(/checkout/success)`.
+   **Manual:** `redirect(/checkout/success)` (success page shows "check your email").
 
 **Failure ordering:** the transaction makes order+items atomic; everything after (emails,
 QStash, invoice) is best-effort and must not roll back a committed order. Invoice-creation
@@ -97,6 +105,23 @@ scheduling — see ADR 0009).
 cancel via `POST /emails/{id}/cancel`) replaces QStash with zero new deps — guard becomes
 cancel-on-payment (in both the webhook AND the admin-confirm action). Swap needs no schema
 change.
+
+## 5b. Post-payment shipping form (`/shipping/<token>`) — [ADR 0010](../decisions/0010-frictionless-dr-checkout.md)
+
+Shipping address is collected AFTER payment, not at checkout (friction-less DR). The
+payment-confirmed email (§4 / the manual-confirm path) links to `/shipping/<token>`.
+
+- **`shipping_token`** — an unguessable per-order nanoid generated at submit (§3 step 5),
+  stored on the order. The link uses the TOKEN, never the guessable `order_number`.
+- **Route `/shipping/<token>`** (server component): look up the order by `shipping_token`;
+  404 if none. Render a short form — **Full name, Address, City, Postal code, Mobile**
+  (country already on the order). If `shipping_details_at` is already set, show the
+  submitted address read-only (idempotent revisit).
+- **Server action** validates the token again server-side, `update`s the order row
+  (`name` ← full name, `address`, `city`, `postal_code`, `phone` ← mobile) and stamps
+  `shipping_details_at = now()`. Token is the only auth; no login.
+- An order with `shipping_details_at IS NULL` after `paid` = address still outstanding
+  (admin follow-up surface).
 
 ## 6. Env surface for G2
 

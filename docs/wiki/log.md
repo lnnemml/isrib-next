@@ -1003,3 +1003,62 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   money-back/guarantee copy; JSX double-quoted. `tsc` clean; `next build` all 26 routes (/checkout/success
   dynamic). **Next: G2 Step 3 — Resend order emails** (confirmation + ops alert, stamp
   confirmation_email_sent_at). Needs RESEND_API_KEY + FROM_EMAIL + ADMIN_EMAIL in `.env.local`.
+
+## [2026-09-04] decision | ADR 0010 — friction-less DR checkout (minimal form + post-payment shipping)
+
+- Anton's direction: adopt the live `isrib-a15-lander`'s friction-less conversion flow for paid
+  traffic. **Roles run:** LEAD → general-purpose audit of the lander's customer-facing checkout +
+  shipping-collection → LEAD report → AskUserQuestion (shipping mechanism + form fields) → LEAD wiki.
+- **Lander audit:** checkout = 5 fields, only 3 typed (first name / email / country); NO address at
+  checkout. Delivery address requested ONLY after payment confirmed, via a prefilled `mailto:` reply
+  to ProtonMail (never stored in DB). Admin manually confirms manual-payment funds in `/admin` → that
+  triggers the address-request email. Crypto auto-confirms via webhook.
+- **Decisions (Anton, via AskUserQuestion):** (1) **checkout = first name + email + country + payment
+  toggle** (cart supplies line items — we're multi-item, unlike the lander's single-SKU form); (2)
+  **shipping collected post-payment via a form that writes to Neon** (chosen over the lander's
+  inbox-only `mailto:` — structured address for the future admin panel, zero pre-payment friction).
+- **Ratified in [ADR 0010](decisions/0010-frictionless-dr-checkout.md):** minimal checkout form;
+  `/shipping/<token>` post-payment form (Full name/Address/City/Postal/Mobile) gated by an unguessable
+  `shipping_token` (NOT the guessable order_number); lifecycle pending→paid→(address)→fulfilled (enum
+  unchanged — address is data); emails redefined (submit: received+pay-instructions; paid: confirmed +
+  /shipping link). Manual-payment details for the emails come verbatim from the lander.
+- **Schema deltas (re-`db:push`):** shipping cols (`phone`,`address`,`city`,`postal_code`,`state_region`)
+  → NULLABLE; add `shipping_token` (unique) + `shipping_details_at`. **Step-2 rework:** strip shipping
+  from the checkout form + submitOrder; success page → "check your email"; the Step-2 **core is reused**
+  (transactional insert, server price recompute, idempotency, cart). Wiki reconciled: manual-payment-flow,
+  checkout-architecture (§3 + new §5b), data-model, index.
+- **Next: implement** — (a) schema change + `db:push`; (b) rework checkout form/submitOrder/success to
+  the short flow + `/shipping/<token>` route; then Steps 3/4/5 (emails/NowPayments/QStash) as planned.
+
+## [2026-09-04] gate | ADR 0010 checkout rework built + runtime-verified (short form + /shipping token flow)
+
+- Implemented the friction-less DR checkout (ADR 0010). **Roles run:** LEAD → implementer (schema
+  deltas) → LEAD `db:push` → implementer (app rework) → verifier (fresh context, APPROVE) → LEAD
+  browser runtime (short order + /shipping submit) + DB verification → cleanup.
+- **Schema (re-`db:push`, applied to Neon):** shipping cols (`phone`/`address`/`city`/`postal_code`)
+  → NULLABLE; added `shipping_token` (NOT NULL unique) + `shipping_details_at`. `name`/`email`/`country`
+  stay NOT NULL.
+- **App rework:** checkout form stripped to **First name + Email + Country + payment** (+ reassurance
+  "Shipping details are collected after payment is confirmed"; note field removed); `submitOrder` reads
+  only those, generates a `shippingToken` (plain 21-char `nanoid()` — unguessable, distinct from `ISR-`),
+  omits the now-nullable shipping cols. **Price-recompute + idempotency + 23505 TOCTOU byte-for-byte
+  unchanged** (verifier confirmed). success page reframed to "check your email / payment instructions".
+  New `/shipping/[token]` route (server: fetch by `shipping_token`, `notFound()` on miss; read-only
+  "received" panel if `shipping_details_at` set, else the form) + `ShippingForm` (Full name/Address/City/
+  Postal/Mobile; country read-only) + `submitShipping` action (validates token, updates name/address/
+  city/postal_code/phone + stamps `shipping_details_at`, redirects back to the token URL).
+- **Token security (verifier APPROVE):** the shipping flow is gated ONLY by the 126-bit token — page
+  lookup + update both `where(shipping_token = token)`; `order_number` is never a shipping key. No
+  enumeration risk.
+- **RUNTIME GATE (LEAD, real Chrome + DB):** added MPEP 1g, filled the 3-field form (Danylo / email /
+  Ukraine), crypto → order `ISR-ZANGXRBG` created (Subtotal $200, Crypto −$20, Total $180), success page
+  "check your email" copy, cart cleared. Fetched `shipping_token` from Neon (email not built yet),
+  visited `/shipping/<token>` → filled address → submit → redirected to the read-only "received" panel.
+  DB confirmed: `name` "Danylo"→"Danylo Tsymbaliuk", `address`/`city`/`postal_code`/`phone` populated,
+  `shipping_details_at` stamped, `status` still pending (shipping doesn't change status). Test order
+  deleted; 0 leftovers.
+- `tsc` clean; `next build` all 27 routes (incl. dynamic `/shipping/[token]`). Compliance held (no
+  card/Pay-Now/guarantee; double-quoted JSX). **Next: G2 Step 3 — Resend emails** (order-received +
+  pay-instructions with real manual-payment details ported from the lander's `buyer-confirmation.ts`;
+  payment-confirmed email carrying the `/shipping/<token>` link). Test now via `onboarding@resend.dev`
+  (delivers only to Anton's account email); verify real `send.isrib.shop` domain pre-cutover.

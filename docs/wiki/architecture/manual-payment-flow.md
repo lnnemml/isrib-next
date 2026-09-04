@@ -2,25 +2,26 @@
 
 > No payment gateway wired into code beyond NowPayments crypto invoices.
 
-## Order lifecycle
+## Order lifecycle (friction-less DR — [ADR 0010](../decisions/0010-frictionless-dr-checkout.md))
 
 ```
-pending_payment_instructions  (form submitted, confirmation email sent)
-  -> awaiting_payment          (ops emails customer to arrange payment)
-  -> paid                      (ops manually confirms funds)
+pending_payment_instructions  (short form submitted → confirmation + pay-instructions email)
+  -> paid                      (crypto webhook OR ops manually confirms funds → email w/ /shipping link)
+     └─ customer submits /shipping/<token> form → address stored, shipping_details_at stamped
   -> fulfilled                 (shipped)
 cancelled                      (reachable from any state)
 ```
 
-Only the first transition is automatic (submit -> pending + confirmation email).
-All later ones are human — no webhook drives them except NowPayments marking crypto
-orders paid.
+Only submit -> pending is automatic (confirmation + pay-instructions email). Crypto ->
+paid is driven by the NowPayments webhook; manual -> paid is ops clicking confirm. The
+shipping address is collected **after** paid, via the token-gated form.
 
-## Checkout fields
+## Checkout fields (minimal — [ADR 0010](../decisions/0010-frictionless-dr-checkout.md))
 
-Name, email, phone (real payment-coordination channel), shipping address
-(state/province optional), quantity (shown in order summary), optional note
-(preferred payment method / best contact time). **Never collect card/payment
+**Checkout collects only: first name, email, country + the crypto/manual toggle.** The
+**cart** supplies the line items. **No address/city/postal/state/phone at checkout** —
+those are deferred to the post-payment `/shipping/<token>` form (Full name, Address, City,
+Postal code, Mobile) to minimise paid-traffic friction. **Never collect card/payment
 details. Never add a card field "for later."**
 
 ## Payment method selection
@@ -35,9 +36,11 @@ details. Never add a card field "for later."**
 
 ## Emails (Resend)
 
-1. Order received (customer, automatic on submit).
+1. Order received + payment instructions (customer, automatic on submit — crypto: invoice
+   link; manual: real payment details ported from the lander's `buyer-confirmation.ts`).
 2. New order (ops, automatic on submit).
-3. Payment confirmed (customer, sent by ops when marking paid).
+3. Payment confirmed + **provide shipping details** (customer, on paid — carries the
+   `/shipping/<token>` link; [ADR 0010](../decisions/0010-frictionless-dr-checkout.md)).
 4. Shipped (customer, manual/semi-automatic).
 5. Abandoned-checkout nurture ×2 (customer, T+2h / T+24h, **Upstash QStash** delayed
    callback; suppressed once paid). The only async piece — see

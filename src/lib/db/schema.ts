@@ -30,14 +30,18 @@ export const orders = pgTable("orders", {
   // customer
   name:                     text("name").notNull(),
   email:                    text("email").notNull(),
-  phone:                    text("phone").notNull(),
+  phone:                    text("phone"),                     // ADR 0010 — collected post-payment
 
-  // shipping
-  address:                  text("address").notNull(),
-  city:                     text("city").notNull(),
-  postalCode:               text("postal_code").notNull(),
+  // shipping — address fields collected post-payment now, not at checkout (ADR 0010)
+  address:                  text("address"),                   // ADR 0010 — nullable, collected post-payment
+  city:                     text("city"),                      // ADR 0010 — nullable, collected post-payment
+  postalCode:               text("postal_code"),               // ADR 0010 — nullable, collected post-payment
   stateRegion:              text("state_region"),
   country:                  text("country").notNull(),
+
+  // ADR 0010 — post-payment shipping
+  shippingToken:            text("shipping_token").notNull().unique(), // unguessable per-order nanoid; the /shipping/<token> link uses this, never the guessable order_number
+  shippingDetailsAt:        timestamp("shipping_details_at"),   // stamped when the post-payment shipping form is submitted
 
   // payment
   paymentMethod:            paymentMethodEnum("payment_method").notNull(),

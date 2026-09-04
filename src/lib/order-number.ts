@@ -1,4 +1,4 @@
-import { customAlphabet } from "nanoid";
+import { customAlphabet, nanoid } from "nanoid";
 
 // No confusable characters (no I, O, 0, 1)
 const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -6,6 +6,12 @@ const generate = customAlphabet(alphabet, 8);
 
 export function generateOrderNumber(): string {
   return `ISR-${generate()}`;
+}
+
+// Unguessable, URL-safe per-order token for the post-payment /shipping/<token> link
+// (ADR 0010). Distinct from the guessable order_number — a plain 21-char nanoid.
+export function generateShippingToken(): string {
+  return nanoid();
 }
 
 export function deriveTrafficType(

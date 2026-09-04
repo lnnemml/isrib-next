@@ -10,8 +10,11 @@ import { db } from "@/lib/db";
 import { orders, orderItems, type NewOrderItem } from "@/lib/db/schema";
 import { getProduct } from "@/lib/copy/products";
 import { computeTieredPrice } from "@/lib/copy/pricing";
-import { generateOrderNumber, deriveTrafficType } from "@/lib/order-number";
+import { generateOrderNumber, generateShippingToken, deriveTrafficType } from "@/lib/order-number";
 import { trackServerEvent } from "@/lib/analytics/server";
+import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
+import { getCryptoRates } from "@/lib/email/rates";
+import { orderReceivedManual, opsAlert, type EmailItem } from "@/lib/email/templates";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { headers } from "next/headers";
@@ -48,11 +51,6 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     const raw = {
       name:           (formData.get("name") as string | null)?.trim() ?? "",
       email:          (formData.get("email") as string | null)?.trim() ?? "",
-      phone:          (formData.get("phone") as string | null)?.trim() ?? "",
-      address:        (formData.get("address") as string | null)?.trim() ?? "",
-      city:           (formData.get("city") as string | null)?.trim() ?? "",
-      postalCode:     (formData.get("postalCode") as string | null)?.trim() ?? "",
-      stateRegion:    (formData.get("stateRegion") as string | null)?.trim() || null,
       country:        (formData.get("country") as string | null)?.trim() ?? "",
       paymentMethod:  formData.get("paymentMethod") as string | null,
       note:           (formData.get("note") as string | null)?.trim() || null,
@@ -81,16 +79,9 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       return { error: "Missing request key. Please refresh and try again." };
     }
 
-    // 3. Required customer/shipping fields + a valid payment method.
-    if (
-      !raw.name ||
-      !raw.email ||
-      !raw.phone ||
-      !raw.address ||
-      !raw.city ||
-      !raw.postalCode ||
-      !raw.country
-    ) {
+    // 3. Required customer fields + a valid payment method. Shipping address is NOT
+    // collected here — it's captured post-payment via /shipping/<token> (ADR 0010).
+    if (!raw.name || !raw.email || !raw.country) {
       return { error: "Please fill in all required fields." };
     }
     if (raw.paymentMethod !== "crypto" && raw.paymentMethod !== "manual") {
@@ -184,8 +175,10 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
         ? subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100)
         : subtotalCents;
 
-    // 8. Identifiers + traffic classification.
+    // 8. Identifiers + traffic classification. The shipping token is the unguessable
+    // per-order key for the post-payment /shipping/<token> link (ADR 0010).
     const orderNumber = generateOrderNumber();
+    const shippingToken = generateShippingToken();
     const trafficType = deriveTrafficType(raw.utmSource, raw.utmMedium);
 
     // 9. Atomic insert — order + all its items in one transaction (the whole point of
@@ -204,11 +197,8 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           userId: null,
           name: raw.name,
           email: raw.email,
-          phone: raw.phone,
-          address: raw.address,
-          city: raw.city,
-          postalCode: raw.postalCode,
-          stateRegion: raw.stateRegion,
+          // phone/address/city/postalCode/stateRegion omitted — nullable, collected
+          // post-payment via /shipping/<token> (ADR 0010).
           country: raw.country,
           paymentMethod,
           cryptoDiscountPct,
@@ -216,6 +206,7 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           totalPrice: totalCents,
           note: raw.note,
           orderNumber,
+          shippingToken,
           idempotencyKey: raw.idempotencyKey,
           utmSource: raw.utmSource,
           utmMedium: raw.utmMedium,
@@ -265,7 +256,70 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
     });
 
-    // TODO(step 3): sendOrderEmails(order, items) then stamp orders.confirmationEmailSentAt.
+    // 11. Transactional emails (Step 3). ALL email work is wrapped so a Resend/CoinGecko
+    // failure NEVER breaks the order or the redirect — we log and continue. Money is
+    // converted to dollars for the templates; `items` is rebuilt from the RECOMPUTED
+    // order items (never client prices). Manual path also stamps confirmationEmailSentAt.
+    const totalUsd = totalCents / 100;
+    const subtotalUsd = subtotalCents / 100;
+    const emailItems: EmailItem[] = items.map((it) => ({
+      slug: it.productSlug,
+      sizeLabel: it.sizeLabel,
+      format: it.format,
+      quantity: it.quantity,
+      linePrice: it.linePrice,
+    }));
+
+    try {
+      const sends: Promise<unknown>[] = [];
+
+      if (paymentMethod === "manual") {
+        // getCryptoRates never throws (empty strings on any failure → template fallback).
+        const { btcEquivalent, ltcEquivalent } = await getCryptoRates(totalUsd);
+        const manual = orderReceivedManual({
+          firstName: raw.name,
+          orderNumber,
+          items: emailItems,
+          subtotalUsd,
+          totalUsd,
+          btcEquivalent,
+          ltcEquivalent,
+        });
+        sends.push(
+          sendToCustomer(raw.email, manual.subject, manual.html).then(() =>
+            // Stamp only after the customer confirmation actually dispatched.
+            db.update(orders).set({ confirmationEmailSentAt: new Date() }).where(eq(orders.id, orderId)),
+          ),
+        );
+      }
+      // TODO(step 4): crypto customer email — after NowPayments invoice creation,
+      //   sendToCustomer(raw.email, ...orderReceivedCrypto({ ..., invoiceUrl })).
+
+      // Both paths: internal ops alert (no-op if ADMIN_EMAIL is unset).
+      const ops = opsAlert({
+        orderNumber,
+        firstName: raw.name,
+        email: raw.email,
+        country: raw.country,
+        items: emailItems,
+        totalUsd,
+        paymentMethod,
+        utmSource: raw.utmSource,
+        utmCampaign: raw.utmCampaign,
+        utmContent: raw.utmContent,
+      });
+      sends.push(sendToAdmin(ops.subject, ops.html));
+
+      const results = await Promise.allSettled(sends);
+      for (const r of results) {
+        if (r.status === "rejected") console.error("Order email failed (non-fatal):", r.reason);
+      }
+    } catch (emailErr) {
+      // Belt-and-braces: even a synchronous throw while building emails must not break
+      // the order or the redirect below.
+      console.error("Order email step failed (non-fatal):", emailErr);
+    }
+
     // TODO(step 4): if crypto → createInvoice(), db.update({ nowpaymentsInvoiceId,
     //   nowpaymentsPaymentUrl }), then redirect(invoice.invoice_url) instead of the line below.
 

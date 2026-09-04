@@ -96,11 +96,11 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
         <h2 className="mb-2 text-h4 font-semibold text-text">{"What happens next"}</h2>
         {order.paymentMethod === "crypto" ? (
           <p className="text-body text-text-muted">
-            {"Payment instructions for your crypto order will follow shortly. We'll issue a payment address so you can complete your order."}
+            {"Complete your payment using the link in the email we just sent. Once payment is confirmed, we'll email you to collect shipping details."}
           </p>
         ) : (
           <p className="text-body text-text-muted">
-            {"We'll email you within 24h to arrange payment. Bank/wire is arranged individually over Email, Telegram or Signal."}
+            {"We've emailed you payment instructions. Once we confirm your payment, we'll email you to collect your shipping details."}
           </p>
         )}
       </div>
