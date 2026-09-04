@@ -468,6 +468,72 @@ export function paymentConfirmed({
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// 6. shipped — order dispatched, tracking number + carrier (admin saveTracking action)
+// ════════════════════════════════════════════════════════════════════════════
+// LIGHT theme, reuses layout() + itemsTable(). Fired by the admin panel's saveTracking
+// action (ADR 0011 + admin-panel.md §6). COMPLIANCE: shipping-logistics copy only; no
+// card fields / Pay-Now / Stripe; no efficacy / guarantee / money-back language.
+export function shipped({
+  firstName,
+  orderNumber,
+  items,
+  trackingNumber,
+  carrier,
+}: {
+  firstName: string;
+  orderNumber: string;
+  items: EmailItem[];
+  trackingNumber: string;
+  carrier: string;
+}): { subject: string; html: string } {
+  const subject = `Your order ${orderNumber} has shipped`;
+
+  // Prominent tracking block — carrier + tracking number in monospace so the number
+  // is unambiguous. Table-wrapped for Outlook.
+  const trackingBlock = `
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${C.panelBg};border:1px solid ${C.hairline};border-radius:8px;margin:0 0 24px;">
+      <tr><td style="padding:18px 20px;">
+        <p style="color:${C.faint};font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 12px;">
+          Tracking
+        </p>
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="font-size:14px;">
+          <tr>
+            <td style="padding:7px 0;border-bottom:1px solid ${C.hairline};color:${C.muted};width:130px;vertical-align:top;">Carrier</td>
+            <td style="padding:7px 0;border-bottom:1px solid ${C.hairline};color:${C.text};font-weight:600;vertical-align:top;">${carrier}</td>
+          </tr>
+          <tr>
+            <td style="padding:7px 0;color:${C.muted};width:130px;vertical-align:top;">Tracking number</td>
+            <td style="padding:7px 0;vertical-align:top;">
+              <span style="color:${C.brand};font-family:'SFMono-Regular',Consolas,monospace;font-size:15px;font-weight:700;word-break:break-all;">${trackingNumber}</span>
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>`;
+
+  // Items table: recompute the order total from the line items (per-unit × qty) so the
+  // subtotal/total rows are accurate. subtotal == total (no discount row) — this email is
+  // post-payment and simply shows the order contents for reference.
+  const orderTotalUsd =
+    items.reduce((sum, it) => sum + it.linePrice * it.quantity, 0) / 100;
+  const inner = `
+    ${heading("✓ Shipped", C.success, `${firstName}, your order is on its way.`, orderNumber)}
+    <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 22px;">
+      Your order has been dispatched. Use the tracking details below to follow its progress.
+    </p>
+    ${itemsTable(items, orderTotalUsd, orderTotalUsd)}
+    ${trackingBlock}
+    <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
+      Delivery typically 5–12 business days depending on your location.
+    </p>`;
+
+  return {
+    subject,
+    html: layout(inner, `Your order ${orderNumber} has shipped.`),
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // 5. abandonedCheckout — delayed nurture for an unpaid order (QStash T+2h / T+24h)
 // ════════════════════════════════════════════════════════════════════════════
 // Two variants keyed by emailNumber. Ported from the lander's abandoned-checkout.ts

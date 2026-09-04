@@ -72,6 +72,11 @@ export const orders = pgTable("orders", {
   abandonedEmail1SentAt:    timestamp("abandoned_email1_sent_at"),
   abandonedEmail2SentAt:    timestamp("abandoned_email2_sent_at"),
 
+  // ADR 0011 — fulfillment / admin panel
+  trackingNumber:           text("tracking_number"),
+  trackingCarrier:          text("tracking_carrier"),
+  shippedAt:                timestamp("shipped_at"),
+
   // account link — nullable, guest checkout supported.
   // Track B: FK → users.id (users table lands in Track B; no foreign key yet)
   userId:                   text("user_id"),

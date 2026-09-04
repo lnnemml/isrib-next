@@ -49,6 +49,8 @@ rather than scanning the whole directory.
 - [`architecture/checkout-architecture.md`](./architecture/checkout-architecture.md) —
   **the G2 checkout backend mechanism spec** (Neon-only core + QStash for nurture;
   order flow, HMAC webhook, idempotency, transactions). Read before Day-2.
+- [`architecture/admin-panel.md`](./architecture/admin-panel.md) — **the BI admin panel spec
+  (task 1.7)** — minimal cookie auth (NORA-lesson applied), BI queries, order actions, schema deltas.
 
 ## Design knowledge
 
@@ -70,6 +72,7 @@ rather than scanning the whole directory.
 - [`decisions/0008-full-migration-and-cart.md`](./decisions/0008-full-migration-and-cart.md)
 - [`decisions/0009-checkout-backend-neon-qstash.md`](./decisions/0009-checkout-backend-neon-qstash.md)
 - [`decisions/0010-frictionless-dr-checkout.md`](./decisions/0010-frictionless-dr-checkout.md)
+- [`decisions/0011-admin-panel-and-auth.md`](./decisions/0011-admin-panel-and-auth.md)
 
 ## Planning
 

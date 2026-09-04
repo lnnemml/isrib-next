@@ -1174,3 +1174,95 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   transition); real Resend domain (`send.isrib.shop`) for live delivery; QStash round-trip on preview;
   the small cleanup follow-ups; then a real end-to-end multi-item test order on a preview deploy → G2
   green → cutover (ADR 0003/0004: no DNS move until green).
+
+## [2026-09-04] decision | ADR 0011 — admin BI panel (task 1.7) + minimal cookie auth (NORA-lesson applied)
+
+- Anton's ask: a full business-intelligence admin panel (status change, UTM attribution render,
+  tracking-number input + auto shipped-email, group-by-customer, 30-day revenue, unpaid:paid ratio,
+  + more) — explicitly noting "we stumbled in NORA on the admin AUTH; research the cause so we don't
+  repeat it." **Roles run:** LEAD → general-purpose investigation of the NORA auth post-mortem +
+  LEAD schema-readiness recon → AskUserQuestion (auth approach + profit definition) → LEAD wiki.
+- **NORA auth post-mortem (the lesson):** NORA used next-auth v5 beta on Next 16 for a single admin
+  and hit a cluster: (1) **the `authorized` callback is DEAD CODE when middleware is `auth(async req=>…)`**
+  — only runs on `export default auth` → `/admin` was silently UNPROTECTED (the headline bug);
+  (2) `proxy.ts` vs `middleware.ts` (Next 16) + matcher bugs → infinite redirect loop on /admin/login;
+  (3) env-var trailing newline silently broke `bcrypt.compare`; (4) client `signIn` froze without a
+  SessionProvider. Rules filed: checks in the middleware handler body; file = `middleware.ts`;
+  `.trim()` every secret; login via Server Action.
+- **Decisions (Anton, AskUserQuestion):** (1) **auth = minimal signed-cookie gate, NOT next-auth** —
+  `ADMIN_PASSWORD` + `jose` JWT httpOnly cookie, `middleware.ts` gate, ~30 lines, avoids the whole
+  beta-tax class; (2) **"profit" = revenue from paid** (Σ total_price of paid/fulfilled, last 30d) —
+  gross revenue/sales, no COGS (no cost data collected).
+- **Ratified in [ADR 0011](decisions/0011-admin-panel-and-auth.md) + [`admin-panel.md`](architecture/admin-panel.md):**
+  minimal cookie auth (Edge-safe jose in middleware); orders table w/ status change + attribution +
+  tracking-input→shipped-email + group-by-customer; BI (30d revenue, unpaid:paid, AOV, top products,
+  per-UTM, needs-action queue, country); **schema deltas** (`tracking_number`/`tracking_carrier`/
+  `shipped_at`, nullable); new `shipped` email template. **This panel CLOSES the manual-paid gap** —
+  its "mark paid" action is the manual-order `paid` transition (crypto = webhook) + fires the
+  payment-confirmed/shipping email.
+- Env needed for runtime: `ADMIN_PASSWORD`, `ADMIN_AUTH_SECRET` in `.env.local`. **Next: implement** —
+  (A) auth foundation (jose cookie + middleware + login) FIRST + runtime-test the NORA failure mode;
+  (B) schema deltas + db:push; (C) queries + dashboard UI + actions + shipped email.
+
+## [2026-09-04] gate | 1.7-A — admin auth foundation built + runtime-verified (NORA failure mode avoided)
+
+- Built the minimal signed-cookie admin gate per ADR 0011. **Roles run:** LEAD → implementer (auth lib +
+  middleware + login) → LEAD read Next 16 docs (caught the Middleware→Proxy rename) → implementer (rename
+  → src/proxy.ts; caught that a ROOT interceptor is silently unregistered) → LEAD env + browser+curl
+  runtime gate → verifier (fresh context, runtime forged-token probing, APPROVE).
+- **Built:** `src/lib/admin/auth.ts` (jose HS256 session — `createSessionToken`/`verifySessionToken`
+  role-checked + 12h expiry; `verifyPassword` via `timingSafeEqual` w/ length+empty guards; every env
+  secret `.trim()`-ed); **`src/proxy.ts`** (the gate — handler-body check, matcher `["/admin","/admin/:path*"]`,
+  `/admin/login` early-return, jose-only re-inlined); `(admin)/admin/login/{page,LoginForm,actions}`
+  (Server Action login → httpOnly/secure/lax/12h cookie `isrib_admin_session`); `(admin)/admin/page`
+  (placeholder + logout). Installed `jose`. `.env.example` += `ADMIN_PASSWORD`/`ADMIN_AUTH_SECRET`.
+- **⚠️ TWO Next-16 gotchas caught (filed as corrections to ADR 0011 + admin-panel.md):** (1) Next 16
+  renamed **Middleware → Proxy** — the file is `proxy.ts` exporting `proxy` (my ADR originally said
+  `middleware.ts`, based on NORA's 16.2.9 lesson which INVERTED by 16.3.3); (2) because `app/` is under
+  `src/`, the interceptor MUST be **`src/proxy.ts`** — a repo-root file is **silently ignored** (empty
+  middleware-manifest, gate never runs = unprotected /admin, the exact NORA class). Caught by checking
+  the build registered `ƒ Proxy (Middleware)`. **RULE: verify the build shows the Proxy is registered.**
+- **RUNTIME GATE (curl + real Chrome):** unauth `/admin` → **307 → /admin/login**; `/admin/login` → **200**
+  (no loop); correct password (local test creds) → cookie → `/admin` "authenticated ✓"; **logout** → cookie
+  cleared → `/admin` blocked again. Verifier independently ran forged/expired/wrong-role/empty-secret
+  probes — all failure-closed; `/adminfoo` doesn't over-match; cookie flags correct; no secret logged.
+- Local test creds added to `.env.local` (gitignored) for the runtime test; **Anton sets real
+  `ADMIN_PASSWORD` + `ADMIN_AUTH_SECRET` for prod.** `tsc` clean; `next build` all routes + Proxy registered.
+- **Next: 1.7-B** (schema deltas: `tracking_number`/`tracking_carrier`/`shipped_at` + db:push) → **1.7-C**
+  (BI queries + dashboard UI + admin actions markPaid/setStatus/saveTracking + shipped email + chrome
+  isolation). Verifier follow-up carried to C: each admin mutation action must re-verify the session
+  server-side (not trust the proxy alone).
+
+## [2026-09-04] gate | 1.7-B/C — admin BI dashboard built + runtime-verified → task 1.7 COMPLETE
+
+- Built the admin backend + BI dashboard per ADR 0011 / admin-panel.md. **Roles run:** LEAD →
+  implementer 1.7-B (schema: tracking cols) → LEAD db:push → implementer 1.7-C1 (queries + actions +
+  shipped email) → implementer 1.7-C2 (dashboard UI + chrome isolation) → verifier (fresh context,
+  C1+C2, APPROVE) → LEAD seeded-data runtime gate (login → dashboard → markPaid) + DB verify + cleanup.
+- **1.7-B:** added `tracking_number`/`tracking_carrier`/`shipped_at` (nullable) to `orders`; `db:push` applied.
+- **1.7-C1 (`src/lib/admin/queries.ts`, `(admin)/admin/actions.ts`, +shipped email, +`isAdminAuthed`):**
+  `biSummary()` (30d revenue = Σ paid/fulfilled total, orders, paid/unpaid ratio, AOV, byTrafficType,
+  byUtmSource, topProducts, needsAction {paidNoAddress, awaitingShipment}, byCountry — all cents),
+  `listOrders()` (cap 200, newest-first, + items), `groupByCustomer()`. Actions `setStatus`/`markPaid`/
+  `saveTracking` — each **session-guarded** (`isAdminAuthed()` first), enum-validated, idempotent;
+  `markPaid` = the **manual-order paid transition** (fires paymentConfirmed w/ the /shipping/<token>
+  link — closes the manual-paid gap); `saveTracking` sets fulfilled + fires the new `shipped` email.
+- **1.7-C2 (`(admin)/admin/page.tsx` + StatusSelect/MarkPaidButton/TrackingForm/OrderRow + `ChromeGate`):**
+  full dashboard (BI cards, attribution, top products, geography, orders table w/ inline controls,
+  customers). Chrome isolation: `ChromeGate` (client, usePathname) hides marketing Header/Footer on
+  `/admin*` only — non-admin routes stay static with chrome.
+- **RUNTIME GATE (real Chrome + seeded DB + DB verify):** seeded 6 varied orders → logged in (admin gate
+  + chrome-isolated login) → dashboard rendered with **correct math** (Revenue $1874 = paid/fulfilled sum;
+  AOV $468.50; Paid/Unpaid 4/2; Needs action 1·2; attribution/top-products/geography all reconcile; an
+  UNPAID google order correctly shows $0 revenue). Clicked **Mark paid** on an awaiting order → status →
+  **paid** (DB-confirmed), `revalidatePath` recomputed the whole dashboard live (direct revenue
+  $504→$634, France $0→$130), payment-confirmed email fired **non-fatally** (seed email is example.com →
+  Resend rejects, order state intact). Seed orders deleted; DB back to 0.
+- `tsc` clean; `next build` all routes (+ `ƒ Proxy`, /admin dynamic, non-admin static). Verifier's
+  defense-in-depth follow-up (actions re-verify session) — DONE in C1. Local test admin creds remain in
+  `.env.local` (gitignored); **Anton sets prod `ADMIN_PASSWORD`/`ADMIN_AUTH_SECRET`**.
+- **🎯 TASK 1.7 (admin BI panel) COMPLETE** — auth (NORA-lesson-safe) + status change + UTM attribution +
+  tracking→shipped-email + group-by-customer + 30d revenue + unpaid:paid + AOV/top-products/geography/
+  needs-action. **Also closes the last G2 functional gap** (manual-order paid transition). Remaining
+  before cutover: real Resend domain (`send.isrib.shop`), QStash round-trip on preview, a real multi-item
+  e2e test order on a preview deploy → G2 green → cutover (ADR 0003/0004).
