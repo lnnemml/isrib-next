@@ -101,8 +101,8 @@ change.
 ## 6. Env surface for G2
 
 ```
-DATABASE_URL                     # Neon pooled (runtime)
-DATABASE_URL_NON_POOLING         # Neon direct (migrations)
+POSTGRES_URL                     # Neon pooled (runtime; mirrors NORA)
+POSTGRES_URL_NON_POOLING         # Neon direct (migrations / drizzle-kit push)
 RESEND_API_KEY  FROM_EMAIL  ADMIN_EMAIL
 NOWPAYMENTS_API_KEY  NOWPAYMENTS_IPN_SECRET
 QSTASH_TOKEN  QSTASH_CURRENT_SIGNING_KEY  QSTASH_NEXT_SIGNING_KEY
