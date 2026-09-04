@@ -46,6 +46,9 @@ rather than scanning the whole directory.
   IDs to preserve, 2-event conversion model, `trackEvent` layer
 - [`architecture/data-model.md`](./architecture/data-model.md) — `orders` schema
   intent *(stub — grows with Drizzle schema)*
+- [`architecture/checkout-architecture.md`](./architecture/checkout-architecture.md) —
+  **the G2 checkout backend mechanism spec** (Neon-only core + QStash for nurture;
+  order flow, HMAC webhook, idempotency, transactions). Read before Day-2.
 
 ## Design knowledge
 
@@ -65,6 +68,7 @@ rather than scanning the whole directory.
 - [`decisions/0006-delegation-discipline.md`](./decisions/0006-delegation-discipline.md)
 - [`decisions/0007-pricing-model-shape.md`](./decisions/0007-pricing-model-shape.md)
 - [`decisions/0008-full-migration-and-cart.md`](./decisions/0008-full-migration-and-cart.md)
+- [`decisions/0009-checkout-backend-neon-qstash.md`](./decisions/0009-checkout-backend-neon-qstash.md)
 
 ## Planning
 

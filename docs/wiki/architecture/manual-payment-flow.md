@@ -39,6 +39,10 @@ details. Never add a card field "for later."**
 2. New order (ops, automatic on submit).
 3. Payment confirmed (customer, sent by ops when marking paid).
 4. Shipped (customer, manual/semi-automatic).
+5. Abandoned-checkout nurture ×2 (customer, T+2h / T+24h, **Upstash QStash** delayed
+   callback; suppressed once paid). The only async piece — see
+   [`checkout-architecture.md`](./checkout-architecture.md) §5 and
+   [ADR 0009](../decisions/0009-checkout-backend-neon-qstash.md).
 
 ## Cutover note
 
@@ -48,4 +52,5 @@ dashboard — otherwise crypto confirmations fire into nowhere. See
 [`migration-plan.md`](./migration-plan.md).
 
 ## Related
-- [`data-model.md`](./data-model.md) · [`../decisions/0003-order-storage-neon.md`](../decisions/0003-order-storage-neon.md)
+- [`checkout-architecture.md`](./checkout-architecture.md) — the full G2 backend mechanism
+- [`data-model.md`](./data-model.md) · [`../decisions/0003-order-storage-neon.md`](../decisions/0003-order-storage-neon.md) · [`../decisions/0009-checkout-backend-neon-qstash.md`](../decisions/0009-checkout-backend-neon-qstash.md)

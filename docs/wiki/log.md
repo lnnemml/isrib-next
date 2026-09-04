@@ -897,3 +897,39 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   links/assets (this audit). Next: **Day-2 checkout (G2, highest risk)** — Neon/Drizzle `orders`+
   `order_items`, `submitOrder` from cart, payment selector, Resend emails, NowPayments invoice +
   webhook. **No DNS/domain move until a real multi-item test order is green** (ADR 0003/0004).
+
+## [2026-09-04] decision | ADR 0009 — checkout backend architecture audited + ratified (pre-G2)
+
+- Audit-and-plan iteration before Day-2 (no code). Deep read-only audit of the two reference
+  backends to decide whether the whole order mechanism fits in **Neon alone** (drop Upstash +
+  QStash). **Roles run:** LEAD → 2× general-purpose audit agents (NORA + isrib-a15-lander,
+  parallel) → LEAD verify (Vercel Hobby cron limits + Resend scheduling via WebFetch) →
+  AskUserQuestion (nurture mechanism) → LEAD wiki.
+- **Audit findings:** NORA (platform ref) runs its ENTIRE order backend on Neon alone — no Redis,
+  no queue, no cron; neon-http driver (no transactions); single-product `orders`; async = an
+  idempotent HMAC NowPayments webhook leaning on the provider's own retry + inline
+  `Promise.allSettled`. isrib-a15-lander = same Neon+NowPayments+Resend spine, **uses QStash for
+  exactly one job** (2 delayed abandoned-checkout emails T+2h/T+24h); **no Upstash Redis in either
+  project**.
+- **Verified externals (2026-09-04):** Vercel **Hobby cron = once/day, ±59 min** → inadequate for a
+  T+2h nurture email, so "Neon + Vercel Cron" is NOT a viable QStash replacement on Anton's free
+  plan. **Resend supports native scheduling** (`scheduledAt`, ≤30 days, cancel via
+  `POST /emails/{id}/cancel`) → a zero-dependency alternative.
+- **Verdict:** the core commerce backend fits in **Neon alone** (+ Resend/NowPayments/Meta CAPI,
+  all already in stack). **Upstash Redis dropped entirely** (never used). QStash is technically
+  replaceable by Resend scheduling, but **Anton chose to KEEP QStash** for the stronger send-time
+  guard (consumer re-reads Neon `payment_status` + live crypto rates) — accepted as a small,
+  isolated dependency for nurture only.
+- **Ratified in [ADR 0009](decisions/0009-checkout-backend-neon-qstash.md):** (1) DB driver =
+  `drizzle-orm/neon-serverless` (Pool/WebSocket) for **atomic** multi-line `orders`+`order_items`
+  inserts (diverges from NORA's neon-http, which has no transactions); (2) two real tables
+  (closes the data-model "or JSON column" hedge); (3) NowPayments HMAC-SHA512 IPN webhook,
+  idempotent, always-200; (4) Resend inline emails; (5) QStash = the ONLY async piece (2 nurture
+  emails, signature-verified consumer, Neon-side guards); (6) no Redis, no Vercel Cron. Plus **4
+  hardening improvements** (all approved): idempotency key on submit, timing-safe webhook compare,
+  actually stamp email timestamps, no app-rate-limit (WAF sufficient — documented non-need).
+- **Wiki filed:** ADR 0009 (new); `architecture/checkout-architecture.md` (new — the full G2
+  mechanism spec: schema deltas, submit flow, webhook, nurture, env surface, G2-green definition);
+  reconciled `data-model.md` (two tables + driver + new columns), `manual-payment-flow.md` (nurture
+  emails), ADR 0003 (forward-pointer: revisited/extended), `index.md`. **Direction fixed — ready to
+  implement G2** (schema first, then submitOrder + webhook + emails + QStash, runtime-verified).

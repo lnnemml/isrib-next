@@ -24,3 +24,10 @@ actions. The legacy Redis checkout is fragile (a `ReferenceError` near line ~280
 
 Order volume ever needs a normalized `products`/`order_items` model (currently
 denormalized single `orders` table is enough).
+
+> **Revisited & extended:** the `order_items` model was adopted in
+> [ADR 0008](./0008-full-migration-and-cart.md) (real multi-item cart), and the full
+> checkout backend architecture (neon-serverless driver for transactions, QStash for
+> nurture only, no Redis) is ratified in
+> [ADR 0009](./0009-checkout-backend-neon-qstash.md). This ADR's core stands: **Neon is
+> the order source of truth; Redis is not used** (in fact not used at all — not even as cache).

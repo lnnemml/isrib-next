@@ -6,9 +6,14 @@
 
 ## `orders` + `order_items` (multi-line — ADR 0008)
 
-The live site has a real multi-item cart, so an order carries **line items**. Two
-tables (or an `order_items` JSON column if simpler at this scale — orchestrator's
-technical call at schema time):
+The live site has a real multi-item cart, so an order carries **line items**. **Two
+real tables** (the earlier "or a JSON column" hedge is closed — decided in
+[ADR 0009](../decisions/0009-checkout-backend-neon-qstash.md)).
+
+**DB driver ([ADR 0009](../decisions/0009-checkout-backend-neon-qstash.md)):** use
+`drizzle-orm/neon-serverless` (WebSocket `Pool`), **not** `neon-http` — the order+items
+insert must be **atomic** (`db.transaction()`), which only the serverless driver supports.
+(NORA uses neon-http and has no transactions; we diverge for order integrity.)
 
 **`orders`** — customer + payment + totals, one row per order:
 `id` (nanoid), `created_at`, `status` (enum), `name`, `email`, `phone`, `address`,
@@ -16,8 +21,10 @@ technical call at schema time):
 (crypto|manual), `crypto_discount_pct` (nullable), `subtotal_price` (cents),
 `total_price` (cents), `promo_code` (nullable), `note` (nullable),
 `nowpayments_invoice_id` (nullable), `nowpayments_payment_url` (nullable),
-`order_number` (unique), UTM fields, `confirmation_email_sent_at`,
-`user_id` (nullable — guest checkout stays supported).
+`order_number` (unique), `idempotency_key` (unique — dedupes double-submit, ADR 0009),
+UTM fields, `confirmation_email_sent_at` (**actually written**, ADR 0009),
+`abandoned_email1_sent_at` / `abandoned_email2_sent_at` (nullable — QStash nurture state
+machine, ADR 0009), `user_id` (nullable — guest checkout stays supported).
 
 **`order_items`** — one row per cart line: `id`, `order_id` (FK), `product_slug`,
 `format` (powder|capsules), `quantity`, `size_label` (e.g. "2g", "50 × 20mg"),
@@ -95,4 +102,6 @@ to the cent, runtime + verifier); only the `kind` and grouping changed.
 `tracking_carrier`, `shipped_at`).
 
 ## Related
-- [`manual-payment-flow.md`](./manual-payment-flow.md) · [`../decisions/0003-order-storage-neon.md`](../decisions/0003-order-storage-neon.md)
+- [`checkout-architecture.md`](./checkout-architecture.md) — the G2 mechanism spec (flow,
+  webhook, nurture) built on this schema
+- [`manual-payment-flow.md`](./manual-payment-flow.md) · [`../decisions/0003-order-storage-neon.md`](../decisions/0003-order-storage-neon.md) · [`../decisions/0009-checkout-backend-neon-qstash.md`](../decisions/0009-checkout-backend-neon-qstash.md)
