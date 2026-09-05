@@ -14,6 +14,7 @@ import { orders, orderItems, orderStatusEnum } from "@/lib/db/schema";
 import { isAdminAuthed } from "@/lib/admin/auth";
 import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { paymentConfirmed, shipped, type EmailItem } from "@/lib/email/templates";
+import { cancelAbandonedNurture } from "@/lib/qstash";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -51,6 +52,12 @@ export async function markPaid(orderId: string): Promise<ActionResult> {
   }
 
   await db.update(orders).set({ status: "paid" }).where(eq(orders.id, orderId));
+
+  // Actively cancel the pending abandoned-checkout nurture reminders — best-effort; the
+  // helper never throws, so this can't roll back the paid state. Consumer's status guard
+  // remains the backstop. (order came from select() with no projection, so the qstash ids
+  // are present.)
+  await cancelAbandonedNurture([order.qstashMessageId1, order.qstashMessageId2]);
 
   // Email is best-effort — a failure must not roll back the paid state.
   try {

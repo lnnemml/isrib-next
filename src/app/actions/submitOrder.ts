@@ -338,8 +338,9 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       // Manual payment is confirmed by hand (admin markPaid), which is slower than the instant
       // crypto IPN webhook — so nudge manual buyers later (T+12h) to avoid nagging mid-arrangement.
       const abandonedDelay1 = paymentMethod === "manual" ? 43200 : 7200; // manual T+12h · crypto T+2h
-      await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 1 }, delay: abandonedDelay1 });
-      await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 2 }, delay: 86400 }); // T+24h both
+      const m1 = await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 1 }, delay: abandonedDelay1 });
+      const m2 = await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 2 }, delay: 86400 }); // T+24h both
+      await db.update(orders).set({ qstashMessageId1: m1.messageId, qstashMessageId2: m2.messageId }).where(eq(orders.id, orderId));
     } catch (e) {
       console.error("QStash enqueue failed (non-fatal):", e);
     }

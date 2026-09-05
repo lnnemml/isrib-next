@@ -71,6 +71,9 @@ export const orders = pgTable("orders", {
   // nurture state machine — stamped by the QStash consumer on successful send
   abandonedEmail1SentAt:    timestamp("abandoned_email1_sent_at"),
   abandonedEmail2SentAt:    timestamp("abandoned_email2_sent_at"),
+  // QStash message ids for the two nurture reminders — used to actively cancel them on payment
+  qstashMessageId1:         text("qstash_message_id_1"),
+  qstashMessageId2:         text("qstash_message_id_2"),
 
   // ADR 0011 — fulfillment / admin panel
   trackingNumber:           text("tracking_number"),

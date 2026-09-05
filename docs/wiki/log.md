@@ -1375,3 +1375,35 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   files) → **LEAD browser runtime test (PASS): unpaid order + spoofed `?paid=1` → "Payment received"
   headline but NO shipping link/token in DOM (`hasShippingLink:false`); genuinely-paid order → link
   present (count 1).** `tsc` clean. Uncommitted (Anton commits/deploys).
+
+## [2026-09-05] gate | Post-payment: cart-clear hydration-race fix + active QStash nurture cancel
+
+- Two issues Anton hit after the crypto flow went live on prod:
+- **Cart not emptied after a crypto order (FIXED + verified).** Root cause: a hydration race, NOT a
+  storage bug. `ClearCartOnMount` (deep child of the success page) fires its effect before
+  `CartProvider`'s hydrate effect; it cleared React state while `hydrated` was false (persist skipped),
+  then the provider's hydrate reloaded the old cart from storage and clobbered the clear. Only bites
+  the CRYPTO path because returning from the external NowPayments page is a FULL reload that re-mounts
+  CartProvider (manual/SPA nav already cleared fine — confirmed at runtime). First attempt
+  (`saveCart([])` inside `clear()`) did NOT fix the full-reload case. Real fix: expose `hydrated` from
+  the cart API and gate `ClearCartOnMount` to clear only once `hydrated===true`, so no later hydrate
+  can undo it. Files: `lib/cart/CartProvider.tsx` (+`hydrated` on CartApi, added to useMemo deps),
+  `(shop)/checkout/ClearCartOnMount.tsx` (wait-for-hydrated). **LEAD runtime test (PASS):** SPA nav
+  (manual submit) AND full reload (crypto return, hard-reload) both → `storage:[]`, empty badge.
+- **Active QStash nurture cancellation on payment (CODE DONE — MIGRATION PENDING).** Anton wanted the
+  queued reminders actually cancelled, not just no-op'd by the consumer guard. The guard already makes
+  it HARMLESS (Resend logs show zero abandoned emails sent to any paid order), but active cancel keeps
+  the QStash console clean. Implemented: 2 nullable columns `qstash_message_id_1/2` on `orders`;
+  `submitOrder` captures each `publishJSON().messageId` and stores them; new `lib/qstash.ts`
+  `cancelAbandonedNurture()` (best-effort `messages.cancel`, never throws — `delete` is deprecated in
+  the SDK); the NowPayments webhook (crypto) and admin `markPaid` (manual) both cancel on payment.
+  Consumer `status==="paid"` guard retained as backstop. `tsc` clean.
+  **BLOCKER before this runs: `npm run db:push`** to add the 2 columns to Neon (additive/nullable,
+  non-destructive). The auto-mode classifier (correctly) blocked me from running the prod migration —
+  Anton runs it, then commits/deploys. Until the migration runs, the new column reads/writes would
+  fail at runtime, so migrate + deploy together.
+- **Roles run:** LEAD (diagnosis: read CartProvider/ClearCartOnMount + QStash SDK types + Resend logs;
+  fought a stale multi-instance dev server that masked the first cart test) → implementer ×3 (cart
+  saveCart attempt → cart hydration-gate → QStash cancel code) → LEAD runtime test (cart PASS both
+  paths). QStash cancel not runtime-tested (needs migration + a real payment — Anton verifies on prod).
+- **Test data:** manual test order `ISR-FYN2FG5T` created in Neon during cart verification.

@@ -90,6 +90,7 @@ export interface CartApi {
   lines: CartLineWithKey[];
   count: number;
   subtotalCents: number;
+  hydrated: boolean;
   addLine: (line: CartLine) => void;
   updateQuantity: (key: string, quantity: number) => void;
   removeLine: (key: string) => void;
@@ -120,12 +121,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       lines,
       count: state.reduce((n, l) => n + l.quantity, 0),
       subtotalCents: state.reduce((n, l) => n + l.linePriceCents * l.quantity, 0),
+      hydrated,
       addLine: (line) => dispatch({ type: "add", line: { ...line, quantity: line.quantity || 1 } }),
       updateQuantity: (key, quantity) => dispatch({ type: "update", key, quantity }),
       removeLine: (key) => dispatch({ type: "remove", key }),
-      clear: () => dispatch({ type: "clear" }),
+      clear: () => {
+        dispatch({ type: "clear" });
+        // Also clear storage synchronously: ClearCartOnMount (a child) fires before the
+        // provider's hydrate effect, so without this the subsequent hydrate would reload the
+        // old cart from storage and undo the clear (seen on the crypto success page, which is a
+        // full reload back from NowPayments).
+        saveCart([]);
+      },
     };
-  }, [state]);
+  }, [state, hydrated]);
 
   return <CartContext.Provider value={api}>{children}</CartContext.Provider>;
 }

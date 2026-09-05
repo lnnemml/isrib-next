@@ -17,6 +17,7 @@ import { verifyIpnSignature } from "@/lib/nowpayments";
 import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { paymentConfirmed } from "@/lib/email/templates";
 import { trackServerEvent } from "@/lib/analytics/server";
+import { cancelAbandonedNurture } from "@/lib/qstash";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: Request): Promise<Response> {
@@ -57,6 +58,8 @@ export async function POST(req: Request): Promise<Response> {
       name: orders.name,
       shippingToken: orders.shippingToken,
       totalPrice: orders.totalPrice,
+      qstashMessageId1: orders.qstashMessageId1,
+      qstashMessageId2: orders.qstashMessageId2,
     })
     .from(orders)
     .where(eq(orders.orderNumber, orderNumber))
@@ -95,6 +98,9 @@ export async function POST(req: Request): Promise<Response> {
       userAgent: req.headers.get("user-agent") ?? undefined,
       ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
     }),
+    // Actively cancel the pending abandoned-checkout nurture reminders — best-effort;
+    // the consumer's status==="paid" guard remains the backstop.
+    cancelAbandonedNurture([order.qstashMessageId1, order.qstashMessageId2]),
   ]);
   for (const r of results) {
     if (r.status === "rejected") console.error("NowPayments IPN side-effect failed (non-fatal):", r.reason);
