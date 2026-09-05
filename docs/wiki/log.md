@@ -1315,3 +1315,39 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   in Neon (email → `delivered@resend.dev` sink) during verification.
 - **Carry to cutover:** at domain switch, change `NEXT_PUBLIC_BASE_URL` → `https://isrib.shop`
   (rebuild — it's inlined) and repoint the NowPayments IPN URL to the isrib.shop host.
+
+## [2026-09-05] gate | Crypto post-payment UX — paid success page + drop redundant invoice email
+
+- Prod crypto payment now works end-to-end (env fixed: `NOWPAYMENTS_API_KEY`/`IPN_SECRET` on Vercel
+  Production — the earlier "redirect doesn't work" was `createInvoice` throwing on a missing key,
+  caught → fall-through to `/checkout/success`, NOT a redirect-code bug). Three follow-ups from
+  Anton's live test, resolved:
+  1. **Success page after crypto payment (FIX).** NowPayments `success_url` pointed at the generic
+     `/checkout/success` which ignored `order.status` → showed "await payment instructions" even
+     after a successful payment. Fix: crypto `success_url` now carries `&paid=1` (NowPayments only
+     redirects there AFTER payment — race-proof vs the webhook), and the success page shows a
+     distinct **"Payment received"** state (`isPaid = order.status === "paid" || paid === "1"`) with
+     a prominent **"Provide shipping details →"** button linking to `/shipping/<shippingToken>`.
+     Unpaid/manual keep the prior copy. Files: `submitOrder.ts`, `(shop)/checkout/success/page.tsx`.
+  2. **Duplicate invoice email (DECISION: remove for crypto).** Resend logs proved we send exactly
+     ONE invoice email per order — the perceived "duplicate" was the invoice email + the
+     payment-confirmed email ~100s apart. With the auto-redirect, the immediate crypto invoice email
+     is redundant (buyer is already on the NowPayments page; abandoned-checkout nurture re-sends the
+     link at T+2h for non-payers). Removed the `orderReceivedCrypto` send + `confirmationEmailSentAt`
+     stamp from the crypto branch (mirrors NORA, whose crypto branch never emailed); dropped the now-
+     unused import. Also reworded the unpaid-crypto success copy (no longer promises an email link →
+     points to /contact). The webhook's `paymentConfirmed` email is unchanged.
+  3. **QStash queue after payment (NO CHANGE — already safe).** The abandoned-checkout consumer
+     guards `if (order.status === "paid") return OK` (route.ts:66), so queued reminders no-op for a
+     paid buyer even though the messages remain. Anton chose the guard over active
+     `qstash.messages.delete()` (simpler, zero new code/schema).
+- **Roles run:** LEAD (read code + Resend email logs as evidence for the "duplicate") →
+  AskUserQuestion (2 forks: drop-invoice-email, guard-vs-active-delete) → implementer (2 files) →
+  implementer (copy follow-up) → **LEAD browser runtime test (PASS): paid success page renders the
+  "Payment received" state + working "Provide shipping details" button → `/shipping/<token>` for a
+  real paid order (ISR-2FW8QGFY).** `tsc` clean. Uncommitted (Anton commits/deploys).
+- **Minor known considerations (non-blocking):** (a) the `paid=1` flag is technically spoofable
+  (visiting `success?order=<num>&paid=1` reveals that order's shipping-form link) — low risk given
+  random order numbers + limited impact; revisit if abused. (b) crypto fall-through when
+  `createInvoice` fails now sends NO customer email (only ops alert) and shows the /contact success
+  copy — acceptable error path now that the key is set.

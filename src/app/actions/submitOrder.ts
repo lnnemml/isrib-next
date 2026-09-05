@@ -14,7 +14,7 @@ import { generateOrderNumber, generateShippingToken, deriveTrafficType } from "@
 import { trackServerEvent } from "@/lib/analytics/server";
 import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { getCryptoRates } from "@/lib/email/rates";
-import { orderReceivedManual, orderReceivedCrypto, opsAlert, type EmailItem } from "@/lib/email/templates";
+import { orderReceivedManual, opsAlert, type EmailItem } from "@/lib/email/templates";
 import { createInvoice } from "@/lib/nowpayments";
 import { Client } from "@upstash/qstash";
 import { eq } from "drizzle-orm";
@@ -351,7 +351,7 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
         const invoice = await createInvoice({
           orderNumber,
           amountUsd: totalUsd,
-          successUrl: `${baseUrl}/checkout/success?order=${orderNumber}`,
+          successUrl: `${baseUrl}/checkout/success?order=${orderNumber}&paid=1`,
           cancelUrl: `${baseUrl}/checkout`,
           ipnCallbackUrl: `${baseUrl}/api/webhooks/nowpayments`,
         });
@@ -359,24 +359,6 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           .update(orders)
           .set({ nowpaymentsInvoiceId: invoice.id, nowpaymentsPaymentUrl: invoice.invoice_url })
           .where(eq(orders.id, orderId));
-        // Crypto customer "order received" email with the invoice link (non-fatal;
-        // stamp confirmationEmailSentAt only on a genuine successful send).
-        try {
-          const crypto = orderReceivedCrypto({
-            firstName: raw.name,
-            orderNumber,
-            items: emailItems,
-            totalUsd,
-            invoiceUrl: invoice.invoice_url,
-          });
-          await sendToCustomer(raw.email, crypto.subject, crypto.html);
-          await db
-            .update(orders)
-            .set({ confirmationEmailSentAt: new Date() })
-            .where(eq(orders.id, orderId));
-        } catch (e) {
-          console.error("Crypto order email failed (non-fatal):", e);
-        }
         return { redirectUrl: invoice.invoice_url };
       } catch (err) {
         if (isRedirectError(err)) throw err;
