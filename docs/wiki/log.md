@@ -1626,3 +1626,28 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   bites on manual only. Attribution + referrer reward still fire on all referred orders.
 - **Roles run:** LEAD (recon synth, ADR, 8 specs, wiki, runtime hand-off) → 2× explorer → 8× implementer →
   2× verifier.
+
+## [2026-09-05] gate | Referral discount — full E2E runtime-verified (LEAD, browser + signed webhook)
+
+- **Anton applied the gate:** `db:push` (chose "add constraint WITHOUT truncating" — 212 customers intact)
+  + `backfill:referral-codes --commit` (LEAD confirmed: all 212 have a REF- code; discount_ledger/referrals
+  tables present + empty).
+- **LEAD drove the full flow vs local dev (same Neon), verify tokens/paid-transition simulated safely:**
+  1. **Capture + validate:** `/?ref=REF-QATST7` → `RefCapture` set the cookie → checkout showed "Referral
+     code applied: REF-QATST7" (validate endpoint) + "Crypto total (−10%)".
+  2. **Referee (guest) manual order:** subtotal $200 → **$180** (−10% via referral); DB: `referralCodeUsed`
+     + `referredByCustomerId` set, `discountLedgerId` null, `cryptoPct` null. ✓
+  3. **Reward-on-paid via the REAL webhook:** POSTed a correctly HMAC-SHA512-signed NowPayments IPN
+     (`order_id`, `payment_status:finished`) → 200 → order `paid` + **1 referrer credit** (referral_reward,
+     10%, available) + 1 referrals row. **Idempotent:** re-firing the same IPN created NO duplicate (still 1/1).
+  4. **`/account/referrals`:** shows the code, share link (Copy), "10% off a future order — AVAILABLE",
+     honest How-it-works copy (manual vs crypto), history row `q***@isrib-qa.test | PAID | AVAILABLE` (masked).
+  5. **Self-referral BLOCKED + credit auto-redeem:** referrer (logged in, still holding own `?ref` cookie)
+     placed a manual order → subtotal $200 → **$180**; DB: `referralCodeUsed`=null + `referredByCustomerId`=null
+     (own code correctly rejected), `discountLedgerId` SET, `userId`=referrer; the credit flipped to
+     **redeemed** with `redeemedOrderId` matching the order (the atomic conditional-claim path). ✓
+- **Cleanup:** all `@isrib-qa.test` customers + test orders + cascaded ledger/referrals deleted; DB back to
+  `customers`=212 / `discount_ledger`=0 / `referrals`=0 / 0 test orders. Dev stopped.
+- **Still on Anton:** commit + deploy the referral code (tasks 1–6 + TOCTOU fix + docs). db:push + backfill
+  already done. **Deploy note (from the build gate): db:push must precede deploy** — already satisfied.
+  **Roles run:** LEAD (browser E2E + signed-webhook simulation + DB verify + cleanup).

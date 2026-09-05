@@ -43,6 +43,17 @@ Recon (NORA referral + our pricing) → agreed 3 forks with Anton → ADR 0014 �
   `effectiveDiscountLedgerId = null`). Re-verified APPROVE. The **no-referral pricing path is
   unchanged byte-for-byte** (crypto ×0.9 / manual subtotal).
 
+## ✅ FULL E2E RUNTIME-VERIFIED (2026-09-05)
+Anton ran `db:push` (chose add-constraint-without-truncate → 212 intact) + `backfill:referral-codes
+--commit` (all 212 have REF- codes). LEAD then drove the **entire flow** vs local dev: capture+validate
+→ referee manual order ($200→$180, attribution recorded) → **reward-on-paid via a real HMAC-signed
+NowPayments IPN** (credit created, idempotent on retry) → `/account/referrals` (code, share link,
+available credit, masked history) → **self-referral blocked** + **credit auto-redeemed** on the
+referrer's next manual order ($200→$180, ledger flipped to redeemed with matching order id). All test
+data cleaned (DB back to 212 / 0 / 0). See the log gate for step-by-step. **Remaining: Anton commits +
+deploys the code (db:push + backfill already done).** The section below is retained as the historical
+hand-off.
+
 ## GATED ON ANTON — do IN THIS ORDER
 1. **`npm run db:push`** — adds the referral tables/columns. **Must precede the deploy:** after the
    new code deploys but before the push, a *logged-in* checkout queries `discount_ledger` and would
