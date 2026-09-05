@@ -133,6 +133,8 @@ export const customers = pgTable("customers", {
   firstOrderAt:    timestamp("first_order_at"),      // nullable
   legacySheetUrl:  text("legacy_sheet_url"),         // per-client Google Sheet link
   source:          text("source").notNull().default("legacy"),
+  passwordHash:    text("password_hash"),            // ADR 0013 — nullable: legacy/guest rows have no password until they register.
+  emailVerifiedAt: timestamp("email_verified_at"),   // ADR 0013 — set when the customer verifies their email; login is blocked until non-null.
   createdAt:       timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -154,3 +156,19 @@ export const legacyOrders = pgTable("legacy_orders", {
 
 export type LegacyOrder = typeof legacyOrders.$inferSelect;
 export type NewLegacyOrder = typeof legacyOrders.$inferInsert;
+
+// ── verification_tokens ──────────────────────────────────────────────────────
+// ADR 0013 — NORA-style dual-use, one-time tokens for password reset AND email
+// verification. Rows are deleted on use. Distinguished by the identifier prefix.
+
+export const verificationTokens = pgTable("verification_tokens", {
+  // password-reset tokens store the bare email; email-verification tokens store
+  // "verify:"+email — the prefix is how the two flows share this one table.
+  identifier:  text("identifier").notNull(),
+  token:       text("token").notNull().unique(),   // unguessable nanoid
+  expires:     timestamp("expires").notNull(),     // reset = 1h, verify = 24h (set by the action, not the schema)
+  createdAt:   timestamp("created_at").defaultNow().notNull(),
+});
+
+export type VerificationToken = typeof verificationTokens.$inferSelect;
+export type NewVerificationToken = typeof verificationTokens.$inferInsert;

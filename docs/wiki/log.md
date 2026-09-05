@@ -1467,3 +1467,61 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   server-only/alias tooling snag (not a code issue); data-layer + build verification stand in. Final
   visual is Anton's (admin is password-gated; LEAD does not enter the password). Uncommitted — Anton
   commits/deploys. **Roles run:** LEAD (DB verify, build) → implementer (queries + UI).
+
+## [2026-09-05] phase | Session summary filed — crypto-flow fixes + legacy import
+
+- Wrote [`sessions_summary/2026-09-05-crypto-flow-fixes-and-legacy-import.md`](sessions_summary/2026-09-05-crypto-flow-fixes-and-legacy-import.md):
+  cutover-env prep; the G2 crypto flow going live + its real-world fixes (auto-redirect, paid success
+  page, cart hydration race, active QStash cancel, method-aware nurture delays); and the ADR 0012 legacy
+  import (212 customers / 223 orders / $43.6k into Neon) + unified admin customer view. Includes a
+  **commit + deploy checklist** for the still-uncommitted tail (cart / QStash-cancel / admin view /
+  import tooling) and a test-data cleanup note.
+- Wired into `index.md`. **Next session: customer accounts** (auth on the `customers` anchor, reuse
+  NORA's two-instance isolated-cookie pattern, account cabinet with unified order history, personal
+  referral discount).
+
+## [2026-09-05] decision | Customer accounts — auth architecture agreed (ADR 0013)
+
+- **Recon:** 2× explorer — NORA customer-auth pattern (next-auth@5 two-instance, bcrypt,
+  verificationTokens, `(customer)/account` cabinet) + isrib-next integration points (customers/
+  orders schema, admin gate `isrib_admin_session` via `src/proxy.ts`, `groupByCustomer()`,
+  `submitOrder` guest-only `userId:null`, no zod, jose+node:crypto+nanoid present, `sendToCustomer`).
+- **Three forks agreed with Anton (ADR 0013):** (1) **bespoke auth** — extend ADR 0011 (jose JWT +
+  node:crypto scrypt, second cookie `isrib_customer_session`, own server actions), NOT next-auth —
+  reuse NORA's *isolation architecture* not its library; avoids the ADR-0011-documented next-auth-beta
+  bug cluster; zero new deps. (2) **promote `customers`** — add nullable `passwordHash`+`emailVerifiedAt`
+  + `verification_tokens` table; a legacy buyer registering with their known email instantly inherits
+  history+LTV (sanctioned by ADR 0012). (3) **scope** — accounts core first (auth+verify+reset+cabinet),
+  **referral discount = phase 2** (it touches the checkout price recompute).
+- **Build sequence:** schema delta → auth lib → proxy `/account*` branch → auth flows/pages →
+  `(account)` cabinet → checkout order-linkage. Filed ADR 0013, wired into index. **Roles run:** LEAD
+  (recon synthesis, fork framing, ADR) → 2× explorer.
+
+## [2026-09-05] gate | Customer accounts v1 — built (auth + cabinet), routing/proxy runtime-verified
+
+- **Built end-to-end (ADR 0013), 6 sequenced implementer tasks, tsc + `next build` green throughout:**
+  (1) schema delta — `customers += password_hash, email_verified_at` + new `verification_tokens`
+  (dual-use, delete-on-use); (2) `src/lib/customer/auth.ts` — scrypt hash/verify (node:crypto, per-customer
+  DB hash), jose session JWT (`sub`=customerId, 30d), `getCurrentCustomer()`, cookie `isrib_customer_session`;
+  (3) `src/proxy.ts` — added `/account/:path*` gate (re-inlined jose-only verify w/ `CUSTOMER_AUTH_SECRET`,
+  public whitelist for login/register/reset/verify, `?callbackUrl=`), build still shows `ƒ Proxy`;
+  (4) `actions/customerAuth.ts` + public pages register/login/logout/verify-email/reset(request+confirm) —
+  legacy-row CLAIM (register on a password-less imported row keeps its history), generic errors (no
+  existence leak), verify-required-before-login, open-redirect-sanitized callback; (5) `(account)/account/(cabinet)/`
+  guarded group — home + orders + orders/[id], own `src/lib/customer/orders.ts` (live-by-email + legacy,
+  ownership by email), reused `formatCents`/status-badge/tokens, admin `queries.ts` untouched; (6) `submitOrder`
+  stamps `orders.userId = currentCustomer?.id ?? null` (guest unchanged).
+- **Verifier (fresh context) APPROVED the auth core:** Edge-safe (jose-only proxy), full cookie/secret
+  isolation from admin, scrypt correct (random per-pw salt, timingSafeEqual+length guard, never throws),
+  deleted-customer → null, `.trim()` on the secret.
+- **Prober runtime (no db:push, GET-only):** 9/9 PASS — `/account`,`/account/orders`,`/account/orders/x`
+  (no cookie) → 307 to `/account/login?callbackUrl=…`; login/register/reset render 200 w/ fields; banner
+  on `?registered=1`; admin gate un-regressed. Dev boot clean, no runtime errors.
+- **GATED ON ANTON before the flow works:** (a) `npm run db:push` (adds the 2 columns + verification_tokens);
+  (b) set env `CUSTOMER_AUTH_SECRET` (distinct from ADMIN_AUTH_SECRET) in `.env.local` + Vercel; then the
+  full register→verify-email→login→cabinet flow is runtime-testable. Also new `FROM_EMAIL` reuse for the
+  verify/reset mails (already `orders@isrib.shop`). **Referral discount = phase 2** (not built).
+- **Flags:** verify-email mutates on GET (one-time delete-on-use token, external email link — acceptable v1);
+  cabinet read path is email-join (a guest-then-registered order backfill to `orders.userId` is a later step).
+  **Roles run:** LEAD (recon synth, ADR, 6 specs, wiki, runtime hand-off) → 2× explorer → 6× implementer →
+  verifier → prober.

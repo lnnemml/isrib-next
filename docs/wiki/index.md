@@ -74,6 +74,7 @@ rather than scanning the whole directory.
 - [`decisions/0010-frictionless-dr-checkout.md`](./decisions/0010-frictionless-dr-checkout.md)
 - [`decisions/0011-admin-panel-and-auth.md`](./decisions/0011-admin-panel-and-auth.md)
 - [`decisions/0012-legacy-orders-import-and-customers.md`](./decisions/0012-legacy-orders-import-and-customers.md)
+- [`decisions/0013-customer-accounts-auth.md`](./decisions/0013-customer-accounts-auth.md)
 
 ## Planning
 
@@ -88,6 +89,15 @@ rather than scanning the whole directory.
 - [`sessions_summary/2026-09-04-g2-checkout-backend-and-admin-panel.md`](./sessions_summary/2026-09-04-g2-checkout-backend-and-admin-panel.md)
   — **G2 checkout backend (all 5 steps) + friction-less DR checkout (ADR 0010) + admin BI panel
   (task 1.7).** ADRs 0009–0011. Pre-cutover gaps + Anton's next-tasks roadmap.
+- [`sessions_summary/2026-09-05-crypto-flow-fixes-and-legacy-import.md`](./sessions_summary/2026-09-05-crypto-flow-fixes-and-legacy-import.md)
+  — **Crypto flow live + hardened** (auto-redirect, success page, cart, QStash cancel) + **legacy order
+  import** (ADR 0012: 212 customers / 223 orders / $43.6k into Neon) + unified admin customer view.
+  Commit/deploy checklist inside. **Next: customer accounts.**
+- [`sessions_summary/2026-09-05-customer-accounts-v1.md`](./sessions_summary/2026-09-05-customer-accounts-v1.md)
+  — **Customer accounts v1** (ADR 0013): bespoke auth (jose+scrypt, cookie `isrib_customer_session`) on
+  the promoted `customers` anchor + guarded `(account)` cabinet w/ unified live+legacy history. Built +
+  build-green + routing/proxy runtime-verified. **GATED on Anton: `db:push` + `CUSTOMER_AUTH_SECRET`.**
+  **Next: referral discount (phase 2).**
 
 ## Backlog (sources not yet fully ingested)
 

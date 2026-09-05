@@ -14,6 +14,7 @@ import { generateOrderNumber, generateShippingToken, deriveTrafficType } from "@
 import { trackServerEvent } from "@/lib/analytics/server";
 import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { getCryptoRates } from "@/lib/email/rates";
+import { getCurrentCustomer } from "@/lib/customer/auth";
 import { orderReceivedManual, opsAlert, type EmailItem } from "@/lib/email/templates";
 import { createInvoice } from "@/lib/nowpayments";
 import { Client } from "@upstash/qstash";
@@ -194,11 +195,15 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // (23505) on orders_idempotency_key_unique. We recover that as an idempotent SUCCESS:
     // re-SELECT the winning row and redirect to its success page. Only the insert is
     // wrapped so we don't mistake a later error for the collision.
+    //
+    // ADR 0013 — attach the order to the logged-in customer if there is one; guest
+    // checkout leaves this null. Email-join remains the cabinet read path for now.
+    const currentCustomer = await getCurrentCustomer();
     try {
       await db.transaction(async (tx) => {
         await tx.insert(orders).values({
           id: orderId,
-          userId: null,
+          userId: currentCustomer?.id ?? null,
           name: raw.name,
           email: raw.email,
           // phone/address/city/postalCode/stateRegion omitted — nullable, collected
