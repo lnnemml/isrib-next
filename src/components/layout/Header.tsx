@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/lib/cart/CartProvider";
 import { cn } from "@/lib/utils/cn";
+import { AccountWidget } from "@/components/layout/AccountWidget";
 
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: "Products", href: "/products" },
@@ -58,11 +59,13 @@ export function Header() {
               {l.label}
             </Link>
           ))}
+          <AccountWidget />
           <CartLink />
         </nav>
 
         {/* Mobile actions */}
         <div className="flex items-center gap-4 md:hidden">
+          <AccountWidget />
           <CartLink />
           <button
             type="button"

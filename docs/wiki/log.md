@@ -1550,3 +1550,26 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Lesson (filed to memory):** QA of the legacy-claim / account flows must use synthetic
   `@isrib-qa.test` data — never a real imported customer's email (real mail + live account mutation).
   **Roles run:** LEAD (browser runtime E2E + DB verify + cleanup).
+
+## [2026-09-05] gate | Header account widget + inline sign-in (NORA pattern) — built + browser-verified
+
+- **UI-only add (no auth-logic change), mirrors NORA's AccountButton.** 3 files, tsc + `next build` green,
+  marketing pages STILL static (○), only the new endpoint is dynamic (ƒ):
+  - NEW `src/app/api/account/me/route.ts` — `GET` → `{customer:{name,email}}|null` via `getCurrentCustomer`,
+    `force-dynamic`, PUBLIC fields only (no passwordHash). Isolates the session read so layout/static
+    rendering is untouched (deliberately did NOT add `getCurrentCustomer` to layout — would force the whole
+    app dynamic).
+  - NEW `src/components/layout/AccountWidget.tsx` (`"use client"`) — fetches `/api/account/me` on mount +
+    on `usePathname()` change (so it updates after login/logout redirects). Logged-out: "Sign in" →
+    popover w/ inline email+password (`useActionState(signInCustomer)`), error/needsVerify inline, +
+    Create account / Forgot password links; outside-click + Escape close, autofocus. Logged-in: plaque
+    (initial avatar + first name) → dropdown (email · My account · Order history · divider · Log out via
+    `<form action={signOutCustomer}>`). Reuses existing verified actions; success → `/account` (NORA-style;
+    `safeCallback` forces `/account`). Design tokens only.
+  - EDIT `src/components/layout/Header.tsx` — `<AccountWidget />` in desktop nav cluster + mobile action row.
+- **LEAD browser runtime E2E (local dev, synthetic verified customer):** logged-out "Sign in" renders →
+  popover opens → inline login authenticates WITHOUT visiting /account/login → lands on /account, header
+  shows plaque "Ada" → plaque dropdown (email/My account/Order history/Log out) → Log out → header reverts
+  to "Sign in". All ✓. Test customer deleted (`customers`=212), dev stopped.
+- **Uncommitted (Anton commits/deploys):** the 3 files above + this log entry. **Roles run:** LEAD (recon
+  synth, spec, browser E2E, cleanup) → 2× explorer (NORA + isrib-next header) → implementer.
