@@ -6,7 +6,7 @@
 // the crypto discount. NO card fields, NO "Pay Now", NO Stripe — payment is manual
 // arrangement + crypto (NowPayments), by design. See CLAUDE.md.
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { nanoid } from "nanoid";
 import { useCart } from "@/lib/cart/CartProvider";
@@ -35,6 +35,16 @@ export default function CheckoutPage() {
   const [method, setMethod] = useState("crypto");
 
   const [state, formAction, pending] = useActionState<SubmitState, FormData>(submitOrder, null);
+
+  // Crypto path returns an EXTERNAL NowPayments invoice URL — redirect() can't navigate
+  // to it through the action, so we navigate client-side here.
+  useEffect(() => {
+    if (state && "redirectUrl" in state && state.redirectUrl) {
+      window.location.href = state.redirectUrl;
+    }
+  }, [state]);
+
+  const redirecting = state !== null && "redirectUrl" in state;
 
   const cryptoTotalCents = subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100);
   const cartPayload = JSON.stringify(
@@ -178,11 +188,19 @@ export default function CheckoutPage() {
         ) : null}
 
         <div>
-          <Button type="submit" variant="primary" disabled={pending || lines.length === 0} className="w-full sm:w-auto">
-            {pending ? "Placing order…" : "Place order — get payment details"}
+          <Button type="submit" variant="primary" disabled={pending || redirecting || lines.length === 0} className="w-full sm:w-auto">
+            {pending || redirecting
+              ? method === "crypto"
+                ? "Redirecting to payment…"
+                : "Placing order…"
+              : method === "crypto"
+                ? "Continue to crypto payment"
+                : "Place order — get payment details"}
           </Button>
           <p className="mt-3 text-caption text-text-faint">
-            {"No card payment, by design. We arrange manual or crypto payment after you place the order."}
+            {method === "crypto"
+              ? "You'll be taken straight to our secure crypto payment page (BTC, ETH, USDT, XMR) to pay with the 10% discount. No card payment, by design."
+              : "No card payment, by design. We'll email payment details to arrange payment manually after you place the order."}
           </p>
         </div>
       </form>

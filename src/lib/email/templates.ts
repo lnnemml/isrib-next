@@ -308,7 +308,7 @@ export function orderReceivedManual({
   btcEquivalent?: string;
   ltcEquivalent?: string;
 }): { subject: string; html: string } {
-  const subject = "Your ISRIB Shop order — transfer details inside";
+  const subject = "Your ISRIB Shop order — payment details inside";
   const amount = totalUsd; // manual path charges the (undiscounted) total
 
   const closing = `
@@ -330,7 +330,7 @@ export function orderReceivedManual({
 
   return {
     subject,
-    html: layout(inner, "Transfer details for your ISRIB Shop order are inside."),
+    html: layout(inner, "Payment details for your ISRIB Shop order are inside."),
   };
 }
 

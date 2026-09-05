@@ -53,7 +53,7 @@ export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) 
             </span>
           </span>
           <span className="mt-1 block text-[14px] leading-[1.55] text-text-subtle">
-            BTC, ETH, USDT, XMR. Address issued after you place the order.
+            BTC, ETH, USDT, XMR. You'll be taken straight to the secure payment page — pay instantly, save 10%.
           </span>
         </span>
       </label>

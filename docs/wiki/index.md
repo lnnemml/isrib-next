@@ -84,6 +84,9 @@ rather than scanning the whole directory.
 - [`sessions_summary/2026-09-03-day1-tail-and-content-migration.md`](./sessions_summary/2026-09-03-day1-tail-and-content-migration.md)
   — full content migration: all 6 product pages + `/products` + home + About/FAQ/Contact/legal.
   Decisions, current state, known gaps, next steps.
+- [`sessions_summary/2026-09-04-g2-checkout-backend-and-admin-panel.md`](./sessions_summary/2026-09-04-g2-checkout-backend-and-admin-panel.md)
+  — **G2 checkout backend (all 5 steps) + friction-less DR checkout (ADR 0010) + admin BI panel
+  (task 1.7).** ADRs 0009–0011. Pre-cutover gaps + Anton's next-tasks roadmap.
 
 ## Backlog (sources not yet fully ingested)
 

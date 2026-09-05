@@ -1266,3 +1266,52 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   needs-action. **Also closes the last G2 functional gap** (manual-order paid transition). Remaining
   before cutover: real Resend domain (`send.isrib.shop`), QStash round-trip on preview, a real multi-item
   e2e test order on a preview deploy → G2 green → cutover (ADR 0003/0004).
+
+## [2026-09-04] phase | Session summary filed — G2 backend + admin panel
+
+- Wrote [`sessions_summary/2026-09-04-g2-checkout-backend-and-admin-panel.md`](sessions_summary/2026-09-04-g2-checkout-backend-and-admin-panel.md):
+  the full session (Day-1.5 audit + ADR 0009; G2 steps 1–5; ADR 0010 friction-less checkout; task
+  1.7 admin BI panel + ADR 0011), pre-cutover gaps, git/housekeeping (large uncommitted batch +
+  suggested commit breakdown), and Anton's next-tasks roadmap (customer accounts/referral, journal,
+  analytics wiring, migration-announce email, §2 organic strategy, §3 landing + paid-traffic relaunch).
+- Wired it into `index.md`. **Next session:** Anton does cutover (real Resend domain + preview e2e +
+  manual gate) → G2 green, then the roadmap above.
+
+## [2026-09-05] gate | Cutover prep on Vercel + crypto auto-redirect fix (G2 hardening)
+
+- **Deploy-env work (Anton, on Vercel; no code):** Resend domain `isrib.shop` was ALREADY
+  fully verified (DKIM+SPF green, "Production" API key) — no DNS work needed; `FROM_EMAIL`
+  set to `orders@isrib.shop` (gap #1 from the session summary closed). `NEXT_PUBLIC_BASE_URL`
+  set to `https://isrib-next.vercel.app` as a **Config** var (NOT Secret — `NEXT_PUBLIC_*`
+  is inlined into the browser bundle; must be Config + a fresh build). This one var also fixes
+  NowPayments `successUrl`/`cancelUrl`/`ipnCallbackUrl` + shipping-link URLs, which were all
+  falling back to localhost in prod. NowPayments IPN callback set to
+  `https://isrib-next.vercel.app/api/webhooks/nowpayments`.
+- **QStash "queue not created" was a false alarm:** the nurture uses delayed one-off
+  `publishJSON({delay})` messages — these appear in QStash **Logs**, NOT the **Schedules** tab
+  (Schedules = recurring cron only). The earlier `enqueue failed … loopback ::1` error was the
+  same missing `NEXT_PUBLIC_BASE_URL` (localhost callback); fixed by the env var above. Anton
+  confirmed messages now show in Logs.
+- **Email copy:** manual order email subject + preheader "transfer details" → "payment details"
+  (`templates.ts`). Trivial copy, tsc clean.
+- **CRYPTO AUTO-REDIRECT FIX (the real issue):** crypto checkout was emailing the invoice link
+  but NOT redirecting the buyer to NowPayments. Root cause: the checkout form uses
+  `useActionState`, and `redirect()` to an **external** URL does not perform a browser
+  navigation through the React action dispatch (internal routes work — so manual→/checkout/success
+  was fine). NORA works because it uses a plain `<form action={submitOrder}>` (server 303).
+  **Fix (Anton chose client-nav, keep useActionState):** the crypto branch now
+  `return { redirectUrl: invoice.invoice_url }` instead of `redirect(...)`, and the checkout page
+  navigates via `window.location.href` in a `useEffect`. `SubmitState` gained `{ redirectUrl }`.
+  Also: method-aware button ("Continue to crypto payment") + copy, and PaymentSelector crypto card
+  reworded to state the buyer is taken straight to the payment page ("automatic" made explicit).
+  Files: `submitOrder.ts`, `(shop)/checkout/page.tsx`, `components/ui/PaymentSelector.tsx`.
+- **Roles run:** LEAD (diagnosis: read code + Next 16 docs + NORA reference via bash recon) →
+  AskUserQuestion (redirect mechanism fork) → implementer → verifier (REJECT — but ONLY flagged
+  the `templates.ts` copy change as "out of scope"; that was a separate intentional change this
+  session, not scope creep — core crypto fix APPROVED on all substantive checks, tsc clean) →
+  **LEAD browser runtime test (PASS): crypto order → auto-redirected to
+  `nowpayments.io/payment?iid=…`, invoice = 179.94 USDT ≈ $180 (10% crypto discount recomputed
+  server-side).** Work uncommitted (Anton commits/deploys). Note: one test order + invoice landed
+  in Neon (email → `delivered@resend.dev` sink) during verification.
+- **Carry to cutover:** at domain switch, change `NEXT_PUBLIC_BASE_URL` → `https://isrib.shop`
+  (rebuild — it's inlined) and repoint the NowPayments IPN URL to the isrib.shop host.

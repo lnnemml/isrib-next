@@ -24,9 +24,11 @@ import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 // Return shape designed for `useActionState`: a validation failure RETURNS { error };
-// success `redirect()`s (which throws NEXT_REDIRECT — re-thrown below — so { ok } is
-// never actually returned in practice, but it keeps the type honest for the hook).
-export type SubmitState = { error: string } | { ok: true } | null;
+// the manual path `redirect()`s (which throws NEXT_REDIRECT — re-thrown below — so { ok }
+// is never actually returned in practice, but it keeps the type honest for the hook). The
+// crypto path RETURNS { redirectUrl } so the client can navigate to the EXTERNAL
+// NowPayments invoice (redirect() only works for internal routes through the action).
+export type SubmitState = { error: string } | { redirectUrl: string } | { ok: true } | null;
 
 const CRYPTO_DISCOUNT_PCT = 10;
 
@@ -375,7 +377,7 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
         } catch (e) {
           console.error("Crypto order email failed (non-fatal):", e);
         }
-        redirect(invoice.invoice_url);
+        return { redirectUrl: invoice.invoice_url };
       } catch (err) {
         if (isRedirectError(err)) throw err;
         console.error("NowPayments invoice creation failed:", err);
