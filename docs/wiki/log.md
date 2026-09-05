@@ -1407,3 +1407,44 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   saveCart attempt → cart hydration-gate → QStash cancel code) → LEAD runtime test (cart PASS both
   paths). QStash cancel not runtime-tested (needs migration + a real payment — Anton verifies on prod).
 - **Test data:** manual test order `ISR-FYN2FG5T` created in Neon during cart verification.
+
+## [2026-09-05] decision | ADR 0012 — legacy order history import + customers model
+
+- Anton wants ~5 years of order history (Google Sheets) in the DB for per-customer repeat-count +
+  LTV. Read both sheet levels via Google Drive MCP (CSV export is auth-gated → MCP only): master =
+  customer-level (~190 rows, incl. `total amount`, `Order quantity`, client type, country, first
+  order, link to a per-client sheet); per-client = order-level (order#, products, amount, date).
+- **Anton's rules:** order count = per-client row count (NOT inferred from amount — a big total can
+  be one big order); `regular customer` = 2+ orders; `ordered`/$0 = a lead (import as customer, 0
+  orders). Amounts European-format; dates D.M.YYYY.
+- **ADR 0012 model:** new `customers` (email-keyed anchor for LTV + future accounts/referral) +
+  `legacy_orders` (per-order, `productsRaw` free-text, `amountCents`, `orderedAt`), **quarantined**
+  from the live `orders` table (no synthetic tokens, zero risk to checkout). Admin per-customer view
+  UNIONs live `orders` + `legacy_orders` by email. Filed ADR 0012; wired into index.
+- **Plan:** (1) schema (this) → Anton runs `db:push`; (2) extract master + ~150 per-client sheets via
+  Drive MCP → normalized dataset in `docs/raw/legacy-orders/`; (3) one-off import script + dry-run;
+  (4) Anton runs the full load. **Roles run so far:** LEAD (read both sheets, confirmed shape +
+  Anton's rules, CSV-gated check, wrote ADR) → implementer (schema) next.
+
+## [2026-09-05] phase | Legacy import — extraction + import script built, dry-run verified
+
+- **Schema (ADR 0012):** implementer added `customers` + `legacy_orders` tables + `client_type` enum
+  to schema.ts (tsc clean). Needs `db:push` (Anton) — applies alongside the pending qstash columns.
+- **Extraction:** manifest built from the master sheet → `docs/raw/legacy-orders/customers.json`
+  (**212** customers; 175 with a per-client sheet). Then **6 parallel extractor agents** read all ~175
+  per-client sheets via Google Drive MCP → `orders-batch-1..6.json` (deterministic parse: multi-row
+  order grouping, European amounts `$1 000,00`, D.M.YYYY dates). Consolidated: 175 rows, 225 raw orders.
+- **Data flags handled:** shared sheetId `1nDjn…` (Christopher Crew = lead copy-paste vs David
+  McCallister = real buyer) → Crew excluded, orders attach to McCallister only. Minor: 1 order w/ null
+  date, 1 empty product, a few year-typo dates (2026 vs 2025 — amounts fine, dates left as-is).
+- **clientType (Anton's ruling):** computed from ACTUAL order count (2+ regular / 1 client / 0 lead),
+  NOT the master's manual label (17 rows differed; the master over-counted "regular" 49 vs actual 34).
+- **Import script:** `scripts/import-legacy-orders.ts` (+ `npm run import:legacy`, tsx pinned). Dry-run
+  (default, no DB) VERIFIED: **212 customers · 34 regular / 140 client / 38 lead · 174 buyers · 223
+  legacy orders · $43,637.75 · dates 2025-03-04→2026-12-26.** Top LTV: Noel Quinn $1,880 (3), Walker
+  Baus $1,212 (2), Stefan Berentzen $1,170 (5). `--commit` = idempotent txn (delete source='legacy' →
+  cascade → reinsert). tsc clean.
+- **Next (Anton):** `npm run db:push` → `npm run import:legacy -- --commit`. **Then a follow-up build:**
+  the admin panel must UNION live `orders` + `legacy_orders` per customer to actually SURFACE LTV/repeat
+  (data will be in the DB, not yet shown in the UI). **Roles run:** LEAD (manifest, consolidation, dry-run
+  stats, reconciliation decisions) → 6× extractor agents → implementer (schema, import script).

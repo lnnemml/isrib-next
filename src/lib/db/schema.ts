@@ -20,6 +20,13 @@ export const itemFormatEnum = pgEnum("item_format", [
   "capsules",
 ]);
 
+// ADR 0012 — regular = 2+ orders · client = 1 · lead = 0 (never purchased)
+export const clientTypeEnum = pgEnum("client_type", [
+  "regular",
+  "client",
+  "lead",
+]);
+
 // ── orders ─────────────────────────────────────────────────────────────────
 
 export const orders = pgTable("orders", {
@@ -112,3 +119,38 @@ export const orderItems = pgTable("order_items", {
 
 export type OrderItem = typeof orderItems.$inferSelect;
 export type NewOrderItem = typeof orderItems.$inferInsert;
+
+// ── customers ────────────────────────────────────────────────────────────────
+// ADR 0012 — legacy import + email-keyed aggregation anchor for LTV/repeat.
+// Quarantined from the live checkout path; joined to orders by email for now.
+
+export const customers = pgTable("customers", {
+  id:              text("id").primaryKey(),          // nanoid
+  email:           text("email").notNull().unique(),
+  name:            text("name").notNull(),
+  country:         text("country"),                  // nullable — some rows lack it
+  clientType:      clientTypeEnum("client_type").notNull(),
+  firstOrderAt:    timestamp("first_order_at"),      // nullable
+  legacySheetUrl:  text("legacy_sheet_url"),         // per-client Google Sheet link
+  source:          text("source").notNull().default("legacy"),
+  createdAt:       timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Customer = typeof customers.$inferSelect;
+export type NewCustomer = typeof customers.$inferInsert;
+
+// ── legacy_orders ────────────────────────────────────────────────────────────
+// ADR 0012 — one row per historical order; productsRaw is coarse free-text,
+// NOT normalised to the typed catalog. Never touches the live orders table.
+
+export const legacyOrders = pgTable("legacy_orders", {
+  id:           text("id").primaryKey(),          // nanoid
+  customerId:   text("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }),
+  orderedAt:    timestamp("ordered_at"),          // nullable — some legacy dates unparseable
+  productsRaw:  text("products_raw").notNull(),   // e.g. "100 mg ISRIB"
+  amountCents:  integer("amount_cents").notNull(),// cents
+  createdAt:    timestamp("created_at").defaultNow().notNull(),
+});
+
+export type LegacyOrder = typeof legacyOrders.$inferSelect;
+export type NewLegacyOrder = typeof legacyOrders.$inferInsert;

@@ -73,6 +73,7 @@ rather than scanning the whole directory.
 - [`decisions/0009-checkout-backend-neon-qstash.md`](./decisions/0009-checkout-backend-neon-qstash.md)
 - [`decisions/0010-frictionless-dr-checkout.md`](./decisions/0010-frictionless-dr-checkout.md)
 - [`decisions/0011-admin-panel-and-auth.md`](./decisions/0011-admin-panel-and-auth.md)
+- [`decisions/0012-legacy-orders-import-and-customers.md`](./decisions/0012-legacy-orders-import-and-customers.md)
 
 ## Planning
 

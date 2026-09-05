@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:push": "node --env-file=.env.local node_modules/.bin/drizzle-kit push",
-    "db:studio": "node --env-file=.env.local node_modules/.bin/drizzle-kit studio"
+    "db:studio": "node --env-file=.env.local node_modules/.bin/drizzle-kit studio",
+    "import:legacy": "node --env-file=.env.local --import tsx scripts/import-legacy-orders.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
@@ -32,6 +33,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }

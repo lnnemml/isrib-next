@@ -1,0 +1,481 @@
+[
+  {
+    "email": "nataraj@unitybox.de",
+    "sheetId": "1QcUP23sw4GIv-uOtsOa9P2VvNPwxadOwSb3o5sv8mc8",
+    "orderCount": 2,
+    "totalCents": 64100,
+    "orders": [
+      {
+        "orderedAt": "2025-10-06",
+        "productsRaw": "1 g of ISRIB-A15",
+        "amountCents": 20000
+      },
+      {
+        "orderedAt": "2026-05-14",
+        "productsRaw": "500 mg of ZZL-7; 100 mg of MPEP-Oxalate; 1 g of N-Acetyl-Bromantane; 1 g of ISRIB-A15",
+        "amountCents": 44100
+      }
+    ]
+  },
+  {
+    "email": "humoraiwork@gmail.com",
+    "sheetId": "1W3sD_cfK4fNmXZlkO3sx4S2xTa1dT3dq5vYw5jrI590",
+    "orderCount": 1,
+    "totalCents": 20000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-08",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 20000
+      }
+    ]
+  },
+  {
+    "email": "joephilc@gmail.com",
+    "sheetId": "1aAkPRnxsYbU5qZPfcG-J2UZQ8lgC8VpkU7FKbC2BR70",
+    "orderCount": 1,
+    "totalCents": 25000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-11",
+        "productsRaw": "1 g ISRIB-A15; 100 mg ZZL-7",
+        "amountCents": 25000
+      }
+    ]
+  },
+  {
+    "email": "sauli.holmala@gmail.com",
+    "sheetId": "1oKvycdPDitLXb8t7CYHp7kVu_QT8L_MWA-pzqHj4O4s",
+    "orderCount": 1,
+    "totalCents": 5000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-12",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 5000
+      }
+    ]
+  },
+  {
+    "email": "candacecloud@me.com",
+    "sheetId": "1t3nEttU1bSxhICZNDrTPwqNr78A59BE4pA36KNvjGg0",
+    "orderCount": 3,
+    "totalCents": 38000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-16",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 5000
+      },
+      {
+        "orderedAt": "2025-11-22",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      },
+      {
+        "orderedAt": "2026-03-26",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 20000
+      }
+    ]
+  },
+  {
+    "email": "isrib@a.nyc",
+    "sheetId": "1PZJelxsqTfpBk4a7lLJP-wIzYliWfZsrrIGQ0VBFij4",
+    "orderCount": 1,
+    "totalCents": 6000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-16",
+        "productsRaw": "500 mg ISRIB",
+        "amountCents": 6000
+      }
+    ]
+  },
+  {
+    "email": "lytlekiml@gmail.com",
+    "sheetId": "18qNCLRs6_U5GSdG776NuGGzLhI0xuo40qJn3Twi8M_k",
+    "orderCount": 2,
+    "totalCents": 88000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-18",
+        "productsRaw": "2 g ISRIB-A15",
+        "amountCents": 34000
+      },
+      {
+        "orderedAt": "2026-06-23",
+        "productsRaw": "3 g ISRIB-A15",
+        "amountCents": 54000
+      }
+    ]
+  },
+  {
+    "email": "joryhabab2@gmail.com",
+    "sheetId": "1dYhMEecSnAnLH5xz3ITmxtNTftIQifZle9YQ55de5bc",
+    "orderCount": 1,
+    "totalCents": 4250,
+    "orders": [
+      {
+        "orderedAt": "2026-11-30",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 4250
+      }
+    ]
+  },
+  {
+    "email": "giacomodoni96@gmail.com",
+    "sheetId": "1vKlL16yie7nkxwQB4h6mbHL90CAhFwERgkUQEYNtcx0",
+    "orderCount": 1,
+    "totalCents": 5000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-19",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 5000
+      }
+    ]
+  },
+  {
+    "email": "mateuszgromski014@gmail.com",
+    "sheetId": "1PrPu9ySe3Tur6WDQjwJMEShsAk1eRj516MN0iOSlXPw",
+    "orderCount": 1,
+    "totalCents": 13000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-20",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      }
+    ]
+  },
+  {
+    "email": "aonesti@gmail.com",
+    "sheetId": "1A3D98kdkyTGL2YqHm4W2pQ5OO4PPebmV9r2Se0LKX3g",
+    "orderCount": 1,
+    "totalCents": 11050,
+    "orders": [
+      {
+        "orderedAt": "2025-10-21",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 11050
+      }
+    ]
+  },
+  {
+    "email": "deafeningnoiseless@gmail.com",
+    "sheetId": "15sJmPJdEdVlio1E5neStR5Vs7P7bcV8f_l-6jNrIR-w",
+    "orderCount": 1,
+    "totalCents": 4250,
+    "orders": [
+      {
+        "orderedAt": "2025-10-21",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 4250
+      }
+    ]
+  },
+  {
+    "email": "jodza.popovic@gmail.com",
+    "sheetId": "1Vp3trsSPTU4fkaTY4Y__dtamrsi3enAO02yD00QayVg",
+    "orderCount": 2,
+    "totalCents": 30000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-22",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      },
+      {
+        "orderedAt": "2026-06-22",
+        "productsRaw": "25 caps ISRIB-A15",
+        "amountCents": 17000
+      }
+    ]
+  },
+  {
+    "email": "anastasixt164@gmail.com",
+    "sheetId": "1GfMV13ptEL6gVil-O8ygOZF3_efj--aym91_5TergXs",
+    "orderCount": 1,
+    "totalCents": 6000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-24",
+        "productsRaw": "500 mg ISRIB",
+        "amountCents": 6000
+      }
+    ]
+  },
+  {
+    "email": "raya_stoimenova@hotmail.com",
+    "sheetId": "19S3RCst0fD77KjAcO5rXzuvcvsHhXPVqUM1pmW5D1Bk",
+    "orderCount": 2,
+    "totalCents": 30000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-24",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      },
+      {
+        "orderedAt": "2026-02-11",
+        "productsRaw": "25 caps ISRIB-A15",
+        "amountCents": 17000
+      }
+    ]
+  },
+  {
+    "email": "winterfunfunwinter@yahoo.com",
+    "sheetId": "19Voo7MLobDMB7RBm0X7JhFcvqq-oih50BaquQaErdsM",
+    "orderCount": 1,
+    "totalCents": 11050,
+    "orders": [
+      {
+        "orderedAt": "2025-10-24",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 11050
+      }
+    ]
+  },
+  {
+    "email": "anton.dahlgren@gmail.com",
+    "sheetId": "1YgsZgroS2rUR3ad5MrraRQ9OkAiW8SsDaZ9-9wrZZFI",
+    "orderCount": 1,
+    "totalCents": 5000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-24",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 5000
+      }
+    ]
+  },
+  {
+    "email": "joelmeaders@outlook.com",
+    "sheetId": "1PJkmYiKm9fz3dZ5fIbFiFPmvTHeb6d42Pm3AaTMuOBU",
+    "orderCount": 1,
+    "totalCents": 20000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-25",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 20000
+      }
+    ]
+  },
+  {
+    "email": "primeproductions559@gmail.com",
+    "sheetId": "11h2N-6WNqMTJChigiHO8nbAxrR6m0YdbO-PBjb9THA4",
+    "orderCount": 1,
+    "totalCents": 20000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-26",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 20000
+      }
+    ]
+  },
+  {
+    "email": "jacobvan97@gmail.com",
+    "sheetId": "1nFDod2DURnhTwf2yOL8f4xchQ2-s51YMODb5HQHkRHs",
+    "orderCount": 1,
+    "totalCents": 17000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-26",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 17000
+      }
+    ]
+  },
+  {
+    "email": "rdbacsik@gmail.com",
+    "sheetId": "1fn4317pirQMEBouXMIvRhUD-kdDxkC7Qo_wE7RWJDn8",
+    "orderCount": 1,
+    "totalCents": 100000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-29",
+        "productsRaw": "5 g ISRIB-A15",
+        "amountCents": 100000
+      }
+    ]
+  },
+  {
+    "email": "dakotadigi22@gmail.com",
+    "sheetId": "1OCFB9xlk7RAUm0OtMVFwZ1zxLhNsnrCyXWkmWwDrGQU",
+    "orderCount": 1,
+    "totalCents": 10000,
+    "orders": [
+      {
+        "orderedAt": "2025-10-31",
+        "productsRaw": "1 g ISRIB",
+        "amountCents": 10000
+      }
+    ]
+  },
+  {
+    "email": "elizamettler@gmail.com",
+    "sheetId": "1f6wY_zr6PPN3IGU-kasMPRhWC87xsr-6k4-wTCwSUl0",
+    "orderCount": 2,
+    "totalCents": 40000,
+    "orders": [
+      {
+        "orderedAt": "2026-10-02",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 20000
+      },
+      {
+        "orderedAt": "2026-12-16",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 20000
+      }
+    ]
+  },
+  {
+    "email": "cwalker@polytrope.com",
+    "sheetId": "1Qf8v2MU5OyREotLg4vjOAVtnOR9KAq2MicE_qmsqjMw",
+    "orderCount": 1,
+    "totalCents": 13000,
+    "orders": [
+      {
+        "orderedAt": "2025-11-06",
+        "productsRaw": "500 mg of ISRIB-A15",
+        "amountCents": 13000
+      }
+    ]
+  },
+  {
+    "email": "dkse200@gmail.com",
+    "sheetId": "1pe7l0grNVN-TRynb9bZezqifR0awW5R-Gnkl3m7JyJ8",
+    "orderCount": 4,
+    "totalCents": 72000,
+    "orders": [
+      {
+        "orderedAt": "2025-11-06",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      },
+      {
+        "orderedAt": "2025-11-30",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 15000
+      },
+      {
+        "orderedAt": "2026-02-06",
+        "productsRaw": "1 g ISRIB-A15",
+        "amountCents": 20000
+      },
+      {
+        "orderedAt": "2026-03-12",
+        "productsRaw": "50 caps ISRIB-A15",
+        "amountCents": 24000
+      }
+    ]
+  },
+  {
+    "email": "erhan@hosca.com",
+    "sheetId": "1t4B4UAJj0rrJHyBuUFqqpFyiKHzpJhfQg0UelU0QUpk",
+    "orderCount": 1,
+    "totalCents": 13000,
+    "orders": [
+      {
+        "orderedAt": "2025-11-06",
+        "productsRaw": "500 mg ISIRB-A15",
+        "amountCents": 13000
+      }
+    ]
+  },
+  {
+    "email": "dspad87@gmail.com",
+    "sheetId": "102XOlfULomGTXcpHdkKrs5sfEvC89puto5rU4SsMSYE",
+    "orderCount": 1,
+    "totalCents": 13000,
+    "orders": [
+      {
+        "orderedAt": "2025-11-06",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      }
+    ]
+  },
+  {
+    "email": "msafen@gmail.com",
+    "sheetId": "1iJv9-_H_hf3HyfyhZlCGQMnkj-DQUbRv_ui3z-nYmWM",
+    "orderCount": 1,
+    "totalCents": 13000,
+    "orders": [
+      {
+        "orderedAt": "2025-11-06",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      }
+    ]
+  },
+  {
+    "email": "evansmjde@gmail.com",
+    "sheetId": "1LrLIEZ6B9CHEIQ3Zww5Tfo3RgKsN1ebPl358D69YCSA",
+    "orderCount": 1,
+    "totalCents": 5000,
+    "orders": [
+      {
+        "orderedAt": "2025-11-09",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 5000
+      }
+    ]
+  },
+  {
+    "email": "eamonnsych@hotmail.com",
+    "sheetId": "1eb2T3SO4CGr4rAXwSCGOAhMfKh_qe10Qc9XXcflenx8",
+    "orderCount": 1,
+    "totalCents": 2225,
+    "orders": [
+      {
+        "orderedAt": "2025-11-29",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 2225
+      }
+    ]
+  },
+  {
+    "email": "nrobins@msn.com",
+    "sheetId": "1op4uSg3zSgT0SmB-Vlm6PFyZHoJbD_uI14mWZReX2EI",
+    "orderCount": 1,
+    "totalCents": 13000,
+    "orders": [
+      {
+        "orderedAt": "2025-11-10",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      }
+    ]
+  },
+  {
+    "email": "lynn@lynnle.ca",
+    "sheetId": "1_HRHz4XS9AuSpRawmRM7Adb6h1lKUsArg24Gs9_yWuk",
+    "orderCount": 1,
+    "totalCents": 13000,
+    "orders": [
+      {
+        "orderedAt": "2025-11-10",
+        "productsRaw": "500 mg ISRIB-A15",
+        "amountCents": 13000
+      }
+    ]
+  },
+  {
+    "email": "lavergnenic@gmail.com",
+    "sheetId": "10_K0R3GEJN-TvwsV_BGWDLcZIkSkmYtCIN1PlyRXpOY",
+    "orderCount": 1,
+    "totalCents": 5000,
+    "orders": [
+      {
+        "orderedAt": "2026-11-10",
+        "productsRaw": "100 mg ISRIB-A15",
+        "amountCents": 5000
+      }
+    ]
+  }
+]
