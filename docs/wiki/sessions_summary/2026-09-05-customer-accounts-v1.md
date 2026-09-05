@@ -49,7 +49,17 @@ Recon → agreed 3 architecture forks with Anton → filed ADR 0013 → 6 sequen
   correct `callbackUrl`; public auth pages render with fields; `?registered=1` banner; admin gate
   un-regressed; clean dev boot, no runtime errors.
 
-## GATED ON ANTON (do these, then the flow works)
+## ✅ SHIPPED + RUNTIME-VERIFIED (2026-09-05 pm)
+Anton applied the gate (`db:push`, `CUSTOMER_AUTH_SECRET` local+Vercel, commit+deploy). LEAD then drove
+the **full flow in a real browser** vs local dev (same Neon; verify tokens read from DB since test
+emails receive no mail): **new signup** (register → login-before-verify BLOCKED → verify → login →
+cabinet) and the **legacy CLAIM** marquee (register with a known email claims the existing row with NO
+duplicate, preserves clientType/history, and `/account/orders` shows the legacy orders). All test data
+cleaned up (`customers`=212, `verification_tokens`=0). The claim test used **synthetic
+`@isrib-qa.test`** data — the auto-mode classifier correctly blocked using a real customer's email.
+See the log gate for the step-by-step. The section below is retained as the historical hand-off.
+
+## GATED ON ANTON (do these, then the flow works) — ✅ DONE
 1. **`npm run db:push`** — applies `customers.password_hash`, `customers.email_verified_at`, and the
    `verification_tokens` table to Neon. Until then every register/login/reset POST throws a
    column-not-found error (expected).

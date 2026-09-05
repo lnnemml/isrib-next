@@ -1525,3 +1525,28 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   cabinet read path is email-join (a guest-then-registered order backfill to `orders.userId` is a later step).
   **Roles run:** LEAD (recon synth, ADR, 6 specs, wiki, runtime hand-off) → 2× explorer → 6× implementer →
   verifier → prober.
+
+## [2026-09-05] gate | Customer accounts v1 — full flow runtime-verified in browser (LEAD)
+
+- **Anton applied the gate:** `db:push` (columns + verification_tokens live in Neon — LEAD confirmed
+  `verification_tokens` exists, `customers`=212 intact), `CUSTOMER_AUTH_SECRET` set local + Vercel,
+  committed + deployed.
+- **LEAD drove the full flow in a real browser vs local dev (same Neon), verify tokens read from DB
+  (test emails don't receive mail):**
+  - **New signup:** register (`qa-signup-test@isrib-qa.test`) → row written (`clientType=lead`,
+    `source=signup`, hash set, `verified=null`) + `verify:` token (24h) → login-before-verify correctly
+    BLOCKED ("Please confirm your email…" + resend affordance) → verify link → "Email confirmed",
+    `emailVerifiedAt` set, token deleted (delete-on-use) → login → `/account` cabinet ("Welcome back…",
+    "No orders yet"). ✓
+  - **Legacy CLAIM (marquee):** tested on a SYNTHETIC password-less legacy row + 2 legacy_orders
+    ($630) — the auto-mode classifier correctly BLOCKED using a real 5-yr customer's email (would fire a
+    real verification email + set a password on a live account), so synthetic data was used instead.
+    Register with that email → CLAIMED the existing row (1 row, NO duplicate, same id; `passwordHash`
+    set; `clientType=regular` + `source=legacy` + both legacy orders preserved) → verify → login →
+    `/account/orders` shows both legacy orders (Nov 2024 $390, May 2024 $240) with muted ARCHIVE/LEGACY
+    chips, unlinked, DESC. **Confirms the ADR 0013 payoff: known email → instant history+LTV.** ✓
+- **Cleanup:** all `@isrib-qa.test` test rows + synthetic legacy orders (cascade) + tokens deleted;
+  DB back to `customers`=212 / `verification_tokens`=0. Dev server stopped.
+- **Lesson (filed to memory):** QA of the legacy-claim / account flows must use synthetic
+  `@isrib-qa.test` data — never a real imported customer's email (real mail + live account mutation).
+  **Roles run:** LEAD (browser runtime E2E + DB verify + cleanup).
