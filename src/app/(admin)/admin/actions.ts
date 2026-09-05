@@ -15,6 +15,7 @@ import { isAdminAuthed } from "@/lib/admin/auth";
 import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { paymentConfirmed, shipped, type EmailItem } from "@/lib/email/templates";
 import { cancelAbandonedNurture } from "@/lib/qstash";
+import { createReferrerReward } from "@/lib/referral";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -58,6 +59,14 @@ export async function markPaid(orderId: string): Promise<ActionResult> {
   // remains the backstop. (order came from select() with no projection, so the qstash ids
   // are present.)
   await cancelAbandonedNurture([order.qstashMessageId1, order.qstashMessageId2]);
+
+  // ADR 0014 — create the referrer's reward credit if this order was referred. Best-effort:
+  // a failure must never roll back the paid state (mirrors the email/nurture handling).
+  try {
+    await createReferrerReward(orderId);
+  } catch (e) {
+    console.error("createReferrerReward failed (non-fatal):", e);
+  }
 
   // Email is best-effort — a failure must not roll back the paid state.
   try {

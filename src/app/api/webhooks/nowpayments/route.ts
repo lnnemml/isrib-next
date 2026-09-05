@@ -18,6 +18,7 @@ import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { paymentConfirmed } from "@/lib/email/templates";
 import { trackServerEvent } from "@/lib/analytics/server";
 import { cancelAbandonedNurture } from "@/lib/qstash";
+import { createReferrerReward } from "@/lib/referral";
 import { eq } from "drizzle-orm";
 
 export async function POST(req: Request): Promise<Response> {
@@ -101,6 +102,10 @@ export async function POST(req: Request): Promise<Response> {
     // Actively cancel the pending abandoned-checkout nurture reminders — best-effort;
     // the consumer's status==="paid" guard remains the backstop.
     cancelAbandonedNurture([order.qstashMessageId1, order.qstashMessageId2]),
+    // ADR 0014 — create the referrer's reward credit if this order was referred. Best-effort
+    // via allSettled: idempotent (createReferrerReward pre-checks the referrals junction) and
+    // can never roll back or break the paid transition.
+    createReferrerReward(order.id),
   ]);
   for (const r of results) {
     if (r.status === "rejected") console.error("NowPayments IPN side-effect failed (non-fatal):", r.reason);

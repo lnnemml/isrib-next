@@ -1573,3 +1573,56 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   to "Sign in". All ✓. Test customer deleted (`customers`=212), dev stopped.
 - **Uncommitted (Anton commits/deploys):** the 3 files above + this log entry. **Roles run:** LEAD (recon
   synth, spec, browser E2E, cleanup) → 2× explorer (NORA + isrib-next header) → implementer.
+
+## [2026-09-05] decision | Referral discount — design agreed (ADR 0014, phase 2)
+
+- **Recon:** 2× explorer — NORA referral (two-sided: referee 10% + referrer 10%-next-order credit via
+  `discount_ledger`, reward created on `paid`, `?ref` link, self-referral blocked, referral⊕reward mutually
+  exclusive but stacks w/ crypto → max 20%; tables referral_codes/discount_ledger/referrals) + isrib-next
+  pricing surface (subtotal→crypto `*0.9`; `promoCode` unused; "referral"=UTM only today; no code field in
+  checkout; analytics `value=total/100`).
+- **Three forks agreed with Anton (ADR 0014):** (1) **two-sided** (referee discount + referrer credit,
+  reward-on-paid); (2) **10% NON-stacking with crypto** — effective = `max(crypto,referral)`, total always
+  `subtotal*0.9` when any discount applies (margin protection); (3) **`?ref` link** entry (frictionless,
+  ADR 0010), no manual field.
+- **Key consequence (accepted):** on CRYPTO orders (primary path) referral gives referee no extra discount;
+  it only bites on manual pay. Attribution + referrer reward still fire on all referred orders. Reward
+  credits are preserved (redeemed only when they're the sole reason for the 10%).
+- **Schema:** `customers += referralCode(unique)`; new `discount_ledger` + `referrals`; `orders +=
+  referralCodeUsed, referredByCustomerId, discountLedgerId`. Backfill codes for the 212 imported customers.
+- **Build seq:** schema → referral lib → register code-gen + backfill → `?ref` capture + checkout +
+  submitOrder → reward-on-paid (webhook + admin markPaid) → `/account/referrals` page. Filed ADR 0014,
+  wired index. **Roles run:** LEAD (recon synth, fork framing, ADR) → 2× explorer.
+
+## [2026-09-05] gate | Referral discount (ADR 0014) — built + verifier-approved (runtime GATED on db:push)
+
+- **Built end-to-end, 6+2 implementer tasks, tsc + `next build` green throughout, marketing pages still
+  static (○):**
+  1. schema — `customers += referralCode(unique)`; `discount_ledger` + `referrals` (referrals.referredOrderId
+     UNIQUE = idempotency backstop); `orders += referralCodeUsed, referredByCustomerId, discountLedgerId`.
+  2. `src/lib/referral.ts` — `generateReferralCode` (REF-XXXXXX, distinct from ISR- order#), `validateReferralCode`
+     (self-referral guard by id + email), `computeEffectiveDiscount` (NON-stacking: 10% iff any of
+     crypto/referral/credit; credit `usesRewardCredit` only when sole reason), `getAvailableRewardCredit`,
+     `createReferrerReward` (idempotent, transactional).
+  3. register generates a code (new + legacy-claim paths); `scripts/backfill-referral-codes.ts` +
+     `npm run backfill:referral-codes` for the 212 (dry-run confirmed the missing-column guard).
+  4. `?ref` capture (`RefCapture` client → `isrib_ref` cookie; `<Suspense>` in layout keeps pages static) +
+     `/api/referral/validate` (ƒ) + checkout preview + **submitOrder** integration (cookie read → validate →
+     effective discount → order fields + ledger redeem). No-referral pricing preserved byte-for-byte.
+  5. reward-on-paid — `createReferrerReward` added NON-FATAL to the NowPayments webhook (allSettled) + admin
+     `markPaid` (try/catch), after the paid transition.
+  6. `/account/referrals` cabinet page — code + share link (CopyButton) + available credits + masked referral
+     history; link added on the cabinet home; data layer `src/lib/customer/referrals.ts`.
+- **Verifier (fresh context): REJECT → fixed → APPROVE.** Caught a real MONEY defect — reward-credit
+  double-spend TOCTOU (credit read outside tx + unconditional redeem). Fixed: atomic conditional claim
+  `UPDATE … WHERE id=? AND status='available' RETURNING id` inside the order tx; lost race → no-discount
+  fallback (effectiveTotalCents/effectiveDiscountLedgerId). Re-verified APPROVE; no-referral path unchanged.
+- **GATED ON ANTON (in this order):** (1) `npm run db:push` (adds referral tables/columns) — **must precede
+  the deploy**: post-deploy pre-push, a LOGGED-IN checkout hits `discount_ledger` and would error (guest
+  checkout w/o `?ref` is safe — `getAvailableRewardCredit(null)` skips the query). (2)
+  `npm run backfill:referral-codes -- --commit` (codes for the 212). (3) commit + deploy tasks 1–6 + the fix.
+  Then the full flow is runtime-testable: register→code→`?ref` order→paid→referrer credit→`/account/referrals`.
+- **Consequence reminder (accepted):** non-stacking → referral gives no extra on CRYPTO orders (primary path);
+  bites on manual only. Attribution + referrer reward still fire on all referred orders.
+- **Roles run:** LEAD (recon synth, ADR, 8 specs, wiki, runtime hand-off) → 2× explorer → 8× implementer →
+  2× verifier.

@@ -34,6 +34,32 @@ export default function CheckoutPage() {
   const [eventId] = useState(() => nanoid());
   const [method, setMethod] = useState("crypto");
 
+  // ADR 0014 — referral preview. The `isrib_ref` cookie is the source of truth (the
+  // server reads it at submit); here we only mirror it for a preview. `refValid` is a
+  // best-effort exists-check via /api/referral/validate (self-referral is enforced
+  // server-side). We NEVER post a hidden ref field — the cookie drives the discount.
+  const [refCode, setRefCode] = useState<string | null>(null);
+  const [refValid, setRefValid] = useState(false);
+
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|;\s*)isrib_ref=([^;]*)/);
+    const code = match ? decodeURIComponent(match[1]).trim().toUpperCase() : "";
+    if (!code) return;
+    setRefCode(code);
+    let cancelled = false;
+    fetch("/api/referral/validate?code=" + encodeURIComponent(code))
+      .then((r) => r.json())
+      .then((data: { valid?: boolean }) => {
+        if (!cancelled) setRefValid(!!data.valid);
+      })
+      .catch(() => {
+        // Best-effort — a failed preview never blocks checkout (server re-validates).
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const [state, formAction, pending] = useActionState<SubmitState, FormData>(submitOrder, null);
 
   // Crypto path returns an EXTERNAL NowPayments invoice URL — redirect() can't navigate
@@ -47,6 +73,10 @@ export default function CheckoutPage() {
   const redirecting = state !== null && "redirectUrl" in state;
 
   const cryptoTotalCents = subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100);
+  // Non-stacking (ADR 0014): a referral is worth the same flat 10% as crypto, so on the
+  // manual path a valid ref previews the same discounted total.
+  const referralTotalCents = subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100);
+  const showReferral = refValid && refCode !== null;
   const cartPayload = JSON.stringify(
     lines.map((l) => ({
       productSlug: l.productSlug,
@@ -130,11 +160,23 @@ export default function CheckoutPage() {
         <span className="text-body text-text-muted">{"Subtotal"}</span>
         <span className="font-mono text-[20px] font-semibold text-text">{formatCents(subtotalCents)}</span>
       </div>
+      {showReferral ? (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-small text-success">{"Referral code applied: " + refCode}</span>
+        </div>
+      ) : null}
       {method === "crypto" ? (
         <div className="mt-2 flex items-center justify-between">
           <span className="text-small text-success">{"Crypto total (−10%)"}</span>
           <span className="font-mono text-[16px] font-semibold text-success">
             {formatCents(cryptoTotalCents)}
+          </span>
+        </div>
+      ) : showReferral ? (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-small text-success">{"Referral total (−10%)"}</span>
+          <span className="font-mono text-[16px] font-semibold text-success">
+            {formatCents(referralTotalCents)}
           </span>
         </div>
       ) : null}

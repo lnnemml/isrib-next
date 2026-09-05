@@ -75,6 +75,7 @@ rather than scanning the whole directory.
 - [`decisions/0011-admin-panel-and-auth.md`](./decisions/0011-admin-panel-and-auth.md)
 - [`decisions/0012-legacy-orders-import-and-customers.md`](./decisions/0012-legacy-orders-import-and-customers.md)
 - [`decisions/0013-customer-accounts-auth.md`](./decisions/0013-customer-accounts-auth.md)
+- [`decisions/0014-referral-discount.md`](./decisions/0014-referral-discount.md)
 
 ## Planning
 
@@ -97,7 +98,12 @@ rather than scanning the whole directory.
   — **Customer accounts v1** (ADR 0013): bespoke auth (jose+scrypt, cookie `isrib_customer_session`) on
   the promoted `customers` anchor + guarded `(account)` cabinet w/ unified live+legacy history. Built +
   build-green + routing/proxy runtime-verified. **GATED on Anton: `db:push` + `CUSTOMER_AUTH_SECRET`.**
-  **Next: referral discount (phase 2).**
+  **Next: referral discount (phase 2).** _(accounts v1 since shipped + runtime-verified; header account
+  widget added — see log.)_
+- [`sessions_summary/2026-09-05-referral-discount-phase2.md`](./sessions_summary/2026-09-05-referral-discount-phase2.md)
+  — **Referral discount (ADR 0014, phase 2):** two-sided (referee 10% + referrer credit), non-stacking
+  with crypto, `?ref` link. Built + verifier-approved (a reward-credit double-spend TOCTOU was caught +
+  fixed). **GATED on Anton: `db:push` (BEFORE deploy) + `backfill:referral-codes`.**
 
 ## Backlog (sources not yet fully ingested)
 

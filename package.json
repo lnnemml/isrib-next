@@ -9,7 +9,8 @@
     "lint": "eslint",
     "db:push": "node --env-file=.env.local node_modules/.bin/drizzle-kit push",
     "db:studio": "node --env-file=.env.local node_modules/.bin/drizzle-kit studio",
-    "import:legacy": "node --env-file=.env.local --import tsx scripts/import-legacy-orders.ts"
+    "import:legacy": "node --env-file=.env.local --import tsx scripts/import-legacy-orders.ts",
+    "backfill:referral-codes": "node --env-file=.env.local --import tsx scripts/backfill-referral-codes.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

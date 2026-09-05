@@ -25,6 +25,7 @@ import {
   clearCustomerSession,
 } from "@/lib/customer/auth";
 import { sendToCustomer } from "@/lib/email/send";
+import { generateUniqueReferralCode } from "@/lib/referral";
 import { eq, and, gt } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { cookies } from "next/headers";
@@ -171,10 +172,15 @@ export async function registerCustomer(
 
     if (existing) {
       // Legacy/imported row with no password — CLAIM it. Preserve their existing name
-      // (if any), clientType, firstOrderAt and history; only set the password.
+      // (if any), clientType, firstOrderAt and history; only set the password. Assign a
+      // referral code IF the row lacks one — never overwrite an existing code (ADR 0014).
       await db
         .update(customers)
-        .set({ passwordHash, name: existing.name || name })
+        .set({
+          passwordHash,
+          name: existing.name || name,
+          referralCode: existing.referralCode ?? (await generateUniqueReferralCode()),
+        })
         .where(eq(customers.id, existing.id));
     } else {
       await db.insert(customers).values({
@@ -185,6 +191,7 @@ export async function registerCustomer(
         source: "signup",
         passwordHash,
         emailVerifiedAt: null,
+        referralCode: await generateUniqueReferralCode(),
       });
     }
 

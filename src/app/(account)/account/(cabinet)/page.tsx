@@ -55,6 +55,21 @@ export default async function AccountHomePage() {
         </form>
       </div>
 
+      <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2">
+        <Link
+          href="/account/orders"
+          className="text-small font-semibold text-primary transition hover:opacity-80"
+        >
+          {"Order history →"}
+        </Link>
+        <Link
+          href="/account/referrals"
+          className="text-small font-semibold text-primary transition hover:opacity-80"
+        >
+          {"Referral program →"}
+        </Link>
+      </div>
+
       <div className="mt-10 flex items-center justify-between">
         <h2 className="font-mono text-mono-label font-medium uppercase tracking-[0.12em] text-text-subtle">
           {"Recent orders"}

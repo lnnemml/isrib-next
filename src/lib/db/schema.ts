@@ -27,6 +27,13 @@ export const clientTypeEnum = pgEnum("client_type", [
   "lead",
 ]);
 
+// ADR 0014 — lifecycle of a referrer reward credit in the discount ledger
+export const discountLedgerStatusEnum = pgEnum("discount_ledger_status", [
+  "available",
+  "redeemed",
+  "expired",
+]);
+
 // ── orders ─────────────────────────────────────────────────────────────────
 
 export const orders = pgTable("orders", {
@@ -61,6 +68,11 @@ export const orders = pgTable("orders", {
   // optional
   promoCode:                text("promo_code"),
   note:                     text("note"),
+
+  // ADR 0014 — referral
+  referralCodeUsed:         text("referral_code_used"),         // snapshot of the code the referee used (attribution)
+  referredByCustomerId:     text("referred_by_customer_id"),    // the referrer's customer id (drives reward-on-paid)
+  discountLedgerId:         text("discount_ledger_id"),         // nullable; set when a referrer credit was redeemed on THIS order
 
   // nowpayments (crypto path only)
   nowpaymentsInvoiceId:     text("nowpayments_invoice_id"),
@@ -135,6 +147,7 @@ export const customers = pgTable("customers", {
   source:          text("source").notNull().default("legacy"),
   passwordHash:    text("password_hash"),            // ADR 0013 — nullable: legacy/guest rows have no password until they register.
   emailVerifiedAt: timestamp("email_verified_at"),   // ADR 0013 — set when the customer verifies their email; login is blocked until non-null.
+  referralCode:    text("referral_code").unique(),   // ADR 0014 — personal referral code (REF-XXXXXX). Nullable until generated/backfilled; unique allows multiple NULLs in Postgres.
   createdAt:       timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -156,6 +169,42 @@ export const legacyOrders = pgTable("legacy_orders", {
 
 export type LegacyOrder = typeof legacyOrders.$inferSelect;
 export type NewLegacyOrder = typeof legacyOrders.$inferInsert;
+
+// ── discount_ledger ────────────────────────────────────────────────────────────
+// ADR 0014 — referrer reward credits. One row per earned credit, owned by the
+// referrer; consumed once when redeemed on a future order.
+
+export const discountLedger = pgTable("discount_ledger", {
+  id:              text("id").primaryKey(),          // nanoid
+  customerId:      text("customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }), // the reward OWNER (referrer)
+  source:          text("source").notNull(),         // "referral_reward" for now (reserved for future "promo")
+  discountPct:     integer("discount_pct").notNull(),// 10
+  status:          discountLedgerStatusEnum("status").notNull().default("available"),
+  redeemedOrderId: text("redeemed_order_id"),         // nullable; set when consumed
+  expiresAt:       timestamp("expires_at"),           // nullable = never expires
+  createdAt:       timestamp("created_at").defaultNow().notNull(),
+});
+
+export type DiscountLedgerEntry = typeof discountLedger.$inferSelect;
+export type NewDiscountLedgerEntry = typeof discountLedger.$inferInsert;
+
+// ── referrals ────────────────────────────────────────────────────────────────
+// ADR 0014 — junction linking a referral code → the referred order → the reward
+// credit created for the referrer once that order is paid.
+
+export const referrals = pgTable("referrals", {
+  id:                  text("id").primaryKey(),          // nanoid
+  referrerCustomerId:  text("referrer_customer_id").notNull().references(() => customers.id, { onDelete: "cascade" }), // the code owner
+  // .unique() → at most one referral per referred order = DB-level idempotency guard
+  // for createReferrerReward against webhook retries / concurrent paid-transitions (ADR 0014)
+  referredOrderId:     text("referred_order_id").notNull().unique().references(() => orders.id, { onDelete: "cascade" }),
+  referredEmail:       text("referred_email").notNull(),
+  referrerRewardId:    text("referrer_reward_id").references(() => discountLedger.id), // nullable; set when the reward is created on paid
+  createdAt:           timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Referral = typeof referrals.$inferSelect;
+export type NewReferral = typeof referrals.$inferInsert;
 
 // ── verification_tokens ──────────────────────────────────────────────────────
 // ADR 0013 — NORA-style dual-use, one-time tokens for password reset AND email

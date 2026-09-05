@@ -7,7 +7,13 @@
 // both paths just create the order and redirect to the success page this step).
 
 import { db } from "@/lib/db";
-import { orders, orderItems, type NewOrderItem } from "@/lib/db/schema";
+import { orders, orderItems, discountLedger, type NewOrderItem } from "@/lib/db/schema";
+import {
+  normalizeReferralCode,
+  validateReferralCode,
+  computeEffectiveDiscount,
+  getAvailableRewardCredit,
+} from "@/lib/referral";
 import { getProduct } from "@/lib/copy/products";
 import { computeTieredPrice } from "@/lib/copy/pricing";
 import { generateOrderNumber, generateShippingToken, deriveTrafficType } from "@/lib/order-number";
@@ -18,9 +24,9 @@ import { getCurrentCustomer } from "@/lib/customer/auth";
 import { orderReceivedManual, opsAlert, type EmailItem } from "@/lib/email/templates";
 import { createInvoice } from "@/lib/nowpayments";
 import { Client } from "@upstash/qstash";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 
@@ -173,12 +179,44 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       });
     }
 
-    // 6/7. Subtotal + crypto discount.
-    const cryptoDiscountPct = paymentMethod === "crypto" ? CRYPTO_DISCOUNT_PCT : null;
-    const totalCents =
-      paymentMethod === "crypto"
-        ? subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100)
-        : subtotalCents;
+    // 6/7. Subtotal + discount (ADR 0014 — crypto / incoming referral / reward credit,
+    // NON-STACKING, all worth a flat 10%). currentCustomer is fetched here because both
+    // the reward-credit lookup and the self-referral guard need it. NO-REFERRAL invariant:
+    // with no ref cookie AND no reward credit, computeEffectiveDiscount yields exactly the
+    // old numbers — crypto → subtotal×0.9, manual → subtotal.
+    //
+    // ADR 0013 — attach the order to the logged-in customer if there is one; guest
+    // checkout leaves this null. Email-join remains the cabinet read path for now.
+    const currentCustomer = await getCurrentCustomer();
+    const isCrypto = paymentMethod === "crypto";
+
+    // Referee side — read the ?ref cookie (client-set), validate server-side (authoritative).
+    const refCookie = (await cookies()).get("isrib_ref")?.value ?? null;
+    const refCode = normalizeReferralCode(refCookie);
+    const referral = refCode
+      ? await validateReferralCode({ code: refCode, refereeEmail: raw.email, refereeCustomerId: currentCustomer?.id ?? null })
+      : { ok: false as const };
+
+    // Referrer side — a logged-in customer may have an available reward credit.
+    const rewardCredit = await getAvailableRewardCredit(currentCustomer?.id ?? null);
+
+    const eff = computeEffectiveDiscount({
+      subtotalCents,
+      isCrypto,
+      hasValidReferral: referral.ok,
+      rewardCreditAvailable: !!rewardCredit,
+    });
+
+    // Keep existing column semantics: cryptoDiscountPct reflects the crypto method only.
+    const cryptoDiscountPct = isCrypto ? CRYPTO_DISCOUNT_PCT : null;
+    const totalCents = eff.totalCents;
+
+    // Attribution + reward-trigger fields (set whenever a valid referral is present, EVEN on
+    // crypto orders where it adds no extra discount — the referee was still referred).
+    const referralCodeUsed = referral.ok ? referral.code : null;
+    const referredByCustomerId = referral.ok ? referral.referrerId : null;
+    // Consume a reward credit ONLY when it's the sole reason for the discount (eff.usesRewardCredit).
+    const discountLedgerId = eff.usesRewardCredit && rewardCredit ? rewardCredit.id : null;
 
     // 8. Identifiers + traffic classification. The shipping token is the unguessable
     // per-order key for the post-payment /shipping/<token> link (ADR 0010).
@@ -195,12 +233,31 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // (23505) on orders_idempotency_key_unique. We recover that as an idempotent SUCCESS:
     // re-SELECT the winning row and redirect to its success page. Only the insert is
     // wrapped so we don't mistake a later error for the collision.
+    // (currentCustomer + referral/discount were resolved above in step 6/7.)
     //
-    // ADR 0013 — attach the order to the logged-in customer if there is one; guest
-    // checkout leaves this null. Email-join remains the cabinet read path for now.
-    const currentCustomer = await getCurrentCustomer();
+    // ADR 0014 — atomically CLAIM the reward credit (guards against a concurrent order
+    // spending the same credit — the read in getAvailableRewardCredit is not a lock).
+    // These are assigned their final values from INSIDE the transaction so downstream
+    // email/analytics report the amount actually charged.
+    let effectiveTotalCents = totalCents;
+    let effectiveDiscountLedgerId: string | null = discountLedgerId;
     try {
       await db.transaction(async (tx) => {
+        // ADR 0014 — claim the reward credit BEFORE inserting the order, guarding on
+        // `status = "available"` so only one concurrent order can win the credit.
+        if (discountLedgerId) {
+          const claimed = await tx
+            .update(discountLedger)
+            .set({ status: "redeemed", redeemedOrderId: orderId })
+            .where(and(eq(discountLedger.id, discountLedgerId), eq(discountLedger.status, "available")))
+            .returning({ id: discountLedger.id });
+          if (claimed.length === 0) {
+            // Lost the race — the credit was already spent by a concurrent order. The credit was
+            // the SOLE reason for the discount (usesRewardCredit invariant), so drop it: no discount.
+            effectiveDiscountLedgerId = null;
+            effectiveTotalCents = subtotalCents;
+          }
+        }
         await tx.insert(orders).values({
           id: orderId,
           userId: currentCustomer?.id ?? null,
@@ -212,7 +269,7 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           paymentMethod,
           cryptoDiscountPct,
           subtotalPrice: subtotalCents,
-          totalPrice: totalCents,
+          totalPrice: effectiveTotalCents,
           note: raw.note,
           orderNumber,
           shippingToken,
@@ -223,6 +280,10 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           utmContent: raw.utmContent,
           utmTerm: raw.utmTerm,
           trafficType,
+          // ADR 0014 — referral attribution + reward-trigger fields.
+          referralCodeUsed,
+          referredByCustomerId,
+          discountLedgerId: effectiveDiscountLedgerId,
           // status defaults to "pending_payment_instructions".
         });
         await tx.insert(orderItems).values(items);
@@ -258,7 +319,7 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     await trackServerEvent("order_submitted", {
       eventId: raw.eventId ?? undefined,
       email: raw.email,
-      value: totalCents / 100,
+      value: effectiveTotalCents / 100,
       currency: "USD",
       userAgent: h.get("user-agent") ?? undefined,
       sourceUrl: h.get("referer") ?? undefined,
@@ -269,7 +330,9 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // failure NEVER breaks the order or the redirect — we log and continue. Money is
     // converted to dollars for the templates; `items` is rebuilt from the RECOMPUTED
     // order items (never client prices). Manual path also stamps confirmationEmailSentAt.
-    const totalUsd = totalCents / 100;
+    // effectiveTotalCents === totalCents on the crypto path (a credit is never claimed
+    // there); on the manual path it reflects a lost-race fallback to no discount.
+    const totalUsd = effectiveTotalCents / 100;
     const subtotalUsd = subtotalCents / 100;
     const emailItems: EmailItem[] = items.map((it) => ({
       slug: it.productSlug,
