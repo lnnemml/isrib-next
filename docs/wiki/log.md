@@ -1351,3 +1351,27 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   random order numbers + limited impact; revisit if abused. (b) crypto fall-through when
   `createInvoice` fails now sends NO customer email (only ops alert) and shows the /contact success
   copy — acceptable error path now that the key is set.
+
+## [2026-09-05] gate | Success-page shipping-link hardened + method-aware nurture delays
+
+- Follow-ups from Anton on the prior gate:
+- **Shipping link gated on real paid status (security).** The prior gate revealed the shipping-form
+  link whenever `isPaid = status==="paid" || paid==="1"` — but `paid=1` is a URL flag, so knowing an
+  order number (an 8-char `ISR-…` from a 32-symbol no-confusable alphabet ≈ 32⁸ ≈ 1.1e12: not
+  human-guessable / not HTTP-brute-forceable, but NOT a secret — it's in emails/URLs) could reveal
+  that order's `/shipping/<token>`. Fix: added `confirmedPaid = order.status === "paid"` and gated the
+  shipping `<Link>` (and the token in the DOM) SOLELY on `confirmedPaid`. `paid=1` now only drives the
+  optimistic "Payment received" headline during the crypto webhook race; in that window the page shows
+  "we're confirming your payment — we'll email you the link" (the webhook's `paymentConfirmed` email
+  already carries the shipping link, so nothing is lost). File: `(shop)/checkout/success/page.tsx`.
+- **Method-aware abandoned-checkout delay.** Manual payment is confirmed by hand (admin `markPaid`),
+  slower than the instant crypto IPN, so the T+2h nudge was premature for manual. First reminder is now
+  `paymentMethod === "manual" ? 43200 (T+12h) : 7200 (T+2h)`; second stays 86400 (T+24h) for both.
+  File: `submitOrder.ts` §11b. (Manual nurture is still guarded by the consumer's `status==="paid"`
+  check — see prior gate — so a manual order marked paid before the reminder fires won't nag; the only
+  residual is a manual buyer who paid but wasn't marked paid within 12h.)
+- **Roles run:** LEAD (answered Anton's guessability + manual-cancel questions from code:
+  `generateOrderNumber` + `markPaid` status transition) → AskUser(both go-aheads) → implementer (2
+  files) → **LEAD browser runtime test (PASS): unpaid order + spoofed `?paid=1` → "Payment received"
+  headline but NO shipping link/token in DOM (`hasShippingLink:false`); genuinely-paid order → link
+  present (count 1).** `tsc` clean. Uncommitted (Anton commits/deploys).

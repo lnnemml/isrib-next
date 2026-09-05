@@ -335,8 +335,11 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       const abandonedUrl = `${baseUrl}/api/abandoned-checkout`;
       const base = { orderNumber, email: raw.email, firstName: raw.name };
       // delay is in SECONDS per the QStash PublishRequest type.
-      await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 1 }, delay: 7200 });  // T+2h
-      await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 2 }, delay: 86400 }); // T+24h
+      // Manual payment is confirmed by hand (admin markPaid), which is slower than the instant
+      // crypto IPN webhook — so nudge manual buyers later (T+12h) to avoid nagging mid-arrangement.
+      const abandonedDelay1 = paymentMethod === "manual" ? 43200 : 7200; // manual T+12h · crypto T+2h
+      await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 1 }, delay: abandonedDelay1 });
+      await qstash.publishJSON({ url: abandonedUrl, body: { ...base, emailNumber: 2 }, delay: 86400 }); // T+24h both
     } catch (e) {
       console.error("QStash enqueue failed (non-fatal):", e);
     }
