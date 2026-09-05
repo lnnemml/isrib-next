@@ -1448,3 +1448,22 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   the admin panel must UNION live `orders` + `legacy_orders` per customer to actually SURFACE LTV/repeat
   (data will be in the DB, not yet shown in the UI). **Roles run:** LEAD (manifest, consolidation, dry-run
   stats, reconciliation decisions) → 6× extractor agents → implementer (schema, import script).
+
+## [2026-09-05] gate | Legacy loaded to Neon + admin customer view unifies live + legacy
+
+- **Anton ran `db:push` + `import:legacy --commit`.** LEAD verified the load directly against Neon:
+  `customers` = 212 (34 regular / 140 client / 38 lead), `legacy_orders` = 223, revenue **$43,637.75**,
+  top by LTV Noel Quinn $1,880 (3) · Walker Baus $1,212 (2) · Stefan Berentzen $1,170 (5) — matches the
+  dry-run to the cent.
+- **Admin customer view unified (ADR 0012 follow-up).** `groupByCustomer()` now merges LIVE `orders` +
+  `customers`/`legacy_orders` by email → per-customer `orderCount` (live+legacy), `revenueCents`
+  (live paid + legacy = lifetime LTV), computed `clientType` (from total order count), `country`,
+  `firstOrderAt`, `lastOrderAt`, plus a `live+legacy` split. The Customers table gained Country / Type
+  (badge) / First order columns + a summary caption (total · buyers · repeat · lifetime revenue).
+  `biSummary` (30-day KPIs) + `listOrders` deliberately unchanged — legacy is history, not new activity.
+  Files: `src/lib/admin/queries.ts`, `src/app/(admin)/admin/page.tsx`.
+- **Verified:** Neon data correct (direct query); `npx tsc --noEmit` + eslint clean; **`next build` green**
+  (all routes emit, `ƒ Proxy` admin gate registered). Standalone run of the query via tsx hit a
+  server-only/alias tooling snag (not a code issue); data-layer + build verification stand in. Final
+  visual is Anton's (admin is password-gated; LEAD does not enter the password). Uncommitted — Anton
+  commits/deploys. **Roles run:** LEAD (DB verify, build) → implementer (queries + UI).

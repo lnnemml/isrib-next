@@ -9,7 +9,7 @@
 // boundary is computed once per call rather than per-row in Postgres.
 import "server-only";
 import { db } from "@/lib/db";
-import { orders, orderItems } from "@/lib/db/schema";
+import { orders, orderItems, customers, legacyOrders } from "@/lib/db/schema";
 import { getProduct } from "@/lib/copy/products";
 import { and, count, desc, eq, gte, inArray, isNull, isNotNull, ne, sql, sum } from "drizzle-orm";
 
@@ -323,35 +323,156 @@ export async function listOrders(): Promise<AdminOrderRow[]> {
 
 // ── groupByCustomer ──────────────────────────────────────────────────────────────
 
+// ADR 0012 — unified per-customer view: LIVE orders merged with imported LEGACY history
+// by lowercased email, exposing lifetime repeat count and LTV across old + new. This is the
+// ONLY place legacy is folded into live; the 30-day KPIs (biSummary) stay live-only.
 export interface CustomerGroup {
   email: string;
   name: string;
-  orderCount: number;
-  paidRevenueCents: number; // Σ total_price of paid/fulfilled orders
-  lastOrderAt: Date;
+  country: string | null;
+  clientType: "regular" | "client" | "lead"; // computed from TOTAL order count
+  orderCount: number; // live + legacy
+  liveOrderCount: number;
+  legacyOrderCount: number;
+  revenueCents: number; // livePaidRevenue + legacyRevenue (lifetime LTV)
+  firstOrderAt: Date | null;
+  lastOrderAt: Date | null;
 }
 
-// Group orders by email. paidRevenueCents sums only paid/fulfilled orders (a filtered SUM);
-// name is the most recent order's name for that email; ordered by paid revenue desc.
+// Earliest non-null of a set of dates (null if all null).
+function earliest(...dates: (Date | null)[]): Date | null {
+  let out: Date | null = null;
+  for (const d of dates) {
+    if (d == null) continue;
+    if (out == null || d.getTime() < out.getTime()) out = d;
+  }
+  return out;
+}
+
+// Latest non-null of a set of dates (null if all null).
+function latest(...dates: (Date | null)[]): Date | null {
+  let out: Date | null = null;
+  for (const d of dates) {
+    if (d == null) continue;
+    if (out == null || d.getTime() > out.getTime()) out = d;
+  }
+  return out;
+}
+
 export async function groupByCustomer(): Promise<CustomerGroup[]> {
-  const rows = await db
+  // (A) LIVE — group orders by email. Most-recent name/country via array_agg[1]; paid revenue
+  // via a filtered SUM; first/last order via min/max on created_at.
+  const liveRows = await db
     .select({
       email: orders.email,
-      // most-recent name for this email (Postgres: name of the max created_at row)
       name: sql<string>`(array_agg(${orders.name} order by ${orders.createdAt} desc))[1]`,
-      orderCount: count(),
-      paidRevenueCents: sql<string | null>`sum(case when ${inArray(orders.status, [...PAID_STATUSES])} then ${orders.totalPrice} else 0 end)`,
-      lastOrderAt: sql<Date>`max(${orders.createdAt})`,
+      country: sql<string | null>`(array_agg(${orders.country} order by ${orders.createdAt} desc))[1]`,
+      liveOrderCount: count(),
+      livePaidRevenueCents: sql<string | null>`sum(case when ${inArray(orders.status, [...PAID_STATUSES])} then ${orders.totalPrice} else 0 end)`,
+      liveFirstAt: sql<Date | null>`min(${orders.createdAt})`,
+      liveLastAt: sql<Date | null>`max(${orders.createdAt})`,
     })
     .from(orders)
-    .groupBy(orders.email)
-    .orderBy(desc(sql`sum(case when ${inArray(orders.status, [...PAID_STATUSES])} then ${orders.totalPrice} else 0 end)`));
+    .groupBy(orders.email);
 
-  return rows.map((r) => ({
-    email: r.email,
-    name: r.name,
-    orderCount: r.orderCount,
-    paidRevenueCents: toCents(r.paidRevenueCents),
-    lastOrderAt: r.lastOrderAt,
-  }));
+  // (B) LEGACY — customers LEFT JOIN legacyOrders, grouped per customer. count()/sum on the
+  // joined legacy_orders columns → 0 for leads (no legacy rows) thanks to the left join.
+  const legacyRows = await db
+    .select({
+      email: customers.email,
+      name: customers.name,
+      country: customers.country,
+      firstOrderAt: customers.firstOrderAt,
+      legacyOrderCount: sql<number>`count(${legacyOrders.id})`,
+      legacyRevenueCents: sql<string | null>`sum(${legacyOrders.amountCents})`,
+      legacyLastAt: sql<Date | null>`max(${legacyOrders.orderedAt})`,
+    })
+    .from(customers)
+    .leftJoin(legacyOrders, eq(legacyOrders.customerId, customers.id))
+    .groupBy(customers.id, customers.email, customers.name, customers.country, customers.firstOrderAt);
+
+  // Merge by lowercased email.
+  type Merged = {
+    email: string;
+    liveName: string | null;
+    liveCountry: string | null;
+    legacyName: string | null;
+    legacyCountry: string | null;
+    liveOrderCount: number;
+    legacyOrderCount: number;
+    livePaidRevenueCents: number;
+    legacyRevenueCents: number;
+    legacyFirstAt: Date | null;
+    liveFirstAt: Date | null;
+    liveLastAt: Date | null;
+    legacyLastAt: Date | null;
+  };
+  const byEmail = new Map<string, Merged>();
+
+  function slot(email: string): Merged {
+    const key = email.toLowerCase();
+    let m = byEmail.get(key);
+    if (!m) {
+      m = {
+        email,
+        liveName: null,
+        liveCountry: null,
+        legacyName: null,
+        legacyCountry: null,
+        liveOrderCount: 0,
+        legacyOrderCount: 0,
+        livePaidRevenueCents: 0,
+        legacyRevenueCents: 0,
+        legacyFirstAt: null,
+        liveFirstAt: null,
+        liveLastAt: null,
+        legacyLastAt: null,
+      };
+      byEmail.set(key, m);
+    }
+    return m;
+  }
+
+  for (const r of liveRows) {
+    const m = slot(r.email);
+    m.liveName = r.name;
+    m.liveCountry = r.country;
+    m.liveOrderCount = r.liveOrderCount;
+    m.livePaidRevenueCents = toCents(r.livePaidRevenueCents);
+    m.liveFirstAt = r.liveFirstAt;
+    m.liveLastAt = r.liveLastAt;
+  }
+
+  for (const r of legacyRows) {
+    const m = slot(r.email);
+    m.legacyName = r.name;
+    m.legacyCountry = r.country;
+    // count() on the joined column is a bigint → number|string depending on driver; coerce.
+    m.legacyOrderCount = Math.round(Number(r.legacyOrderCount));
+    m.legacyRevenueCents = toCents(r.legacyRevenueCents);
+    m.legacyFirstAt = r.firstOrderAt;
+    m.legacyLastAt = r.legacyLastAt;
+  }
+
+  const groups: CustomerGroup[] = [];
+  for (const m of byEmail.values()) {
+    const orderCount = m.liveOrderCount + m.legacyOrderCount;
+    const clientType: CustomerGroup["clientType"] =
+      orderCount >= 2 ? "regular" : orderCount === 1 ? "client" : "lead";
+    groups.push({
+      email: m.email,
+      name: m.liveName ?? m.legacyName ?? m.email,
+      country: m.legacyCountry ?? m.liveCountry ?? null,
+      clientType,
+      orderCount,
+      liveOrderCount: m.liveOrderCount,
+      legacyOrderCount: m.legacyOrderCount,
+      revenueCents: m.livePaidRevenueCents + m.legacyRevenueCents,
+      firstOrderAt: earliest(m.legacyFirstAt, m.liveFirstAt),
+      lastOrderAt: latest(m.liveLastAt, m.legacyLastAt),
+    });
+  }
+
+  groups.sort((a, b) => b.revenueCents - a.revenueCents || b.orderCount - a.orderCount);
+  return groups;
 }

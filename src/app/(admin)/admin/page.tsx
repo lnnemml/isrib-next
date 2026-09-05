@@ -38,6 +38,20 @@ function fmtDate(d: Date): string {
   });
 }
 
+// Null-safe date label for the unified customer view (legacy dates can be null).
+function fmtDateOrDash(d: Date | null): string {
+  return d ? fmtDate(d) : "—";
+}
+
+// Small badge classes per client type — reusing existing color tokens only.
+function clientTypeBadge(t: "regular" | "client" | "lead"): string {
+  const base =
+    "inline-block rounded-full px-2 py-0.5 font-mono text-caption font-medium uppercase tracking-[0.06em]";
+  if (t === "regular") return `${base} bg-success/10 text-success`;
+  if (t === "client") return `${base} bg-surface-soft text-text-muted`;
+  return `${base} bg-surface-soft text-text-faint`;
+}
+
 function itemsSummary(items: AdminOrderItemRow[]): string {
   if (items.length === 0) return "—";
   const totalUnits = items.reduce((n, it) => n + it.quantity, 0);
@@ -136,6 +150,11 @@ export default async function AdminDashboardPage() {
   const ratioLabel =
     bi.paid30d > 0 ? `${bi.unpaidToPaidRatio.toFixed(2)}× unpaid/paid` : "no paid orders";
   const rows = orders.map(toRowData);
+
+  // Customers summary (ADR 0012 — across LIVE + LEGACY).
+  const customerBuyers = customers.filter((c) => c.orderCount >= 1).length;
+  const customerRepeat = customers.filter((c) => c.orderCount >= 2).length;
+  const customerLifetimeRevenueCents = customers.reduce((sum, c) => sum + c.revenueCents, 0);
 
   return (
     <div className="min-h-screen bg-surface-soft">
@@ -318,16 +337,24 @@ export default async function AdminDashboardPage() {
           </table>
         </div>
 
-        {/* 5 — Customers */}
+        {/* 5 — Customers (ADR 0012 — LIVE + LEGACY unified: repeat count + lifetime LTV) */}
         <SectionHeading>{`Customers (${customers.length})`}</SectionHeading>
+        <p className="mb-3 -mt-1 text-caption text-text-muted">
+          {`${customers.length} total · ${customerBuyers} buyers · ${customerRepeat} repeat · ${formatCents(
+            customerLifetimeRevenueCents,
+          )} lifetime revenue`}
+        </p>
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-          <table className="w-full min-w-[720px]">
+          <table className="w-full min-w-[860px]">
             <thead className="border-b border-border bg-surface-soft">
               <tr>
                 <Th>{"Email"}</Th>
                 <Th>{"Name"}</Th>
+                <Th>{"Country"}</Th>
+                <Th>{"Type"}</Th>
                 <Th right>{"Orders"}</Th>
-                <Th right>{"Paid revenue"}</Th>
+                <Th right>{"Revenue (LTV)"}</Th>
+                <Th>{"First order"}</Th>
                 <Th>{"Last order"}</Th>
               </tr>
             </thead>
@@ -336,14 +363,26 @@ export default async function AdminDashboardPage() {
                 <tr key={c.email} className="border-b border-border last:border-0">
                   <td className="px-3 py-2 text-caption text-text">{c.email}</td>
                   <td className="px-3 py-2 text-caption text-text-muted">{c.name}</td>
-                  <td className="px-3 py-2 text-right text-caption text-text-muted">{c.orderCount}</td>
-                  <td className="px-3 py-2 text-right text-caption font-semibold text-text">{formatCents(c.paidRevenueCents)}</td>
-                  <td className="px-3 py-2 text-caption text-text-muted">{fmtDate(c.lastOrderAt)}</td>
+                  <td className="px-3 py-2 text-caption text-text-muted">{c.country ?? "—"}</td>
+                  <td className="px-3 py-2">
+                    <span className={clientTypeBadge(c.clientType)}>{c.clientType}</span>
+                  </td>
+                  <td className="px-3 py-2 text-right text-caption text-text-muted">
+                    {c.orderCount}
+                    {c.legacyOrderCount > 0 && (
+                      <span className="text-text-faint">
+                        {` (${c.liveOrderCount}+${c.legacyOrderCount})`}
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right text-caption font-semibold text-text">{formatCents(c.revenueCents)}</td>
+                  <td className="px-3 py-2 text-caption text-text-muted">{fmtDateOrDash(c.firstOrderAt)}</td>
+                  <td className="px-3 py-2 text-caption text-text-muted">{fmtDateOrDash(c.lastOrderAt)}</td>
                 </tr>
               ))}
               {customers.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-caption text-text-faint">
+                  <td colSpan={8} className="px-3 py-6 text-center text-caption text-text-faint">
                     {"No customers yet"}
                   </td>
                 </tr>
