@@ -74,7 +74,7 @@ async function sendMetaCAPI(name: EventName, props: ServerEventProps): Promise<v
   if (props.ip) userData.client_ip_address = props.ip;
   if (props.userAgent) userData.client_user_agent = props.userAgent;
 
-  const payload = {
+  const payload: Record<string, unknown> = {
     data: [
       {
         event_name: EVENT_MAP[name] ?? name,
@@ -90,6 +90,14 @@ async function sendMetaCAPI(name: EventName, props: ServerEventProps): Promise<v
       },
     ],
   };
+
+  // TEST ONLY: when META_CAPI_TEST_EVENT_CODE is set, route this event to Meta's
+  // Test Events tool. Top-level sibling of `data` per CAPI spec. Absent/empty env
+  // var => body is exactly as in production (no test_event_code key).
+  const testEventCode = process.env.META_CAPI_TEST_EVENT_CODE?.trim();
+  if (testEventCode) {
+    payload.test_event_code = testEventCode;
+  }
 
   try {
     const res = await fetch(
