@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { PasswordInput } from "@/components/ui";
 import {
   signInCustomer,
   resendVerification,
@@ -72,8 +73,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
 
         <label className="flex flex-col gap-1.5">
           <span className={labelClass}>Password</span>
-          <input
-            type="password"
+          <PasswordInput
             name="password"
             autoComplete="current-password"
             required

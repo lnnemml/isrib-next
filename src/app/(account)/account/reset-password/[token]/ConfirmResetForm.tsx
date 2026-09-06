@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { PasswordInput } from "@/components/ui";
 import { resetPassword, type ResetState } from "@/app/actions/customerAuth";
 
 const initialState: ResetState = null;
@@ -23,8 +24,7 @@ export function ConfirmResetForm({
     <form action={formAction} className="flex flex-col gap-4">
       <label className="flex flex-col gap-1.5">
         <span className={labelClass}>New password</span>
-        <input
-          type="password"
+        <PasswordInput
           name="password"
           autoComplete="new-password"
           minLength={8}
@@ -35,8 +35,7 @@ export function ConfirmResetForm({
 
       <label className="flex flex-col gap-1.5">
         <span className={labelClass}>Confirm new password</span>
-        <input
-          type="password"
+        <PasswordInput
           name="confirmPassword"
           autoComplete="new-password"
           minLength={8}

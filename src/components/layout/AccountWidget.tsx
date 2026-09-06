@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PasswordInput } from "@/components/ui";
 import { signInCustomer, signOutCustomer, type SignInState } from "@/app/actions/customerAuth";
 
 type PublicCustomer = { name: string | null; email: string };
@@ -183,8 +184,7 @@ function SignInPopover() {
 
         <label className="flex flex-col gap-1.5">
           <span className={labelClass}>Password</span>
-          <input
-            type="password"
+          <PasswordInput
             name="password"
             autoComplete="current-password"
             required

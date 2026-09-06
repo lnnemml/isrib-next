@@ -1934,3 +1934,80 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   read the base URL from a runtime (non-NEXT_PUBLIC) var or request headers so a domain change needs
   no rebuild. Memory: [[next-public-base-url-build-time-inlined]].
 - **Roles run:** LEAD (doc-verified root-cause).
+
+## [2026-09-06] gate | G2 crypto webhook FIXED — canonical domain flipped to non-www (apex)
+
+- **Symptom:** after a real crypto payment on isrib.shop, the shipping form stayed stuck in
+  "confirming" and NO payment-confirmed email arrived. Both = the NowPayments IPN never flipped
+  the order to `paid`.
+- **Root cause:** Vercel had `www.isrib.shop` as the primary (serving) domain and `isrib.shop`
+  (apex) 308-redirecting to www. The invoice `ipn_callback_url` is
+  `${NEXT_PUBLIC_BASE_URL}/api/webhooks/nowpayments` = `https://isrib.shop/...` (non-www). NowPayments'
+  IPN POST hit the **308 apex→www redirect**; webhook POSTs aren't followed across redirects (and the
+  `x-nowpayments-sig` header/body would be lost anyway) → the webhook route never ran → no `paid`
+  transition, no `paymentConfirmed` email, shipping link never revealed.
+- **Fix (no code, no redeploy):** flipped the Vercel Domains config — `isrib.shop` (apex) is now the
+  primary/serving domain, `www.isrib.shop` → 308 → apex. Matches `NEXT_PUBLIC_BASE_URL=https://isrib.shop`
+  + all hardcoded canonical URLs (sitemap/robots/journal) + ADR + the old site (all non-www).
+- **Verified (LEAD, curl):** `https://isrib.shop/` → 200; `https://isrib.shop/api/webhooks/nowpayments`
+  → 405 (GET) / 401 (empty POST) — **no longer 308**, route executes + verifies signature;
+  `https://www.isrib.shop/` → 308 → apex.
+- **Follow-ups:** (1) stuck order `ISR-953PYY84` won't self-heal (its invoice baked the non-www
+  callback) → resolve via admin → Mark Paid. (2) fresh crypto E2E to confirm the full chain
+  (IPN → paid → email → shipping form via the success-page poller).
+- Memory: [[nowpayments-ipn-callback-must-match-canonical-host]].
+- **Roles run:** LEAD (curl diagnosis of the 308-on-POST + fix verification).
+
+## [2026-09-06] gate | G2 GREEN on isrib.shop — cutover effectively complete
+
+- **Anton confirmed full E2E on the live domain: BOTH manual and crypto (auto) payment work.**
+  Crypto: IPN → status `paid` → payment-confirmed email → shipping form revealed on the success
+  page (via the auto-refresh poller). Manual: admin Mark-Paid path fires the confirmed email + link.
+  This closes **G2** — the highest-risk cutover gate — on the production domain.
+- **Cutover state:** `isrib.shop` (apex) now serves the new Next app (200) — the domain has been
+  reassigned to the isrib-next Vercel project. 301 legacy map is LIVE
+  (`/product_isrib_A15.html` → 308 → `/products/isrib-a15` verified on prod). sitemap/robots/poller
+  all deployed. Gates G0/G1/G2/G3/G4 green. **The new platform is live and correctly taking orders.**
+- **Residual (post-cutover, mostly Track B / ops):** (1) monitor 48h — orders in Neon, emails,
+  analytics; (2) confirm the OLD deploy is retained ≥7 days as rollback (ADR 0004); (3) `isrib-a15.com`
+  → 301 to isrib.shop — confirm done; (4) add `isrib-research.com` to Vercel to activate the journal
+  301s (Track B); (5) `/unsubscribe.html` from old nurture emails has no new route (Track B email
+  system decision); (6) un-pause ads after 3–4 day stabilisation (single-variable discipline).
+- Only `docs/wiki/log.md` is uncommitted (this log); all app code is committed + deployed.
+- **Roles run:** LEAD (deploy/gate verification via curl + git).
+
+## [2026-09-06] phase | Password show/hide toggle on all account password fields
+
+- Anton reported you can't see what you type in the password fields on register / password-change /
+  login — needed a show/hide toggle.
+- Built one reusable client component `src/components/ui/PasswordInput.tsx` (eye / eye-off toggle,
+  `type="button"` so it never submits, Feather eye paths matching the existing inline-SVG style),
+  exported from the `ui` barrel, and wired it into all four customer-facing password inputs:
+  RegisterForm (password + confirm), ConfirmResetForm (password + confirm), account/login LoginForm,
+  and the header AccountWidget SignInPopover (narrow variant). Admin login + server actions untouched.
+- Verified at runtime in-browser: masked → click eye → reveals plaintext, icon flips; confirm field
+  toggles independently; full input width preserved on both the wide form variant and the narrow
+  header popover. `npx tsc --noEmit` clean.
+- **Roles run:** LEAD (orchestration + runtime visual verify), implementer (component + wiring).
+
+## [2026-09-06] ingest | TBI journal article written (PubMed-sourced) — last /journal 404 closed
+
+- Wrote `content/journal/tbi/isrib-traumatic-brain-injury-research.mdx` (replacing the old 46-word
+  placeholder stub), enabling the `tbi` cluster card on the journal index. This is the target of the
+  `isrib-research.com/tbi/isrib-traumatic-brain-injury-research` 301 — previously a 404.
+- **Sources (real, via PubMed MCP — all directly ISRIB×TBI):** Chou et al. 2017 PNAS
+  (doi:10.1073/pnas.1707661114) — landmark, ISRIB reverses TBI cognitive deficits weeks post-injury,
+  effect persists, LTP restored; Krukowski et al. 2020 J Neurotrauma (doi:10.1089/neu.2019.6827) —
+  repetitive mild TBI, synaptic + behavioral reversal; Frias et al. 2022 PNAS
+  (doi:10.1073/pnas.2209427119) — two-photon spine dynamics + working memory reversed; Ilyin et al.
+  2024 Brain Research (doi:10.1016/j.brainres.2024.149329) — zebrafish cross-species replication.
+- **Compliance decisions (LEAD):** honest-skeptic voice; research-use framing; states explicitly and
+  repeatedly that ALL data is animal and there are NO human ISRIB/A15 TBI trials + "not medical advice."
+  Deliberately OMITTED: DoseProtocol (would read as a TBI dosing protocol), UserQuote (no compliant/real
+  TBI testimonials; never fabricate), and the word "dementia" entirely (hard "no dementia claims" rule —
+  though source Frias 2022 frames TBI as a dementia risk factor, not carried over). CTA → /products/isrib-a15.
+- Verified: `tsc` + `next build` green (both `/journal/tbi` + article route SSG-prerendered); LEAD
+  runtime browser check on dev — article renders, all 4 ResearchCallouts render (no unrendered-citation
+  regression), auto CTA→Related→AuthorBio append, reading-time auto. **Uncommitted → needs commit + deploy**
+  so prod `isrib.shop/journal/tbi/...` resolves (the isrib-research.com/tbi 301 lands on prod 404 until then).
+- **Roles run:** LEAD (PubMed research + full copy draft + compliance + runtime verify) → 1× implementer.

@@ -8,3 +8,4 @@ export { ComparisonTable } from "./ComparisonTable";
 export { FaqAccordion } from "./FaqAccordion";
 export { CheckoutStepper } from "./CheckoutStepper";
 export { PaymentSelector, RadioCard } from "./PaymentSelector";
+export { PasswordInput } from "./PasswordInput";

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { PasswordInput } from "@/components/ui";
 import { registerCustomer, type RegisterState } from "@/app/actions/customerAuth";
 
 const initialState: RegisterState = null;
@@ -41,8 +42,7 @@ export function RegisterForm() {
 
         <label className="flex flex-col gap-1.5">
           <span className={labelClass}>Password</span>
-          <input
-            type="password"
+          <PasswordInput
             name="password"
             autoComplete="new-password"
             minLength={8}
@@ -53,8 +53,7 @@ export function RegisterForm() {
 
         <label className="flex flex-col gap-1.5">
           <span className={labelClass}>Confirm password</span>
-          <input
-            type="password"
+          <PasswordInput
             name="confirmPassword"
             autoComplete="new-password"
             minLength={8}

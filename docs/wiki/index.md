@@ -146,8 +146,9 @@ rather than scanning the whole directory.
 - Full research-evidence ingest → flesh out `product/mechanism-and-science.md`
 - Full VOC phrase bank → `marketing/voice-of-customer.md`
 - Email lead-gen system → `architecture/email-leadgen.md` (Track B)
-- Journal content phases → finish the TBI stub, then write the roadmap articles in
+- Journal content phases → write the roadmap articles in
   [`marketing/organic-content-strategy.md`](./marketing/organic-content-strategy.md) §4
-  (journal infra is BUILT — see the 2026-09-06 build summary)
+  (journal infra is BUILT; all 8 launch articles incl. the TBI piece are written —
+  see the 2026-09-06 build + TBI-article log entries)
 
 See [`log.md`](./log.md) for the chronological record.

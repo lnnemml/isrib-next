@@ -11,8 +11,9 @@ export function generateMetadata(): Metadata {
 }
 
 // Cluster cards. Only clusters that currently hold content are linked (never link a
-// zero-article cluster to a 404). TBI is shown as a non-linked "coming soon" card so
-// the editorial map reads complete without dangling to a missing route.
+// zero-article cluster to a 404). A cluster with no articles renders as a non-linked
+// "coming soon" card so the editorial map reads complete without dangling to a missing
+// route.
 const CLUSTER_CARDS: { slug: JournalCluster; label: string; blurb: string }[] = [
   {
     slug: "compare",
@@ -33,6 +34,11 @@ const CLUSTER_CARDS: { slug: JournalCluster; label: string; blurb: string }[] = 
     slug: "blog",
     label: "Blog",
     blurb: "Field notes on brain fog, burnout, and cognitive recovery.",
+  },
+  {
+    slug: "tbi",
+    label: "TBI",
+    blurb: "What the preclinical research shows on ISRIB, the integrated stress response, and recovery after brain injury.",
   },
 ];
 
