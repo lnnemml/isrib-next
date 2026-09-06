@@ -1840,3 +1840,19 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   structure; card click → `/journal/guide/isrib-a15-complete-guide`; checkout helper text
   updated. `tsc` green. **Not committed/deployed.**
 - **Roles run:** LEAD (recon + specs + runtime verify) → 2× implementer.
+
+## [2026-09-06] lint | Dark footer + favicon from legacy site
+
+- **Footer restyle** (`src/components/layout/Footer.tsx`): repainted to a blue-black dark
+  background so it stands out from the page. Used the locked DS inverse token
+  `bg-surface-inverse` (slate-900 `#0f172a`) + `border-slate-800`; flipped brand/heading/link/
+  copyright text to the light slate scale (`text-white`/`text-slate-200/400/500`). No new colors
+  invented; structure/links/copy unchanged.
+- **Favicon** copied from the legacy live site (`~/Documents/ISRIB/isrib shop website/ISRIB/images/`):
+  `favicon.ico` → `src/app/favicon.ico` (md5 `77c4934c…` matches source), plus `favicon-32x32.png`
+  → `src/app/icon.png` and `apple-touch-icon.png` → `src/app/apple-icon.png` per the Next 16
+  app-icons file convention (auto-detected — no layout/code change). Dev serves all three; `<head>`
+  emits the correct icon/apple-touch links.
+- Runtime-verified (LEAD, dev browser + curl): footer dark and legible; `/favicon.ico` md5 matches;
+  icon links emitted. `tsc` green. **Not committed/deployed.**
+- **Roles run:** LEAD (recon + spec + runtime verify) → 1× implementer.

@@ -22,7 +22,7 @@ const LEGAL_LINKS: { label: string; href: string }[] = [
 function FooterColumn({ heading, children }: { heading: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="mb-4 font-mono text-mono-label font-medium uppercase tracking-[0.08em] text-text-faint">
+      <h3 className="mb-4 font-mono text-mono-label font-medium uppercase tracking-[0.08em] text-slate-500">
         {heading}
       </h3>
       <ul className="flex flex-col gap-2.5">{children}</ul>
@@ -33,7 +33,7 @@ function FooterColumn({ heading, children }: { heading: string; children: React.
 function FooterLink({ href, label }: { href: string; label: string }) {
   return (
     <li>
-      <Link href={href} className="text-small text-text-muted transition hover:text-text">
+      <Link href={href} className="text-small text-slate-400 transition hover:text-white">
         {label}
       </Link>
     </li>
@@ -47,20 +47,20 @@ export function Footer() {
   });
 
   return (
-    <footer className="border-t border-border bg-surface-soft">
+    <footer className="border-t border-slate-800 bg-surface-inverse">
       <div className="mx-auto max-w-[--container-page] px-8 py-14">
         <div className="grid grid-cols-2 gap-10 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
-            <div className="font-semibold text-text">
+            <div className="font-semibold text-white">
               {"ISRIB"}
-              <span className="text-text-faint">{".shop"}</span>
+              <span className="text-slate-400">{".shop"}</span>
             </div>
-            <p className="mt-3 max-w-[38ch] text-small text-text-muted">
+            <p className="mt-3 max-w-[38ch] text-small text-slate-400">
               {"Research compounds for scientific use. Quality-verified, COA per batch, worldwide shipping."}
             </p>
-            <p className="mt-3 text-small text-text-muted">
+            <p className="mt-3 text-small text-slate-400">
               {"Email: "}
-              <a href="mailto:isrib.shop@protonmail.com" className="text-text transition hover:text-primary">
+              <a href="mailto:isrib.shop@protonmail.com" className="text-slate-200 transition hover:text-white">
                 {"isrib.shop@protonmail.com"}
               </a>
             </p>
@@ -86,8 +86,8 @@ export function Footer() {
           </FooterColumn>
         </div>
 
-        <div className="mt-12 border-t border-border pt-6">
-          <p className="text-caption text-text-faint">
+        <div className="mt-12 border-t border-slate-800 pt-6">
+          <p className="text-caption text-slate-500">
             {"© 2026 ISRIB.shop. Research chemicals for laboratory use only."}
           </p>
         </div>
