@@ -27,6 +27,10 @@ const GA4_ONLY_EVENTS = new Set<string>([
   // Meta. GTM must be configured to fire the GA4 tag on this dataLayer event and
   // GA4 enhanced-measurement page_view disabled to avoid double-count (runbook note).
   "page_view",
+  // Scroll-depth engagement (ScrollDepthTracker). GA4-only — replaces the GTM-native
+  // scroll trigger. Must not fan to Meta (not a conversion signal). GTM must fire the
+  // GA4 tag on this dataLayer event and the GTM-native scroll trigger be removed.
+  "scroll_depth",
 ]);
 
 /**

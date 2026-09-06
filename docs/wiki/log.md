@@ -1762,3 +1762,17 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   **This is the pre-cutover blocker Anton wanted closed before moving isrib.shop.**
 - **Roles run:** LEAD (recon synth, 4 forks, 3 slice specs, runbook, wiki) → 1× explorer → 3× implementer →
   1× verifier → 1× prober.
+
+## [2026-09-06] phase | Analytics — code-based ScrollDepthTracker (full SPA scroll depth)
+
+- Added `src/components/analytics/ScrollDepthTracker.tsx` (client, in root layout): fires
+  `trackEvent("scroll_depth", { percent_scrolled, page_path })` at 25/50/75/90, re-armed on route
+  change (full SPA coverage), GA4-only (added `"scroll_depth"` to `GA4_ONLY_EVENTS`). Guards: skips
+  non-scrollable pages, rAF-throttled, listener cleanup, strict-mode-safe via a fired-Set ref. `tsc` +
+  build green. Touched only ScrollDepthTracker + client.ts (one line) + layout.tsx.
+- **Supersedes the GTM-native scroll approach** (would double-count with the code tracker on full loads).
+  Runbook §2c updated: DELETE any built-in Scroll Depth trigger; treat `scroll_depth` as a normal Custom
+  Event (DLV `percent_scrolled` + CE trigger + GA4 tag), disable GA4 enhanced-measurement Scrolls.
+- **On Anton (GTM):** remove the native scroll trigger/tag; add DLV `percent_scrolled` + CE trigger
+  `scroll_depth` + GA4 `scroll_depth` tag. Runtime-verify during the synthetic E2E. **Not yet committed/deployed.**
+- **Roles run:** LEAD (spec + runbook) → 1× implementer.

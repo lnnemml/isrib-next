@@ -13,6 +13,7 @@ import {
 } from "@/components/analytics/GoogleTagManager";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
 import { RouteChangeTracker } from "@/components/analytics/RouteChangeTracker";
+import { ScrollDepthTracker } from "@/components/analytics/ScrollDepthTracker";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -55,6 +56,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 the document). Suspense-wrapped alongside RefCapture — consistent and safe
                 if cacheComponents is later enabled (usePathname can suspend). Renders no UI. */}
             <RouteChangeTracker />
+            {/* Fires GA4-only scroll_depth (25/50/75/90%) once per page view; re-arms on
+                SPA route change. Replaces the GTM-native scroll trigger. Same client
+                boundary as RouteChangeTracker (usePathname can suspend). Renders no UI. */}
+            <ScrollDepthTracker />
           </Suspense>
           {/* ChromeGate hides Header/Footer on /admin* (dense internal tool owns the
               viewport); every other route keeps the marketing chrome. The <main> wrapper
