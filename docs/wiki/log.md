@@ -1891,3 +1891,46 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   `/checkout.html`→`/checkout`, `/success.html`→`/checkout/success`, `/zzl-7`→`/products/zzl-7` — all 308.
   `tsc` + `next build` green. **Not committed/deployed.**
 - **Roles run:** LEAD (gate assessment + recon + spec + runtime verify) → 1× implementer.
+
+## [2026-09-06] fix | Shipping link — env-driven (not hardcoded) + success-page auto-reveal
+
+- **"Update the shipping link in the email" — no code change needed.** Grepped all of `src/`:
+  NO hardcoded `isrib-next.vercel.app` anywhere. The post-payment shipping URL is built from
+  `NEXT_PUBLIC_BASE_URL` in `webhooks/nowpayments/route.ts:86-87` and `admin/actions.ts:73`
+  (`${NEXT_PUBLIC_BASE_URL}/shipping/<token>`). The preview URL in the test email is because
+  the deployed `NEXT_PUBLIC_BASE_URL` currently = the preview domain. **Fix = set
+  `NEXT_PUBLIC_BASE_URL=https://isrib.shop` in prod at cutover** — one var also covers NowPayments
+  `ipn_callback_url` + `success_url`/`cancel_url` (submitOrder.ts:440-442) and all customerAuth
+  email links (verify-email, reset-password). Absolute `https://isrib.shop` in sitemap/robots/
+  journal-canonical/JSON-LD is correct (canonical host), not a stale-URL bug.
+- **Success page didn't show the shipping link right after crypto payment — by design, now improved.**
+  `checkout/success/page.tsx` gates the "Provide shipping details →" link behind `confirmedPaid`
+  (`order.status === "paid"`, set by the IPN webhook) — the spoofable `?paid=1` success_url flag
+  never reveals it (ADR 0010 security). During the crypto webhook race the buyer saw a static
+  "we'll email you" message. Added `PaymentConfirmationPoller` (client, `router.refresh()` every 4s,
+  capped ~3 min) mounted only in the `isPaid && !confirmedPaid` branch: the page now re-queries Neon
+  and reveals the link inline the moment the webhook confirms — no email wait. **Reveal condition
+  unchanged → zero security delta.** Copy updated to say the page auto-updates.
+- Verified: `tsc` green; gate reviewed unchanged; import path resolved. **Runtime (crypto-race
+  E2E) deferred** — it mutates prod Neon + fires emails; will be observed in the cutover smoke-test
+  (step 5, real crypto order). **Not committed/deployed.**
+- **Roles run:** LEAD (grep audit + root-cause + spec + review) → 1× implementer.
+
+## [2026-09-06] fix | CORRECTION — NEXT_PUBLIC_BASE_URL is build-time-inlined → redeploy required
+
+- Corrects the previous entry's "fix = set NEXT_PUBLIC_BASE_URL in prod" — that was INCOMPLETE.
+  Anton had already set `NEXT_PUBLIC_BASE_URL=https://isrib.shop` in Vercel Production BEFORE the
+  E2E test, yet the test email still showed `isrib-next.vercel.app/shipping/`.
+- **Root cause (confirmed in Next 16 docs `self-hosting.md`):** `NEXT_PUBLIC_*` vars are **inlined
+  into the bundle at `next build`** — including where server code reads `process.env.NEXT_PUBLIC_BASE_URL`
+  (webhook shipping link, `submitOrder` ipn_callback_url + success_url/cancel_url, customerAuth email
+  links). Updating the var in Vercel does NOT change an already-built deployment. **A redeploy/rebuild
+  is required** for the new value to take effect.
+- **Action:** redeploy the isrib-next production deployment (no build cache), then re-run the crypto E2E.
+  For cutover, the production build must be built with `NEXT_PUBLIC_BASE_URL=https://isrib.shop` (Vercel
+  does this for Production deploys).
+- **Deliberately NOT refactoring** the server-side URL construction to a runtime var now — it touches
+  G2 checkout code right before cutover (single-variable discipline). Candidate Track B hardening:
+  read the base URL from a runtime (non-NEXT_PUBLIC) var or request headers so a domain change needs
+  no rebuild. Memory: [[next-public-base-url-build-time-inlined]].
+- **Roles run:** LEAD (doc-verified root-cause).

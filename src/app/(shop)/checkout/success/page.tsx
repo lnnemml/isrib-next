@@ -8,6 +8,7 @@ import { orders, orderItems } from "@/lib/db/schema";
 import { getProduct, formatCents } from "@/lib/copy/products";
 import { eq } from "drizzle-orm";
 import { ClearCartOnMount } from "../ClearCartOnMount";
+import { PaymentConfirmationPoller } from "../PaymentConfirmationPoller";
 
 function productName(slug: string): string {
   return getProduct(slug)?.name ?? slug;
@@ -118,7 +119,10 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
               </Link>
             </>
           ) : (
-            <p className="text-body text-text-muted">{"We're confirming your payment now — this usually takes just a few minutes. We'll email you a link to provide your shipping details as soon as it's confirmed."}</p>
+            <>
+              <p className="text-body text-text-muted">{"We're confirming your payment now — this usually takes just a few minutes. This page will update automatically as soon as it's confirmed, and we'll also email you a link to provide your shipping details."}</p>
+              <PaymentConfirmationPoller />
+            </>
           )}
         </div>
       ) : (
