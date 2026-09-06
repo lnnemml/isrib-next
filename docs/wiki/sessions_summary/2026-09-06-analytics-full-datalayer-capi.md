@@ -1,9 +1,9 @@
 # Session summary — 2026-09-06 · Analytics: full dataLayer + CAPI
 
 > Made analytics "повноцінна: via dataLayer + CAPI" with proper Meta dedup. Built +
-> verifier-approved + prober-verified (feasible-headless). **Not deployed; GATED on
-> Anton (db:push + GTM container + synthetic E2E).** This is the pre-cutover blocker
-> Anton wanted closed before moving `isrib.shop`.
+> verifier-approved + prober-verified + **deployed + full E2E verified (GTM Preview +
+> Meta Test Events) + cleaned up.** This was the pre-cutover blocker Anton wanted closed
+> before moving `isrib.shop` — **DONE.** Next: cutover.
 
 ## Starting state (recon)
 
@@ -36,6 +36,9 @@ a client `order_submitted`; the webhook `order_confirmed` carried no `event_id`)
 - **C — coverage:** `EventParams` widened for arrays (`content_ids`); `ProductViewTracker`
   (product_viewed → ViewContent on product pages); `RouteChangeTracker` (page_view on SPA
   route change, GA4-only); `email_subscribed` (→ Lead, server CAPI) on new-lead registration.
+- **Follow-up slice — `ScrollDepthTracker`:** fires `scroll_depth` at 25/50/75/90, re-armed on
+  route change (full SPA coverage), GA4-only. Replaced the GTM-native scroll approach (would
+  double-count). Plus env-driven `META_CAPI_TEST_EVENT_CODE` in `server.ts` for Test-Events routing.
 
 ## Verification
 
@@ -47,20 +50,31 @@ a client `order_submitted`; the webhook `order_confirmed` carried no `event_id`)
 - **Prober: PASS** (feasible headless) — bootstrap no-ops with empty env; injects GTM +
   fbevents + `fbq("init")` + noscript fallbacks when configured; zero raw analytics calls
   in components; `page_view` GA4-only; product_viewed wired; build-green.
-- **Blocked-on-gate (not run):** order→CAPI→webhook dedup E2E (needs db:push), GTM tag
-  firing (needs the real container), Meta Test Events dedup (needs the real pixel + test code).
 
-## GATED ON ANTON (in order)
+## Deployment + E2E verification (DONE — post-deploy)
 
-1. **`npm run db:push`** — adds `orders.event_id`; **must precede deploy** (a checkout writes
-   it). Additive/nullable — safe (choose "no truncation" if prompted, like the referral push).
-2. **Create + publish the GTM container**, set `NEXT_PUBLIC_GTM_ID`, and confirm the Pixel /
-   GA4 / Clarity / `META_CAPI_ACCESS_TOKEN` / `GA4_API_SECRET` envs in Vercel. Configure the
-   GTM tags per [`../architecture/analytics-gtm-runbook.md`](../architecture/analytics-gtm-runbook.md)
-   (GA4 config with pageview OFF; GA4 event tags; Clarity tag; **do NOT add a Meta Pixel tag**).
-3. **Synthetic E2E** ([[qa-use-synthetic-not-real-customers]]) — GTM Preview + Meta Events
-   Manager Test Events (confirm `InitiateCheckout` counted once = deduped) + GA4 DebugView;
-   clean up after.
+Anton ran `db:push` (adds `orders.event_id`), created + published GTM container
+**`GTM-KKX85H6G`** (DLV + triggers + GA4 tags + Clarity per the runbook), and moved the
+CAPI secrets from the old `isrib-analytics-api-fbqy` project (`FB_ACCESS_TOKEN`→
+`META_CAPI_ACCESS_TOKEN`, `GA_API_SECRET`→`GA4_API_SECRET`). Then deployed.
+
+- **Server CAPI verified in Meta Test Events** (pixel `1228338595957402`): a LEAD direct probe
+  (HTTP 200, `events_received:1`) AND Anton's **real app checkout** both landed as Server
+  `InitiateCheckout` events → the app `submitOrder`→CAPI integration is proven, not just the
+  raw endpoint. (Meta Test Events has strong latency — the initial "nothing shows" was that,
+  plus browsing fires only client events.)
+- **GTM Preview verified** (Anton): tags fire correctly.
+- **Client dataLayer verified** (LEAD, deployed site): `product_viewed` (`content_ids` array),
+  `page_view`, `scroll_depth` (25/50) push with correct params; `event_id` only on `order_submitted`.
+- **Dedup:** client + server share one `event_id` (code-guaranteed). Full browser+server
+  "Deduplicated" view needs an unblocked browser (the local Chrome adblocker 503s gtm.js +
+  fbevents.js — [[analytics-capi-verified-and-adblock-caveat]]); real users (~70%) get it.
+- **Cleanup done (Anton):** removed `META_CAPI_TEST_EVENT_CODE` from Vercel prod + `.env.local`
+  + redeploy; deleted the synthetic test order; committed the pending slices (ScrollDepthTracker
+  + env-driven test_event_code).
+
+**Analytics = functionally complete + verified.** The env-driven `META_CAPI_TEST_EVENT_CODE`
+stays in the code (inert without the env var) for future Test-Events runs — never set in prod.
 
 ## Related
 - [`../architecture/analytics-gtm-runbook.md`](../architecture/analytics-gtm-runbook.md) (the setup steps) ·

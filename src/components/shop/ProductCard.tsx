@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/CartProvider";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils/cn";
@@ -23,6 +24,7 @@ function usd(cents: number): string {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addLine } = useCart();
+  const router = useRouter();
   const options = getCatalogOptions(product);
 
   // True only for per-gram products (A15/ISRIB), which have discounted sizes — drives the
@@ -54,7 +56,10 @@ export function ProductCard({ product }: ProductCardProps) {
   }
 
   return (
-    <article className="flex h-full flex-col rounded-xl border border-border bg-surface p-6 shadow-sm transition hover:shadow-md">
+    <article
+      onClick={() => router.push(`/products/${product.slug}`)}
+      className="flex h-full cursor-pointer flex-col rounded-xl border border-border bg-surface p-6 shadow-sm transition hover:shadow-md"
+    >
       {/* Formula box — bordered slot echoing the product hero's formula panel, smaller. */}
       <div className="mb-5 flex aspect-[3/2] items-center justify-center rounded-lg border border-border bg-surface-soft p-4">
         {product.assets?.formulaSvg ? (
@@ -100,6 +105,7 @@ export function ProductCard({ product }: ProductCardProps) {
         <select
           id={`size-${product.slug}`}
           value={index}
+          onClick={(e) => e.stopPropagation()}
           onChange={(e) => setIndex(Number(e.target.value))}
           className="w-full rounded-lg border-2 border-border bg-surface px-3 py-2.5 font-mono text-[14px] text-text transition focus:border-primary focus:outline-none"
         >
@@ -133,6 +139,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <span>{"💊 Also available in "}</span>
             <a
               href={`/products/${product.slug}`}
+              onClick={(e) => e.stopPropagation()}
               className="underline underline-offset-2 hover:text-success"
             >
               {"pre-measured 20mg capsules"}
@@ -143,13 +150,22 @@ export function ProductCard({ product }: ProductCardProps) {
 
       {/* Add-to-cart (label reflects selection) + View details. */}
       <div className="mt-5 flex flex-col gap-2">
-        <Button type="button" variant="primary" onClick={handleAdd} className="w-full">
+        <Button
+          type="button"
+          variant="primary"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAdd();
+          }}
+          className="w-full"
+        >
           {selected
             ? `Add to cart — ${selected.sizeLabel} for ${usd(selected.priceCents)}`
             : "Add to cart"}
         </Button>
         <a
           href={`/products/${product.slug}`}
+          onClick={(e) => e.stopPropagation()}
           className={cn(
             "inline-flex items-center justify-center gap-1.5 rounded-md px-4 py-2.5 text-[14px]",
             "font-semibold text-slate-700 transition hover:text-primary",

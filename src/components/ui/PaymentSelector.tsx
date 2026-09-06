@@ -90,7 +90,7 @@ export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) 
             </span>
           </span>
           <span className="mt-1 block text-[14px] leading-[1.55] text-text-faint">
-            No card checkout at this time — by design.
+            No card checkout at this time.
           </span>
         </span>
       </label>

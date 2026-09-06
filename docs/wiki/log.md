@@ -1776,3 +1776,33 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **On Anton (GTM):** remove the native scroll trigger/tag; add DLV `percent_scrolled` + CE trigger
   `scroll_depth` + GA4 `scroll_depth` tag. Runtime-verify during the synthetic E2E. **Not yet committed/deployed.**
 - **Roles run:** LEAD (spec + runbook) → 1× implementer.
+
+## [2026-09-06] gate | Analytics E2E — CAPI verified in Meta Test Events (server side)
+
+- Debug of "nothing in Test Events": root cause was NOT code. Server CAPI fires only on
+  checkout/registration (browsing = client-only events, blocked by the local browser's adblocker
+  which 503s gtm.js + fbevents.js). LEAD ran a direct Meta CAPI probe (token+pixel+TEST87172) →
+  HTTP 200 `events_received:1`. Then Anton's real app checkout ALSO landed in Test Events
+  (`4LkfYjHSr3F…`, Server InitiateCheckout) → app `submitOrder`→CAPI integration proven. Meta Test
+  Events just has strong latency.
+- **Verified:** server CAPI (probe + real app checkout) + client dataLayer layer (product_viewed
+  content_ids array, page_view, scroll_depth 25/50 observed earlier). Dedup = shared event_id
+  (code-guaranteed); full browser+server "Deduplicated" view needs an unblocked browser (real users).
+- **Env-driven `META_CAPI_TEST_EVENT_CODE`** added (server.ts) for Test Events routing — off by default.
+- **GATED ON ANTON (urgent cleanup):** (1) REMOVE `META_CAPI_TEST_EVENT_CODE` from Vercel PROD + .env.local
+  + redeploy — while set, real conversions land in Test Events (uncounted). (2) delete the synthetic
+  test order. (3) commit the pending slices (ScrollDepthTracker + test_event_code support).
+- Memory: [[analytics-capi-verified-and-adblock-caveat]]. **Analytics = functionally done.** Next: isrib.shop cutover, then domain move, then announce.
+- **Roles run:** LEAD (CAPI probe, log-based diagnosis, memory/wiki).
+
+## [2026-09-06] gate | Analytics — CLOSED (GTM Preview + Test Events green, cleaned up)
+
+- Anton confirmed **GTM Preview** works (tags fire) and Meta **Test Events** received the server
+  CAPI events (probe + real app checkout). Cleanup done: `META_CAPI_TEST_EVENT_CODE` removed from
+  Vercel prod + `.env.local` + redeploy; synthetic test order deleted; ScrollDepthTracker +
+  test_event_code slices committed.
+- **Analytics = DONE** (full dataLayer + CAPI, deduped, deployed, verified). Session summary updated
+  to final state ([`sessions_summary/2026-09-06-analytics-full-datalayer-capi.md`](sessions_summary/2026-09-06-analytics-full-datalayer-capi.md)).
+- **Pre-cutover blocker closed.** Next: isrib.shop cutover (ADR 0004 blue-green) → isrib-research.com
+  domain move (activates journal 301s) → announce.
+- **Roles run:** LEAD (verification wrap + wiki).

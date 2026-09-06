@@ -48,9 +48,6 @@ export function HomeAbout() {
               </span>
               <p className="mt-0.5 text-caption text-text-faint">{"400 MHz · DMSO-d₆ · Batch 2"}</p>
             </div>
-            <span className="shrink-0 rounded-full border border-success/40 bg-success/10 px-2.5 py-1 font-mono text-[11px] font-semibold text-success">
-              {"≥98% HPLC"}
-            </span>
           </div>
 
           {/* Spectrum image. */}

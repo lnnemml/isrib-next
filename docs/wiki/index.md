@@ -137,8 +137,9 @@ rather than scanning the whole directory.
 - [`sessions_summary/2026-09-06-analytics-full-datalayer-capi.md`](./sessions_summary/2026-09-06-analytics-full-datalayer-capi.md)
   — **Analytics: full dataLayer + CAPI.** Hybrid model (Pixel direct, GA4/Clarity via GTM), client↔server
   `order_submitted` dedup (shared eventId + `orders.event_id`), webhook Purchase dedup, CAPI match quality,
-  product_viewed/page_view/email_subscribed coverage. Verifier-APPROVE + prober-PASS. **GATED: db:push +
-  create GTM container + synthetic E2E** (the pre-cutover blocker).
+  product_viewed/page_view/email_subscribed/scroll_depth coverage. Verifier-APPROVE + prober-PASS +
+  **deployed + E2E verified (GTM Preview + Meta Test Events, server CAPI confirmed) + cleaned up. DONE.**
+  Pre-cutover blocker closed. Next: cutover.
 
 ## Backlog (sources not yet fully ingested)
 
