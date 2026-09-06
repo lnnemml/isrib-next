@@ -50,6 +50,33 @@ export default function CheckoutPage() {
   const [refCode, setRefCode] = useState<string | null>(null);
   const [refValid, setRefValid] = useState(false);
 
+  // ADR 0016 — promo-code preview. Cosmetic only: the server re-validates the code in
+  // submitOrder and is authoritative on price. On Apply we hit /api/promo/validate to
+  // learn valid + discountPct; the code entered is posted to the action via a hidden field.
+  const [promoCode, setPromoCode] = useState("");
+  const [promoPct, setPromoPct] = useState(0);
+  const [promoValid, setPromoValid] = useState<boolean | null>(null);
+
+  function applyPromo(): void {
+    const code = promoCode.trim().toUpperCase();
+    if (!code) {
+      setPromoValid(null);
+      setPromoPct(0);
+      return;
+    }
+    fetch("/api/promo/validate?code=" + encodeURIComponent(code))
+      .then((r) => r.json())
+      .then((data: { valid?: boolean; discountPct?: number }) => {
+        setPromoValid(!!data.valid);
+        setPromoPct(data.valid ? data.discountPct ?? 0 : 0);
+      })
+      .catch(() => {
+        // Best-effort — a failed preview never blocks checkout (server re-validates).
+        setPromoValid(null);
+        setPromoPct(0);
+      });
+  }
+
   // Hidden inputs for the Meta _fbp/_fbc cookies — populated from document.cookie at submit
   // (via onSubmit below) so their values are the freshest before the server action posts.
   const fbpRef = useRef<HTMLInputElement>(null);
@@ -91,6 +118,19 @@ export default function CheckoutPage() {
   // manual path a valid ref previews the same discounted total.
   const referralTotalCents = subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100);
   const showReferral = refValid && refCode !== null;
+  const showPromo = promoValid === true && promoPct > 0;
+
+  // Non-stacking best-single (ADR 0016) — the previewed discount % is the MAX of every
+  // applicable source (crypto / referral / promo). Cosmetic only; the server recomputes.
+  const previewDiscountPct = Math.max(
+    method === "crypto" ? CRYPTO_DISCOUNT_PCT : 0,
+    showReferral ? CRYPTO_DISCOUNT_PCT : 0,
+    showPromo ? promoPct : 0,
+  );
+  const promoTotalCents = subtotalCents - Math.round((subtotalCents * promoPct) / 100);
+  // The promo line "wins" (is the best single discount) only when it strictly beats the
+  // base 10% either method/referral would already give — that's what the buyer pays.
+  const promoIsWinning = showPromo && promoPct > (method === "crypto" || showReferral ? CRYPTO_DISCOUNT_PCT : 0);
   const cartPayload = JSON.stringify(
     lines.map((l) => ({
       productSlug: l.productSlug,
@@ -106,10 +146,10 @@ export default function CheckoutPage() {
   // _fbp/_fbc hidden inputs from the live cookies. ANALYTICS ONLY: `analyticsValueCents`
   // is read straight from the totals already shown to the user (never recomputed pricing).
   function handleSubmit(): void {
-    // Mirror the total displayed above: crypto → cryptoTotalCents, valid referral on the
-    // manual path → referralTotalCents, otherwise the plain subtotal.
+    // Mirror the total displayed above, using the non-stacking best-single discount %
+    // (ADR 0016). With no promo this equals the old crypto/referral/subtotal logic.
     const analyticsValueCents =
-      method === "crypto" ? cryptoTotalCents : showReferral ? referralTotalCents : subtotalCents;
+      subtotalCents - Math.round((subtotalCents * previewDiscountPct) / 100);
 
     // Stamp the Meta cookies into the hidden fields so the server action forwards them to CAPI.
     if (fbpRef.current) fbpRef.current.value = readCookie("_fbp");
@@ -208,7 +248,19 @@ export default function CheckoutPage() {
           <span className="text-small text-success">{"Referral code applied: " + refCode}</span>
         </div>
       ) : null}
-      {method === "crypto" ? (
+      {showPromo ? (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-small text-success">{"Promo code applied: " + promoCode.trim().toUpperCase()}</span>
+        </div>
+      ) : null}
+      {promoIsWinning ? (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-small text-success">{"Promo total (−" + promoPct + "%)"}</span>
+          <span className="font-mono text-[16px] font-semibold text-success">
+            {formatCents(promoTotalCents)}
+          </span>
+        </div>
+      ) : method === "crypto" ? (
         <div className="mt-2 flex items-center justify-between">
           <span className="text-small text-success">{"Crypto total (−10%)"}</span>
           <span className="font-mono text-[16px] font-semibold text-success">
@@ -220,6 +272,13 @@ export default function CheckoutPage() {
           <span className="text-small text-success">{"Referral total (−10%)"}</span>
           <span className="font-mono text-[16px] font-semibold text-success">
             {formatCents(referralTotalCents)}
+          </span>
+        </div>
+      ) : showPromo ? (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-small text-success">{"Promo total (−" + promoPct + "%)"}</span>
+          <span className="font-mono text-[16px] font-semibold text-success">
+            {formatCents(promoTotalCents)}
           </span>
         </div>
       ) : null}
@@ -260,11 +319,48 @@ export default function CheckoutPage() {
           <PaymentSelector value={method} onChange={setMethod} />
         </section>
 
+        {/* ADR 0016 — promo code. Cosmetic preview only; the server re-validates and is
+            authoritative on price. Non-stacking (best single) with the crypto discount. */}
+        <section className="flex flex-col gap-5">
+          <h2 className="text-h4 font-semibold text-text">{"Promo code"}</h2>
+          <div>
+            <label htmlFor="promoCode" className={LABEL_CLASS}>
+              {"Have a code?"}
+            </label>
+            <div className="flex items-start gap-2">
+              <input
+                id="promoCode"
+                type="text"
+                value={promoCode}
+                onChange={(e) => {
+                  setPromoCode(e.target.value.toUpperCase());
+                  setPromoValid(null);
+                  setPromoPct(0);
+                }}
+                autoComplete="off"
+                className={FIELD_CLASS}
+              />
+              <Button type="button" variant="secondary" onClick={applyPromo} className="shrink-0">
+                {"Apply"}
+              </Button>
+            </div>
+            {showPromo ? (
+              <p className="mt-1.5 text-small text-success">
+                {"Code applied — " + promoPct + "% off."}
+              </p>
+            ) : promoValid === false ? (
+              <p className="mt-1.5 text-small text-text-muted">{"That code is not valid."}</p>
+            ) : null}
+          </div>
+        </section>
+
         {/* Hidden fields consumed by the server action. */}
         <input type="hidden" name="paymentMethod" value={method} />
         <input type="hidden" name="idempotencyKey" value={idem} />
         <input type="hidden" name="eventId" value={eventId} />
         <input type="hidden" name="cart" value={cartPayload} />
+        {/* ADR 0016 — promo code entered above; server re-validates (client preview is cosmetic). */}
+        <input type="hidden" name="promoCode" value={promoCode} />
         {/* Meta _fbp/_fbc cookies — value set from document.cookie in handleSubmit (CAPI match quality). */}
         <input ref={fbpRef} type="hidden" name="fbp" defaultValue="" />
         <input ref={fbcRef} type="hidden" name="fbc" defaultValue="" />

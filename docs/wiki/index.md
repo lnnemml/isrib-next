@@ -30,6 +30,9 @@ rather than scanning the whole directory.
 - [`marketing/organic-content-strategy.md`](./marketing/organic-content-strategy.md) —
   **the `/journal` organic-growth engine** — topic clusters, content roadmap,
   promotion + acquisition channels, KPIs, compliance guardrails
+- [`marketing/relaunch-announcement-email.md`](./marketing/relaunch-announcement-email.md) —
+  **the relaunch/announce email draft** (audience, subject lines, body, RELAUNCH10 offer,
+  Resend + gating). Send only after the promo code is verified live.
 
 ## Journal / SEO hub
 
@@ -92,6 +95,7 @@ rather than scanning the whole directory.
 - [`decisions/0013-customer-accounts-auth.md`](./decisions/0013-customer-accounts-auth.md)
 - [`decisions/0014-referral-discount.md`](./decisions/0014-referral-discount.md)
 - [`decisions/0015-journal-migration-and-organic-growth.md`](./decisions/0015-journal-migration-and-organic-growth.md)
+- [`decisions/0016-launch-promo-codes.md`](./decisions/0016-launch-promo-codes.md)
 
 ## Planning
 
@@ -140,6 +144,12 @@ rather than scanning the whole directory.
   product_viewed/page_view/email_subscribed/scroll_depth coverage. Verifier-APPROVE + prober-PASS +
   **deployed + E2E verified (GTM Preview + Meta Test Events, server CAPI confirmed) + cleaned up. DONE.**
   Pre-cutover blocker closed. Next: cutover.
+- [`sessions_summary/2026-09-06-cutover-complete-and-relaunch-prep.md`](./sessions_summary/2026-09-06-cutover-complete-and-relaunch-prep.md)
+  — **CUTOVER COMPLETE** (isrib.shop serves the new app; G2 manual+crypto verified live; crypto-webhook
+  308 bug fixed via non-www-apex canonical flip) + **journal domain migrated** (isrib-research.com 301s
+  live; TBI article written, last /journal 404 closed) + **launch promo-code built** (ADR 0016,
+  verifier-APPROVE) + **relaunch email drafted**. Email send **deferred to 2026-09-07** (deliverability
+  work). `db:push` done; promo not yet seeded/committed/deployed. **Read before continuing.**
 
 ## Backlog (sources not yet fully ingested)
 

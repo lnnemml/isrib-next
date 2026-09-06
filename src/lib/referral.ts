@@ -74,10 +74,13 @@ export interface EffectiveDiscount {
   usesRewardCredit: boolean;
 }
 
-// ADR 0014 — discounts DO NOT STACK. Crypto (CRYPTO_DISCOUNT_PCT), an incoming
-// referral code (REFERRAL_DISCOUNT_PCT), and a redeemed reward credit are all
-// worth exactly 10%, so a single local DISCOUNT_PCT captures all three: since
-// they never combine, the effective discount is one flat 10% or nothing.
+// ADR 0014 / ADR 0016 — discounts DO NOT STACK; the effective discount is the BEST
+// SINGLE applicable percentage, never a sum. Crypto (CRYPTO_DISCOUNT_PCT), an incoming
+// referral code (REFERRAL_DISCOUNT_PCT), and a redeemed reward credit are all worth
+// exactly 10%, captured by this local DISCOUNT_PCT. A launch promo code (ADR 0016)
+// adds a fourth source whose percentage may differ, so the effective rate is
+// max(basePct, promoPct). When promoPct === 0 this reduces EXACTLY to the old
+// flat-10-or-0 behaviour (the no-promo invariant).
 const DISCOUNT_PCT = 10;
 
 export function computeEffectiveDiscount(input: {
@@ -85,18 +88,24 @@ export function computeEffectiveDiscount(input: {
   isCrypto: boolean;
   hasValidReferral: boolean;
   rewardCreditAvailable: boolean;
+  promoPct: number;
 }): EffectiveDiscount {
-  const eligible =
+  const baseEligible =
     input.isCrypto || input.hasValidReferral || input.rewardCreditAvailable;
-  const discountPct = eligible ? DISCOUNT_PCT : 0;
+  const basePct = baseEligible ? DISCOUNT_PCT : 0; // existing flat-10 path
+  const discountPct = Math.max(basePct, input.promoPct); // non-stacking: best single
   const totalCents =
     input.subtotalCents - Math.round((input.subtotalCents * discountPct) / 100);
 
-  // Consume the credit ONLY when it is the SOLE reason for the 10% — never on a
-  // crypto order or an order that already carries an incoming referral code, so
-  // a stored credit is never wasted on a discount the order would get anyway.
+  // Consume the credit ONLY when it is the SOLE reason for the discount — never on a
+  // crypto order, an order that already carries an incoming referral code, or one
+  // discounted by a promo code, so a stored credit is never wasted on a discount the
+  // order would get anyway.
   const usesRewardCredit =
-    !input.isCrypto && !input.hasValidReferral && input.rewardCreditAvailable;
+    !input.isCrypto &&
+    !input.hasValidReferral &&
+    input.promoPct === 0 &&
+    input.rewardCreditAvailable;
 
   return { discountPct, totalCents, usesRewardCredit };
 }

@@ -14,6 +14,7 @@ import {
   computeEffectiveDiscount,
   getAvailableRewardCredit,
 } from "@/lib/referral";
+import { validatePromoCode, incrementPromoRedemption } from "@/lib/promo";
 import { getProduct } from "@/lib/copy/products";
 import { computeTieredPrice } from "@/lib/copy/pricing";
 import { generateOrderNumber, generateShippingToken, deriveTrafficType } from "@/lib/order-number";
@@ -204,11 +205,18 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // Referrer side — a logged-in customer may have an available reward credit.
     const rewardCredit = await getAvailableRewardCredit(currentCustomer?.id ?? null);
 
+    // ADR 0016 — promo code (posted from the checkout field). Server-side validation is
+    // authoritative; the client preview is cosmetic. promoPct is 0 when absent/invalid, so
+    // the NO-PROMO invariant holds: computeEffectiveDiscount yields exactly the old numbers.
+    const promoRaw = formData.get("promoCode") as string | null;
+    const promo = await validatePromoCode({ code: promoRaw });
+
     const eff = computeEffectiveDiscount({
       subtotalCents,
       isCrypto,
       hasValidReferral: referral.ok,
       rewardCreditAvailable: !!rewardCredit,
+      promoPct: promo.ok ? promo.discountPct : 0,
     });
 
     // Keep existing column semantics: cryptoDiscountPct reflects the crypto method only.
@@ -272,6 +280,8 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           country: raw.country,
           paymentMethod,
           cryptoDiscountPct,
+          // ADR 0016 — snapshot the applied promo code (uppercase, server-validated) or null.
+          promoCode: promo.ok ? promo.code : null,
           subtotalPrice: subtotalCents,
           totalPrice: effectiveTotalCents,
           note: raw.note,
@@ -294,6 +304,12 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           // status defaults to "pending_payment_instructions".
         });
         await tx.insert(orderItems).values(items);
+        // ADR 0016 — atomically bump the promo redemption counter alongside the order
+        // insert (never over-count under concurrency). Placed after the inserts so it
+        // shares their transaction but can't interfere with the idempotency/reward logic.
+        if (promo.ok) {
+          await incrementPromoRedemption(tx, promo.code);
+        }
       });
     } catch (insertErr) {
       // Narrow the unknown pg/neon error safely (no bare `any`): the driver surfaces the

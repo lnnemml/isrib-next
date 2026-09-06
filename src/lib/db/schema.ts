@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 
@@ -226,3 +226,23 @@ export const verificationTokens = pgTable("verification_tokens", {
 
 export type VerificationToken = typeof verificationTokens.$inferSelect;
 export type NewVerificationToken = typeof verificationTokens.$inferInsert;
+
+// ── promo_codes ──────────────────────────────────────────────────────────────
+// ADR 0016 — launch promo codes. A checkout-applied percentage discount validated
+// server-side, stored on orders.promo_code, and reflected in the total. Codes are
+// stored/compared uppercase; a DB row (not env/hardcoded) so they can be disabled/
+// expired and usage tracked without a redeploy. Non-stacking (best-single) with the
+// crypto/referral/reward discounts — see computeEffectiveDiscount in src/lib/referral.ts.
+
+export const promoCodes = pgTable("promo_codes", {
+  id:              text("id").primaryKey(),          // nanoid
+  code:            text("code").notNull().unique(),  // stored uppercase (normalizePromoCode)
+  discountPct:     integer("discount_pct").notNull(),// e.g. 10
+  active:          boolean("active").notNull().default(true),
+  expiresAt:       timestamp("expires_at"),          // nullable = never expires
+  redemptionCount: integer("redemption_count").notNull().default(0), // tracked, uncapped
+  createdAt:       timestamp("created_at").defaultNow().notNull(),
+});
+
+export type PromoCode = typeof promoCodes.$inferSelect;
+export type NewPromoCode = typeof promoCodes.$inferInsert;

@@ -2011,3 +2011,40 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   regression), auto CTA→Related→AuthorBio append, reading-time auto. **Uncommitted → needs commit + deploy**
   so prod `isrib.shop/journal/tbi/...` resolves (the isrib-research.com/tbi 301 lands on prod 404 until then).
 - **Roles run:** LEAD (PubMed research + full copy draft + compliance + runtime verify) → 1× implementer.
+
+## [2026-09-06] decision+phase | Launch promo-code feature built (ADR 0016) — for relaunch email
+
+- Relaunch email needed a real incentive; the `orders.promo_code` column was dormant (stored, never
+  applied). Built a working promo-code discount end-to-end. **ADR 0016.**
+- **Decisions (Anton):** launch code **10%**, **7-day** expiry, unlimited redemptions (tracked);
+  **non-stacking = best single discount** (`max(crypto10, referral10, reward10, promoPct)`), extending
+  ADR 0014. Consequence: neutral for crypto orders (both 10%), real benefit is giving manual-pay buyers
+  the 10%. Default code name `RELAUNCH10` (seed-overridable).
+- **Built:** `promo_codes` table (Drizzle); `src/lib/promo.ts` (normalize/validate/atomic-increment);
+  `computeEffectiveDiscount` generalised to `max()` (byte-identical when no promo); `/api/promo/validate`;
+  checkout promo field + preview + hidden field; `submitOrder` server-validates + stores `promoCode` +
+  increments redemption INSIDE the order tx; `scripts/seed-promo-code.ts` + `seed:promo-code`.
+- **Verifier: APPROVE** — 7 adversarial checks: no-promo invariant byte-identical; **normal checkout never
+  queries promo_codes** (null short-circuits before SQL → safe even pre-db:push); server-authoritative
+  (client never supplies the pct); non-stacking max() (no reward-credit waste/double-spend); atomic
+  increment inside tx (rolls back on idempotency collision); compliance (no card/guarantee, additive schema).
+- **GATE (order is load-bearing):** 1) `npm run db:push` (adds promo_codes) **before deploying this code**
+  (a normal order is safe pre-push, but a typed code pre-push errors that order); 2) `npm run seed:promo-code`
+  (creates RELAUNCH10, 10%, +7d) against Neon; 3) deploy; 4) **real test order WITH the code on live** →
+  confirm 10% applies + stored + non-stacking; 5) only THEN send the relaunch email advertising the code.
+- Draft email: [`marketing/relaunch-announcement-email.md`](marketing/relaunch-announcement-email.md).
+- **Roles run:** LEAD (ADR + spec + null-short-circuit safety check) → 1× implementer → 1× verifier (APPROVE).
+
+## [2026-09-06] phase | Session close — cutover complete, relaunch prep; email deferred to 09-07
+
+- Session wrap. Full record in
+  [`sessions_summary/2026-09-06-cutover-complete-and-relaunch-prep.md`](sessions_summary/2026-09-06-cutover-complete-and-relaunch-prep.md).
+- **Cutover COMPLETE** (isrib.shop live on the new app, G2 manual+crypto verified), journal domain
+  migrated (301s live + TBI article closing the last /journal 404), promo-code feature built (ADR 0016,
+  verifier-APPROVE), relaunch email drafted.
+- **Anton this session:** ran `npm run db:push` → `promo_codes` table now in Neon. Promo code NOT yet
+  seeded / committed / deployed.
+- **Email deferred to 2026-09-07** — Sunday low-engagement + needs inbox-deliverability work.
+- **Next (09-07):** deliverability work → commit promo+TBI+docs (SCOPED, excluding Anton's PasswordInput
+  WIP) → deploy → `seed:promo-code` → real test order with RELAUNCH10 → Resend test-send → send to 500+.
+- **Roles run:** LEAD (session summary + wiki).
