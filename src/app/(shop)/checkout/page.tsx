@@ -287,8 +287,8 @@ export default function CheckoutPage() {
           </Button>
           <p className="mt-3 text-caption text-text-faint">
             {method === "crypto"
-              ? "You'll be taken straight to our secure crypto payment page (BTC, ETH, USDT, XMR) to pay with the 10% discount. No card payment, by design."
-              : "No card payment, by design. We'll email payment details to arrange payment manually after you place the order."}
+              ? "You'll be taken straight to our secure crypto payment page (BTC, ETH, USDT, XMR) to pay with the 10% discount. No card payment."
+              : "No card payment. We'll email payment details to arrange payment manually after you place the order."}
           </p>
         </div>
       </form>

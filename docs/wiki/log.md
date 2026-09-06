@@ -1806,3 +1806,37 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Pre-cutover blocker closed.** Next: isrib.shop cutover (ADR 0004 blue-green) → isrib-research.com
   domain move (activates journal 301s) → announce.
 - **Roles run:** LEAD (verification wrap + wiki).
+
+## [2026-09-06] lint | Storefront hotfixes — NMR badge, card copy, product-card click
+
+- Three small pre-cutover UI fixes: (1) removed the `≥98% HPLC` badge from the home
+  ¹H NMR proof card header (`HomeAbout.tsx`); (2) Card payment option now reads
+  "No card checkout at this time." — dropped "— by design" (`PaymentSelector.tsx`);
+  the checkout-page helper copy's "by design" was intentionally left as-is (Anton
+  pointed only at the Card option). (3) Whole `ProductCard` (`/products` grid) is now
+  clickable → navigates to `/products/{slug}` via `onClick`+`useRouter`, with
+  `stopPropagation()` guards on the size `<select>`, Add-to-cart, "View details", and
+  capsules link so the nested controls still work; "View details →" kept as the a11y
+  affordance.
+- Runtime-verified (LEAD, dev): card-body click navigates; select + Add-to-cart still
+  function (cart badge → 1, no nav); NMR badge gone; Card copy updated. `tsc` green.
+  **Not committed/deployed.**
+- **Roles run:** LEAD (recon + spec + runtime verify) → 1× implementer.
+
+## [2026-09-06] build | Home "The Journal" teaser section + checkout copy
+
+- **Home Journal teaser:** new `src/components/marketing/HomeJournal.tsx` (Server Component)
+  implements the "THE JOURNAL — Research, written by the chemist" section from
+  `docs/raw/Premium_UI.pdf`, rebuilt in OUR light DS (mockup was dark — style intentionally
+  NOT ported). Header (kicker + h2 + "All articles →" → `/journal`), a 3-up trio of pillar
+  articles (Guide / Science / Comparison) + one wide Blog card. Curated by `(cluster,slug)`,
+  resolved against `getAllArticles()` with a missing-article guard (returns null rather than
+  404); titles/descriptions verbatim from MDX frontmatter (no invented copy). Whole card is a
+  `next/link`. Inserted in `page.tsx` between "How to order" (E) and "FAQ" (F). DS tokens reused
+  from the product/FAQ cards + journal-index kicker.
+- **Checkout copy:** removed "by design" from both helper-text branches in
+  `(shop)/checkout/page.tsx` (crypto + manual) — follows the earlier PaymentSelector Card fix.
+- Runtime-verified (LEAD, dev browser): section renders in light DS matching the mockup
+  structure; card click → `/journal/guide/isrib-a15-complete-guide`; checkout helper text
+  updated. `tsc` green. **Not committed/deployed.**
+- **Roles run:** LEAD (recon + specs + runtime verify) → 2× implementer.

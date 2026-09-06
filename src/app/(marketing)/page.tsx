@@ -4,6 +4,7 @@ import { Button, Card } from "@/components/ui";
 import { HomeHero } from "@/components/marketing/HomeHero";
 import { HomeProductCard } from "@/components/marketing/HomeProductCard";
 import { HomeAbout } from "@/components/marketing/HomeAbout";
+import { HomeJournal } from "@/components/marketing/HomeJournal";
 
 // Homepage metadata — mirrors the live index.html <title>/<description>, adapted to the
 // new brand line. (No money-back / cancer / dementia claims; "guaranteed purity" is a
@@ -174,6 +175,9 @@ export default function HomePage() {
           </div>
         </section>
       </div>
+
+      {/* E2 — THE JOURNAL teaser */}
+      <HomeJournal />
 
       {/* F — FAQ preview */}
       <section id="faq" className="mx-auto max-w-[--container-page] px-8 py-[90px]">
