@@ -22,6 +22,11 @@ const GA4_ONLY_EVENTS = new Set<string>([
   "journal_cta_click",
   "journal_article_read",
   "journal_toc_click",
+  // SPA route-change pageview (RouteChangeTracker). GA4-only — NOT a Meta standard
+  // event here (the Pixel base code fires its own PageView), so it must not fan to
+  // Meta. GTM must be configured to fire the GA4 tag on this dataLayer event and
+  // GA4 enhanced-measurement page_view disabled to avoid double-count (runbook note).
+  "page_view",
 ]);
 
 /**

@@ -13,6 +13,7 @@ import { ProductHero, HeroStat, NmrSection, MechanismSection, ComparisonTable, C
 import { AddToCartButton } from "@/components/shop/AddToCartButton";
 import { OrderBlock } from "@/components/shop/OrderBlock";
 import { UnderstandingSection } from "@/components/shop/UnderstandingSection";
+import { ProductViewTracker } from "@/components/analytics/ProductViewTracker";
 import { cn } from "@/lib/utils/cn";
 import type { CartFormat } from "@/lib/cart/types";
 
@@ -36,6 +37,19 @@ export async function generateMetadata({
 
 function specValue(product: Product, label: string): string | undefined {
   return product.specs.find((s) => s.label === label)?.value;
+}
+
+// Analytics-only: lowest already-loaded display price (in cents) from the product's
+// existing pricing data — the same numbers the page renders. This does NOT compute or
+// modify pricing; it only surfaces an existing figure for the ViewContent `value`.
+// Returns undefined if no discrete price is available (event still fires, sans value).
+function displayFromPriceCents(product: Product): number | undefined {
+  const p = product.pricing;
+  const cents =
+    p.kind === "fixed"
+      ? p.formats.map((f) => f.priceCents)
+      : p.trials.map((t) => t.priceCents);
+  return cents.length > 0 ? Math.min(...cents) : undefined;
 }
 
 // Specs split into the live page's three columns. Chemical + storage/handling are ported
@@ -229,8 +243,14 @@ export default async function ProductPage({
       ...(mw ? [{ figure: mw, label: "Molecular weight" }] : []),
     ];
 
+  // ViewContent value from existing display pricing (cents → USD). Analytics only.
+  const fromPriceCents = displayFromPriceCents(product);
+  const viewValue = fromPriceCents != null ? fromPriceCents / 100 : undefined;
+
   return (
     <main>
+      {/* Fires product_viewed (→ Meta ViewContent) once on mount. No UI. */}
+      <ProductViewTracker slug={product.slug} contentName={product.name} value={viewValue} />
       <ProductHero
         kicker={product.categorySubtitle}
         title={product.name}

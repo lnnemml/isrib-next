@@ -61,6 +61,10 @@ export async function POST(req: Request): Promise<Response> {
       totalPrice: orders.totalPrice,
       qstashMessageId1: orders.qstashMessageId1,
       qstashMessageId2: orders.qstashMessageId2,
+      // Analytics — the browser↔CAPI dedup id stored at checkout, and the account link used
+      // for external_id match quality (mirrors submitOrder: customer id if any, else order id).
+      eventId: orders.eventId,
+      userId: orders.userId,
     })
     .from(orders)
     .where(eq(orders.orderNumber, orderNumber))
@@ -93,11 +97,16 @@ export async function POST(req: Request): Promise<Response> {
     sendToAdmin(`Payment confirmed: ${orderNumber}`, minimalPaidAdminHtml),
     // "order_confirmed" → Purchase in the server EVENT_MAP (src/lib/analytics/server.ts).
     trackServerEvent("order_confirmed", {
+      // Reuse the eventId stored at checkout so the browser Pixel Purchase (if any) and this
+      // CAPI Purchase dedup. Nullable in the schema → coerce to undefined when absent.
+      eventId: order.eventId ?? undefined,
       email: order.email,
       value: order.totalPrice / 100,
       currency: "USD",
       userAgent: req.headers.get("user-agent") ?? undefined,
       ip: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
+      // Same stable external_id logic as checkout: customer id if linked, else the order id.
+      externalId: order.userId ?? order.id,
     }),
     // Actively cancel the pending abandoned-checkout nurture reminders — best-effort;
     // the consumer's status==="paid" guard remains the backstop.

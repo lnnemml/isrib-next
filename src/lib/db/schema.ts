@@ -112,6 +112,11 @@ export const orders = pgTable("orders", {
 
   // derived from UTM — "paid" | "referral" | "direct"
   trafficType:              text("traffic_type"),
+
+  // analytics — shared browser↔CAPI dedup id (ADR 0005). Nullable/additive: the client
+  // mints it per checkout attempt and passes it to both the Pixel order_submitted and the
+  // server action; the NowPayments webhook reuses it for the order_confirmed Purchase dedup.
+  eventId:                  text("event_id"),
 });
 
 export type Order = typeof orders.$inferSelect;

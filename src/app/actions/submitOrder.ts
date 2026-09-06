@@ -68,6 +68,10 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       idempotencyKey: (formData.get("idempotencyKey") as string | null) ?? "",
       cart:           (formData.get("cart") as string | null) ?? "",
       eventId:        (formData.get("eventId") as string | null) || null,
+      // Meta browser cookies captured client-side at submit and forwarded for CAPI match
+      // quality (analytics only — never affect pricing). fbp/fbc are sent to Meta UN-hashed.
+      fbp:            (formData.get("fbp") as string | null) || null,
+      fbc:            (formData.get("fbc") as string | null) || null,
       utmSource:      (formData.get("utmSource") as string | null) || null,
       utmMedium:      (formData.get("utmMedium") as string | null) || null,
       utmCampaign:    (formData.get("utmCampaign") as string | null) || null,
@@ -284,6 +288,9 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           referralCodeUsed,
           referredByCustomerId,
           discountLedgerId: effectiveDiscountLedgerId,
+          // Analytics dedup id (ADR 0005) — stored so the NowPayments webhook's Purchase
+          // event can reuse it. Nullable: a missing incoming eventId stores null, never fails.
+          eventId: raw.eventId,
           // status defaults to "pending_payment_instructions".
         });
         await tx.insert(orderItems).values(items);
@@ -315,6 +322,10 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // primary conversion — ADR 0005). `value` is passed in DOLLARS: server.ts forwards
     // props.value straight into Meta CAPI custom_data.value / GA4 value, both of which
     // expect the monetary amount, so we divide cents by 100 (mirrors NORA). Never throws.
+    // externalId — a stable id for CAPI match quality: the logged-in customer id when
+    // present, otherwise this order's id (never PII; hashed server-side). The checkout form
+    // collects no phone (ADR 0010 — phone is captured post-payment), so phone is omitted.
+    const externalId = currentCustomer?.id ?? orderId;
     const h = await headers();
     await trackServerEvent("order_submitted", {
       eventId: raw.eventId ?? undefined,
@@ -324,6 +335,9 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       userAgent: h.get("user-agent") ?? undefined,
       sourceUrl: h.get("referer") ?? undefined,
       ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
+      fbp: raw.fbp ?? undefined,
+      fbc: raw.fbc ?? undefined,
+      externalId,
     });
 
     // 11. Transactional emails (Step 3). ALL email work is wrapped so a Resend/CoinGecko

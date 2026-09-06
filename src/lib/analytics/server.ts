@@ -18,6 +18,14 @@ export interface ServerEventProps {
   userAgent?: string;
   sourceUrl?: string;
   ip?: string;
+  /** Meta browser cookie _fbp — forwarded UN-hashed to CAPI user_data.fbp for match quality. */
+  fbp?: string;
+  /** Meta click cookie _fbc — forwarded UN-hashed to CAPI user_data.fbc for match quality. */
+  fbc?: string;
+  /** Raw phone (any format) — hashed (digits only) into user_data.ph. */
+  phone?: string;
+  /** Stable id (customer id or order id) — hashed into user_data.external_id. */
+  externalId?: string;
   [key: string]: unknown;
 }
 
@@ -48,7 +56,24 @@ async function sendMetaCAPI(name: EventName, props: ServerEventProps): Promise<v
     return;
   }
 
+  // Build user_data omitting any absent field (Meta match quality — send nothing rather
+  // than empty strings). em/ph/external_id are SHA-256 hashed (PII); fbp/fbc are the raw
+  // Meta cookie values and MUST NOT be hashed.
   const hashedEmail = props.email ? sha256(props.email) : undefined;
+  // Phone: strip everything but digits before hashing (Meta expects digits-only).
+  const phoneDigits = props.phone ? props.phone.replace(/\D/g, "") : "";
+  const hashedPhone = phoneDigits ? sha256(phoneDigits) : undefined;
+  const hashedExternalId = props.externalId ? sha256(props.externalId) : undefined;
+
+  const userData: Record<string, unknown> = {};
+  if (hashedEmail) userData.em = [hashedEmail];
+  if (hashedPhone) userData.ph = [hashedPhone];
+  if (hashedExternalId) userData.external_id = [hashedExternalId];
+  if (props.fbp) userData.fbp = props.fbp;
+  if (props.fbc) userData.fbc = props.fbc;
+  if (props.ip) userData.client_ip_address = props.ip;
+  if (props.userAgent) userData.client_user_agent = props.userAgent;
+
   const payload = {
     data: [
       {
@@ -57,11 +82,7 @@ async function sendMetaCAPI(name: EventName, props: ServerEventProps): Promise<v
         event_id: props.eventId,
         action_source: "website",
         event_source_url: props.sourceUrl,
-        user_data: {
-          em: hashedEmail ? [hashedEmail] : undefined,
-          client_ip_address: props.ip,
-          client_user_agent: props.userAgent,
-        },
+        user_data: userData,
         custom_data: {
           value: props.value,
           currency: props.currency ?? "USD",

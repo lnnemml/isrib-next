@@ -8,6 +8,7 @@ import { AccountWidget } from "@/components/layout/AccountWidget";
 
 const NAV_LINKS: { label: string; href: string }[] = [
   { label: "Products", href: "/products" },
+  { label: "Journal", href: "/journal" },
   { label: "About", href: "/about" },
   { label: "FAQ", href: "/faq" },
   { label: "Contact", href: "/contact" },

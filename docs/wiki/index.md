@@ -54,7 +54,11 @@ rather than scanning the whole directory.
 - [`architecture/manual-payment-flow.md`](./architecture/manual-payment-flow.md) —
   order lifecycle, checkout fields, emails (no gateway in code)
 - [`architecture/analytics.md`](./architecture/analytics.md) — analytics stack,
-  IDs to preserve, 2-event conversion model, `trackEvent` layer
+  IDs to preserve, 2-event conversion model, `trackEvent` layer (**built 2026-09-06:
+  hybrid dataLayer + CAPI dedup**)
+- [`architecture/analytics-gtm-runbook.md`](./architecture/analytics-gtm-runbook.md) —
+  **the env vars + GTM container config Anton must set up** to activate analytics
+  (GA4/Clarity tags, dedup, synthetic E2E test plan)
 - [`architecture/data-model.md`](./architecture/data-model.md) — `orders` schema
   intent *(stub — grows with Drizzle schema)*
 - [`architecture/checkout-architecture.md`](./architecture/checkout-architecture.md) —
@@ -130,6 +134,11 @@ rather than scanning the whole directory.
   301s), restyled onto the shop DS. Verifier-APPROVE + prober ALL-PASS + build-green. **GATED: commit +
   deploy + add `isrib-research.com` to Vercel** (activates the 301s). Latent source bug (unrendered
   ResearchCallout citations) caught + fixed.
+- [`sessions_summary/2026-09-06-analytics-full-datalayer-capi.md`](./sessions_summary/2026-09-06-analytics-full-datalayer-capi.md)
+  — **Analytics: full dataLayer + CAPI.** Hybrid model (Pixel direct, GA4/Clarity via GTM), client↔server
+  `order_submitted` dedup (shared eventId + `orders.event_id`), webhook Purchase dedup, CAPI match quality,
+  product_viewed/page_view/email_subscribed coverage. Verifier-APPROVE + prober-PASS. **GATED: db:push +
+  create GTM container + synthetic E2E** (the pre-cutover blocker).
 
 ## Backlog (sources not yet fully ingested)
 

@@ -20,13 +20,34 @@ forward — migrate tags incrementally; never full-import a container (it overwr
 
 ## Unified layer (the only analytics API in the codebase)
 
-- `src/lib/analytics/client.ts` — `trackEvent(name, props?)` fires GTM dataLayer +
-  fbq + Clarity simultaneously.
-- `src/lib/analytics/server.ts` — `trackServerEvent(name, props)` fires Meta CAPI +
-  GA4 Measurement Protocol.
-- `src/lib/analytics/types.ts` — Window interface extensions.
+- `src/lib/analytics/client.ts` — `trackEvent(name, props?, eventId?)` fires GTM
+  dataLayer + fbq + Clarity. `GA4_ONLY_EVENTS` (journal_* + `page_view`) stop at
+  dataLayer (no Meta fan-out).
+- `src/lib/analytics/server.ts` — `trackServerEvent(name, props)` fires Meta CAPI
+  (graph v20.0) + GA4 Measurement Protocol.
+- `src/lib/analytics/types.ts` — Window extensions + `EventParams` (supports arrays
+  for `content_ids`).
 
-**Never call `fbq()` / `dataLayer.push()` / `clarity()` directly in components.**
+**Never call `fbq()` / `dataLayer.push()` / `clarity()` directly in components** — the
+only exceptions are the bootstrap components `src/components/analytics/{GoogleTagManager,MetaPixel}.tsx`.
+
+## Implementation status (built + verified 2026-09-06)
+
+Firing model = **hybrid**: **Meta Pixel loads directly** (`MetaPixel.tsx`) so
+`trackEvent` fires `fbq(... {eventID})` for clean CAPI dedup; **GA4 + Clarity are GTM
+tags**. Bootstrap (`GoogleTagManager.tsx` + `MetaPixel.tsx`, env-driven, no-op when
+unset) is wired into the root layout. **The GTM container config + env values are a
+manual step → [`analytics-gtm-runbook.md`](./analytics-gtm-runbook.md).**
+
+- **Dedup wired:** client `order_submitted` (Pixel InitiateCheckout) + server CAPI share
+  one `eventId`, stored on `orders.event_id`; the NowPayments webhook reuses it for the
+  Purchase. **CAPI match quality:** hashed `em`/`ph`/`external_id` + raw `_fbp`/`_fbc`.
+- **Coverage:** `product_viewed` (product pages → ViewContent), `page_view` (SPA route
+  changes, GA4-only), `email_subscribed` (new-lead registration → Lead, server CAPI),
+  journal `journal_*` (GA4-only).
+- **GATED ON ANTON:** `npm run db:push` (adds `orders.event_id`; must precede deploy) +
+  create/publish the GTM container + set `NEXT_PUBLIC_GTM_ID` + synthetic E2E in Meta
+  Test Events. Full E2E not yet run (needs those). See the runbook §5.
 
 ## 2-event conversion model (keep)
 

@@ -25,7 +25,13 @@ export type JournalEventName =
 /** Semantic event name (e.g. "order_submitted"). Mapped to vendor names internally. */
 export type EventName = string | JournalEventName;
 
-/** Flat, serializable event properties. No nested objects — vendors flatten these. */
-export type EventParams = Record<string, string | number | boolean | null | undefined>;
+/** Flat, serializable event properties. No nested objects — vendors flatten these.
+ * Arrays of scalars are permitted for Meta list params (e.g. content_ids); client.ts
+ * spreads props into both the dataLayer push and fbq(...) params, so arrays pass
+ * through unchanged. */
+export type EventParams = Record<
+  string,
+  string | number | boolean | null | undefined | string[] | number[]
+>;
 
 export {};

@@ -6,14 +6,23 @@
 // the crypto discount. NO card fields, NO "Pay Now", NO Stripe — payment is manual
 // arrangement + crypto (NowPayments), by design. See CLAUDE.md.
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { nanoid } from "nanoid";
 import { useCart } from "@/lib/cart/CartProvider";
 import { getProduct, formatCents } from "@/lib/copy/products";
 import { Button } from "@/components/ui";
 import { PaymentSelector } from "@/components/ui";
+import { trackEvent } from "@/lib/analytics/client";
 import { submitOrder, type SubmitState } from "@/app/actions/submitOrder";
+
+// Read a browser cookie by name — used to capture the Meta Pixel _fbp/_fbc cookies at
+// submit so they can be forwarded to CAPI (analytics only, never affects pricing).
+function readCookie(name: string): string {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(new RegExp("(?:^|;\\s*)" + name + "=([^;]*)"));
+  return match ? decodeURIComponent(match[1]) : "";
+}
 
 function productName(slug: string): string {
   return getProduct(slug)?.name ?? slug;
@@ -40,6 +49,11 @@ export default function CheckoutPage() {
   // server-side). We NEVER post a hidden ref field — the cookie drives the discount.
   const [refCode, setRefCode] = useState<string | null>(null);
   const [refValid, setRefValid] = useState(false);
+
+  // Hidden inputs for the Meta _fbp/_fbc cookies — populated from document.cookie at submit
+  // (via onSubmit below) so their values are the freshest before the server action posts.
+  const fbpRef = useRef<HTMLInputElement>(null);
+  const fbcRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const match = document.cookie.match(/(?:^|;\s*)isrib_ref=([^;]*)/);
@@ -85,6 +99,35 @@ export default function CheckoutPage() {
       sizeLabel: l.sizeLabel,
     })),
   );
+
+  // Fire the browser Pixel order_submitted with the SAME eventId the server action uses
+  // (hidden field above) so Meta dedups the InitiateCheckout against the CAPI event. This
+  // runs on the form's onSubmit — before React invokes formAction — and also stamps the
+  // _fbp/_fbc hidden inputs from the live cookies. ANALYTICS ONLY: `analyticsValueCents`
+  // is read straight from the totals already shown to the user (never recomputed pricing).
+  function handleSubmit(): void {
+    // Mirror the total displayed above: crypto → cryptoTotalCents, valid referral on the
+    // manual path → referralTotalCents, otherwise the plain subtotal.
+    const analyticsValueCents =
+      method === "crypto" ? cryptoTotalCents : showReferral ? referralTotalCents : subtotalCents;
+
+    // Stamp the Meta cookies into the hidden fields so the server action forwards them to CAPI.
+    if (fbpRef.current) fbpRef.current.value = readCookie("_fbp");
+    if (fbcRef.current) fbcRef.current.value = readCookie("_fbc");
+
+    trackEvent(
+      "order_submitted",
+      {
+        value: analyticsValueCents / 100,
+        currency: "USD",
+        // Real array of product slugs for Meta content_ids (EventParams now allows
+        // string[]). Kept as an array — no comma-join — per Slice C.
+        content_ids: lines.map((l) => l.productSlug),
+        num_items: count,
+      },
+      eventId,
+    );
+  }
 
   if (lines.length === 0) {
     return (
@@ -184,7 +227,7 @@ export default function CheckoutPage() {
       {/* Checkout form — posts to the server action, which recomputes every price.
           ADR 0010: minimal fields at checkout (first name / email / country); the
           shipping address is collected after payment via /shipping/<token>. */}
-      <form action={formAction} className="mt-12 flex flex-col gap-8">
+      <form action={formAction} onSubmit={handleSubmit} className="mt-12 flex flex-col gap-8">
         <section className="flex flex-col gap-5">
           <h2 className="text-h4 font-semibold text-text">{"Your details"}</h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -222,6 +265,9 @@ export default function CheckoutPage() {
         <input type="hidden" name="idempotencyKey" value={idem} />
         <input type="hidden" name="eventId" value={eventId} />
         <input type="hidden" name="cart" value={cartPayload} />
+        {/* Meta _fbp/_fbc cookies — value set from document.cookie in handleSubmit (CAPI match quality). */}
+        <input ref={fbpRef} type="hidden" name="fbp" defaultValue="" />
+        <input ref={fbcRef} type="hidden" name="fbc" defaultValue="" />
 
         {state && "error" in state ? (
           <p role="alert" aria-live="assertive" className="text-small font-medium text-red-600">

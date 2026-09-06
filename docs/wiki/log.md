@@ -1720,3 +1720,45 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   (activates the host-gated 301s — they can't fire until the domain resolves here); optional pixel look.
 - **Roles run:** LEAD (recon synth, 3 forks resolved, gate orchestration, latent-bug catch, structural
   gate, wiki) → 3× explorer → 5× implementer → 1× verifier → 1× prober.
+
+## [2026-09-06] phase | Header: Journal nav link added
+
+- Added a "Journal" → `/journal` link to the global header (`src/components/layout/Header.tsx`), placed
+  after "Products" (Products · Journal · About · FAQ · Contact). Single edit to the shared `NAV_LINKS`
+  array → propagates to both desktop nav + mobile burger. `tsc` clean. Journal home visually confirmed
+  rendering on the shop DS (LEAD screenshot review). **Still pending Anton: commit + deploy** (the whole
+  journal bundle incl. this link). **Next session per Anton: ANALYTICS reconciliation** (before cutover);
+  then isrib.shop cutover; then the isrib-research.com domain move (last — activates the 301s).
+- **Roles run:** LEAD (spec + review) → 1× implementer.
+
+## [2026-09-06] phase | Analytics — full dataLayer + CAPI (built + verified, pre-deploy)
+
+- Anton: analytics must be full — **via dataLayer (GTM) + Meta CAPI** with dedup. Recon (explorer) found the
+  unified `trackEvent`/`trackServerEvent` layer existed (CAPI + GA4 MP working server-side) but the **browser
+  side was never bootstrapped** (no GTM/Pixel/Clarity injected) and **conversion dedup was one-sided**
+  (checkout never fired client `order_submitted`; webhook `order_confirmed` had no eventId).
+- **4 forks agreed with Anton:** (1) firing model = **hybrid** (Pixel direct, GA4+Clarity via GTM);
+  (2) GTM = **new container** (id pending from Anton; bootstrap is env-driven no-op until set);
+  (3) scope = **full** (eventId column + webhook Purchase dedup + fbp/fbc/phone/external_id match quality —
+  db:push gated); (4) coverage = Clarity + product_viewed + page_view + email_subscribed (**Reddit deferred**).
+- **3 implementer slices:** (A) `GoogleTagManager.tsx` + `MetaPixel.tsx` bootstrap wired into root layout,
+  env-driven; (B) [G2] client `order_submitted` Pixel fire reusing the server's `eventId`, `orders.event_id`
+  column, submitOrder stores it + CAPI match-quality fields, webhook reuses it for Purchase, server.ts
+  user_data (hashed em/ph/external_id + raw fbp/fbc); (C) `EventParams` array support (content_ids),
+  `ProductViewTracker` (product_viewed), `RouteChangeTracker` (page_view, GA4-only), `email_subscribed` on
+  new-lead registration.
+- **Verifier: APPROVE** (all 10 constraints — critically **no pricing/discount/referral/idempotency change**;
+  full shared-eventId dedup chain; correct hashing; schema additive; IDs preserved; order_submitted still
+  primary). **Prober: PASS** on feasible headless tests (bootstrap no-ops when env empty, injects correctly
+  when configured — GTM + fbevents + fbq init + noscript fallbacks; zero raw analytics calls in components;
+  page_view GA4-only; product_viewed wired). Build-green (`tsc` + `next build`).
+- **Docs:** new [`architecture/analytics-gtm-runbook.md`](architecture/analytics-gtm-runbook.md) (env vars +
+  the GTM container config Anton must do in the UI: GA4 config tag with pageview OFF, GA4 event tags, Clarity
+  tag, **do NOT add a Meta Pixel tag** — it's direct; dedup explainer; synthetic E2E test plan). Updated
+  `analytics.md` status.
+- **GATED ON ANTON (in order):** (1) `npm run db:push` (adds `orders.event_id`; must precede deploy);
+  (2) create+publish GTM container + set `NEXT_PUBLIC_GTM_ID` (+ confirm Pixel/GA4/Clarity/CAPI-token/GA4-secret
+  envs in Vercel); (3) synthetic E2E in Meta Events Manager Test Events (@isrib-qa.test, clean up after).
+  **This is the pre-cutover blocker Anton wanted closed before moving isrib.shop.**
+- **Roles run:** LEAD (recon synth, 4 forks, 3 slice specs, runbook, wiki) → 1× explorer → 3× implementer →
+  1× verifier → 1× prober.

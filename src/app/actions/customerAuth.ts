@@ -25,6 +25,7 @@ import {
   clearCustomerSession,
 } from "@/lib/customer/auth";
 import { sendToCustomer } from "@/lib/email/send";
+import { trackServerEvent } from "@/lib/analytics/server";
 import { generateUniqueReferralCode } from "@/lib/referral";
 import { eq, and, gt } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -193,6 +194,13 @@ export async function registerCustomer(
         emailVerifiedAt: null,
         referralCode: await generateUniqueReferralCode(),
       });
+
+      // Slice C: fire email_subscribed (→ Meta Lead / GA4) for a genuinely NEW lead —
+      // account creation is a real, standalone email-capture step, distinct from the
+      // checkout order_submitted event (no double-count). Only on the fresh-insert
+      // branch (a claimed legacy row is a returning person, not a new lead). Server-side
+      // via CAPI for match quality (hashed email). trackServerEvent never throws.
+      await trackServerEvent("email_subscribed", { email, eventId: nanoid() });
     }
 
     await issueVerificationEmail(email);
