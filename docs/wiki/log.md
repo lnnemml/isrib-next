@@ -1856,3 +1856,15 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - Runtime-verified (LEAD, dev browser + curl): footer dark and legible; `/favicon.ico` md5 matches;
   icon links emitted. `tsc` green. **Not committed/deployed.**
 - **Roles run:** LEAD (recon + spec + runtime verify) → 1× implementer.
+
+## [2026-09-06] lint | Header logo lockup from legacy site
+
+- Replaced the header's text brand with the legacy site's logo lockup (blue→cyan hexagon +
+  "ISRIB.shop" wordmark) on the left, matching the old site. Copied
+  `isrib shop website/ISRIB/images/logo-dark-trimmed.png` → `public/images/logo.png` (411×107)
+  and swapped the brand `<Link>` in `src/components/layout/Header.tsx` to a plain `<img>` at
+  `h-9 w-auto` (36px, in the h-16 header) with width/height set to avoid CLS. aria-label kept.
+  Logo navy/cyan reads well on the white header and aligns with the DS primary/accent.
+- Runtime-verified (LEAD, dev browser): logo renders left, nav/cart balanced right. `tsc` green.
+  **Not committed/deployed.**
+- **Roles run:** LEAD (recon + spec + runtime verify) → 1× implementer.

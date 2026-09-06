@@ -48,9 +48,15 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface">
       <div className="mx-auto flex h-16 max-w-[--container-page] items-center justify-between px-8">
-        <Link href="/" aria-label="ISRIB.shop home" className="font-semibold tracking-[-0.01em] text-text">
-          {"ISRIB"}
-          <span className="text-text-faint">{".shop"}</span>
+        <Link href="/" aria-label="ISRIB.shop home" className="inline-flex items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element -- static logo asset */}
+          <img
+            src="/images/logo.png"
+            alt="ISRIB.shop"
+            className="h-9 w-auto"
+            width={411}
+            height={107}
+          />
         </Link>
 
         {/* Desktop nav */}
