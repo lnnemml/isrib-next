@@ -12,8 +12,18 @@ declare global {
   }
 }
 
+/**
+ * Journal (SEO hub) semantic events. GA4-only custom events — they pass through the
+ * dataLayer sink unchanged (no Meta/Clarity mapping). Kept as a named union so the
+ * journal components fire from a documented, typo-checked set.
+ */
+export type JournalEventName =
+  | "journal_cta_click"
+  | "journal_article_read"
+  | "journal_toc_click";
+
 /** Semantic event name (e.g. "order_submitted"). Mapped to vendor names internally. */
-export type EventName = string;
+export type EventName = string | JournalEventName;
 
 /** Flat, serializable event properties. No nested objects — vendors flatten these. */
 export type EventParams = Record<string, string | number | boolean | null | undefined>;

@@ -1651,3 +1651,72 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Still on Anton:** commit + deploy the referral code (tasks 1–6 + TOCTOU fix + docs). db:push + backfill
   already done. **Deploy note (from the build gate): db:push must precede deploy** — already satisfied.
   **Roles run:** LEAD (browser E2E + signed-webhook simulation + DB verify + cleanup).
+
+## [2026-09-05] phase | Session wrap filed — accounts + header widget + referral
+
+- Wrote [`sessions_summary/2026-09-05-session-accounts-widget-referral.md`](sessions_summary/2026-09-05-session-accounts-widget-referral.md):
+  session-level overview of the three features shipped this session (customer accounts v1 / header
+  account widget / referral phase 2), all built + full-E2E runtime-verified. Records the deploy state
+  (accounts v1 live; header widget + referral code + docs PENDING commit+deploy by Anton; referral
+  db:push + backfill already done) and the accepted non-stacking behavior. Wired into index.
+- **Next session: JOURNAL MIGRATION (301s)** — migrate the legacy SEO journal hub with 301 redirects
+  (preserve organic equity). Recon the legacy URL inventory first, then build the redirect map. Start
+  from roadmap Track B + the index backlog. **Roles run:** LEAD (session summary).
+
+## [2026-09-06] decision | Journal migration approach + organic-content strategy (docs-only)
+
+- **Session scoped docs-only** (Anton's call): agree the port approach + write the growth
+  strategy this session; the `src/` build is a following session. No code touched.
+- **Recon:** full source inventory of `isrib-research-seo-hub` (Next 14, `next-mdx-remote/rsc`
+  + gray-matter): 8 MDX articles — 7 real (1,737–2,060 words) + 1 TBI stub (46 words) — across
+  5 clusters (compare/guide/science/blog/tbi), each cluster index + `[slug]`, `/author` E-E-A-T,
+  sitemap/robots, 11 article/layout components, teal/DM-Serif identity, CTABlock → legacy
+  `isrib.shop/product_isrib_A15.html`. Target has NO MDX stack/content dir yet; redirects via
+  `src/proxy.ts` (Next 16 middleware→proxy).
+- **4 WHAT-level forks agreed with Anton (AskUserQuestion) → [ADR 0015](decisions/0015-journal-migration-and-organic-growth.md):**
+  (1) identity = **sub-brand within the shop DS** (keep editorial "The Synthesis Lab" byline;
+  drop teal tokens); (2) CTA → **`/products/isrib-a15`**; (3) build scope = **infra + 7 real
+  articles + 301s** (defer TBI stub + new articles); (4) 301s = **point `isrib-research.com`
+  at this Vercel project**, host-gated redirects → `isrib.shop/journal/...`.
+- **Wrote:** [`marketing/organic-content-strategy.md`](marketing/organic-content-strategy.md)
+  (hub-and-spoke clusters, 4-phase content roadmap mapped to the 6 beliefs/objections,
+  promotion + acquisition channels, conversion path, KPIs, compliance guardrails) ·
+  [`architecture/journal-migration-plan.md`](architecture/journal-migration-plan.md) (complete
+  source inventory + target shape + full old→new **301 redirect map** + build gates) ·
+  [`journal/writing-rules.md`](journal/writing-rules.md) (voice/formula/frontmatter/MDX rules —
+  backlog item cleared) · ADR 0015. Wired all into `index.md`; backlog updated.
+- **Compliance note carried into the strategy:** article *bodies* may name comparison drugs
+  educationally; the prescription-drug-name ban is ad-copy-only. No cancer/dementia/guarantee claims.
+- **Next session: JOURNAL BUILD** — execute `journal-migration-plan.md` under the agent-roles
+  protocol (explorer → implementer → verifier → prober/LEAD runtime + visual side-by-side).
+  **Roles run:** LEAD (recon synth, 4 forks w/ Anton, ADR, 3 wiki pages, index/log).
+
+## [2026-09-06] phase | Journal BUILD — infra + 7 articles + 301s (built + verified, pre-deploy)
+
+- Executed [`architecture/journal-migration-plan.md`](architecture/journal-migration-plan.md) under the
+  agent-roles protocol. **3 read-only explorers** (target DS/analytics/routes · source components/lib ·
+  Next-16 MDX approach) → **4 sequential implementer slices** → **1 focused fix** → **verifier (fresh)** →
+  **prober (runtime)** → **LEAD structural gate**.
+- **LEAD decisions before delegating:** renderer = `next-mdx-remote/rsc` (faithful, RSC, Turbopack-safe —
+  not `@next/mdx`); restyle onto the LOCKED shop DS via Tailwind tokens (no teal/serif — ADR 0015);
+  analytics via `trackEvent` (added GA4-only `journal_*` events, additive).
+- **Slices:** (1) MDX infra + `src/lib/journal/{mdx,toc,schema}` + 7 MDX files (byte-identical); (2) 11
+  components ported + restyled + CTA→`/products/isrib-a15`; (3) `(journal)` route group + MDXRemote pipeline
+  (Next-16 async params, `dynamicParams=false`, Article+FAQ JSON-LD); (4) `sitemap.ts` (new) + `robots.ts` +
+  host-gated 301/308 redirect map + schema author-URL fix.
+- **LEAD caught a latent SOURCE bug:** all 12 `<ResearchCallout>` pass `title=` but the source component
+  never rendered it — study citations were invisible on the live site. Fixed (renders now) as an
+  intentional improvement-over-live.
+- **Verifier: APPROVE** (all 9 hard constraints: CTA internal, no teal, additive analytics, no forbidden
+  copy, no forbidden-file edits, redirects host-gated, canonical `isrib.shop/journal/*`, Next-16 params,
+  TS strict). **Prober: ALL PASS** — 10 journal pages 200, CTA + citations + JSON-LD + TOC anchors render,
+  404 hygiene, host-gated 308s correct, and the **critical negative test** (isrib.shop traffic NOT
+  redirected). Sitemap/robots correct. Zero console errors.
+- **Build-green:** `tsc` + `next build`; 7 articles + 4 cluster indexes + home + author prerendered SSG.
+- **One gate NOT run:** headless real-browser pixel look (agent-browser not installed; Chrome extension
+  disconnected). Structure/styling verified via rendered HTML (tables/prose/TOC/CTA render, no teal leak).
+  Dev server left at localhost:3000 for a human eyeball.
+- **GATED ON ANTON:** commit + deploy the journal code; **add `isrib-research.com` to this Vercel project**
+  (activates the host-gated 301s — they can't fire until the domain resolves here); optional pixel look.
+- **Roles run:** LEAD (recon synth, 3 forks resolved, gate orchestration, latent-bug catch, structural
+  gate, wiki) → 3× explorer → 5× implementer → 1× verifier → 1× prober.

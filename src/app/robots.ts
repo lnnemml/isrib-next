@@ -7,7 +7,11 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      disallow: ["/kitchen-sink"],
+      allow: "/",
+      // Private/dev surfaces kept out of search indexes. The /kitchen-sink hard guard
+      // is still the VERCEL_ENV production check inside the page itself.
+      disallow: ["/admin", "/account", "/api", "/kitchen-sink", "/checkout"],
     },
+    sitemap: "https://isrib.shop/sitemap.xml",
   };
 }

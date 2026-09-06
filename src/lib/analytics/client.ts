@@ -15,6 +15,15 @@ const META_EVENT_MAP: Record<string, string> = {
   email_subscribed: "Lead",
 };
 
+// Journal (SEO hub) events are GA4 custom events only — no Meta/Clarity standard-event
+// mapping. They flow through the dataLayer sink below unchanged (event: <name>), which
+// GA4 receives as a custom event. Listed here so the GA4-only intent is explicit.
+const GA4_ONLY_EVENTS = new Set<string>([
+  "journal_cta_click",
+  "journal_article_read",
+  "journal_toc_click",
+]);
+
 /**
  * Fire a semantic analytics event to every browser sink.
  *
@@ -30,6 +39,9 @@ export function trackEvent(name: EventName, props?: EventParams, eventId?: strin
   // GTM dataLayer (also carries Reddit + any other GTM-managed tags).
   window.dataLayer = window.dataLayer ?? [];
   window.dataLayer.push({ event: name, event_id: eventId, ...props });
+
+  // GA4-only events (e.g. journal_*) stop here — no Meta/Clarity fan-out.
+  if (GA4_ONLY_EVENTS.has(name)) return;
 
   // Meta Pixel.
   if (typeof window.fbq === "function") {

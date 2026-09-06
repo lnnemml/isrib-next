@@ -1,0 +1,112 @@
+---
+title: "What Is the Integrated Stress Response?"
+description: "The ISR is a cellular pathway that pauses protein synthesis under stress. Here's what it actually does, why it matters for cognition, and why targeting it with ISRIB produces the effects it does."
+slug: "what-is-integrated-stress-response"
+cluster: "science"
+publishedAt: "2025-04-12"
+updatedAt: "2025-04-12"
+keywords: ["integrated stress response", "what is ISR", "ISR pathway", "eIF2B", "ISRIB mechanism", "integrated stress response cognition"]
+relatedSlugs: ["isrib-a15-complete-guide", "isrib-vs-modafinil", "how-to-fix-brain-fog"]
+---
+
+There's a cellular mechanism that most people have never heard of that probably affects how well you're thinking right now. Not in a dramatic way. In a quiet, chronic, background way that's easy to normalize as "just how I am lately."
+
+It's called the Integrated Stress Response. And the reason it matters — the reason researchers at UCSF spent a decade studying it and a Google-backed biotech is now running trials on a compound that inhibits it — is that it turns out to be one of the more fundamental regulators of cognitive function we've identified.
+
+## What the ISR actually does
+
+Every cell in your body has a set of emergency protocols for dealing with stress. Not psychological stress specifically — cellular stress. Misfolded proteins accumulating in the endoplasmic reticulum. Nutrient deprivation. Viral infection. Oxidative damage. Heme deficiency. The cell has sensors for all of these, and when those sensors detect a problem, they trigger a response.
+
+The Integrated Stress Response is that response. Its primary mechanism is simple and somewhat brutal: it shuts down most protein synthesis. The logic is sound — if something is wrong, stop building new stuff until the problem is resolved. Save resources. Minimize damage.
+
+The molecular mechanism runs through a single bottleneck. Four different kinases — HRI, PKR, PERK, and GCN2 — each sensitive to different stress signals, all converge on the same target: a protein called eIF2α. When any of these kinases get activated, they phosphorylate eIF2α. Phosphorylated eIF2α then inhibits eIF2B, the guanine nucleotide exchange factor that's required to reload the eIF2 complex for another round of translation initiation.
+
+Translation initiation is how protein synthesis starts. Block that, and most protein production stops.
+
+This is, under normal circumstances, a useful and temporary response. Stress happens, ISR activates, protein synthesis pauses, stress resolves, ISR deactivates, protein synthesis resumes. The whole thing might last hours.
+
+The problem is what happens when stress doesn't resolve.
+
+## When the ISR doesn't turn off
+
+Chronic stress — sustained overwork, poor sleep accumulated over months, aging, traumatic brain injury, neurodegenerative disease — keeps the upstream kinases active. And when those kinases stay active, eIF2α stays phosphorylated, eIF2B stays inhibited, and protein synthesis stays suppressed.
+
+Not completely. Cells don't die from chronic ISR activation in most cases. But they run at reduced capacity. They make less of the proteins they need for normal function.
+
+In neurons, this matters enormously. Memory formation — specifically the conversion of short-term experiences into long-term memories — requires new protein synthesis. This isn't a metaphor. Synaptic consolidation is a protein synthesis-dependent process. Block protein production in neurons and you block the molecular machinery that encodes new memories.
+
+<ResearchCallout title="Costa-Mattioli & Walter, 2020 — Science" source="Science 2020">
+A review paper by Mauro Costa-Mattioli and Peter Walter described the ISR as a "universal regulator of long-term memory formation." The framing matters: not a regulator of memory in disease states, but a universal regulator. Meaning the ISR pathway exerts tonic influence over memory formation in all brains, at all times. Turning it down enhances memory. Chronic activation impairs it.
+</ResearchCallout>
+
+This is the mechanistic foundation for why ISRIB produces the effects it does. It's not acting on neurotransmitter systems. It's not a stimulant pushing dopamine or norepinephrine. It's restoring the upstream capacity for protein synthesis that the ISR had been suppressing.
+
+## eIF2B — the actual target
+
+ISRIB doesn't directly block any of the four stress kinases. It doesn't interfere with eIF2α phosphorylation. Instead it acts downstream, at eIF2B itself.
+
+eIF2B is a decameric complex — ten subunits assembled into a functional unit. Its job is to catalyze the exchange of GDP for GTP on eIF2, which is required before eIF2 can participate in another round of translation initiation. Under ISR conditions, phosphorylated eIF2α binds to eIF2B and acts as a competitive inhibitor, essentially jamming the exchange reaction.
+
+ISRIB binds at the interface between two subcomplexes of eIF2B — specifically at the junction of the two eIF2Bδ and eIF2Bβ subunits — and stabilizes the active conformation of the whole complex. The metaphor that gets used is "molecular staple." ISRIB holds the complex together in a configuration that makes it resistant to inhibition by phospho-eIF2α.
+
+The result: eIF2B keeps functioning even when upstream stress signals are present. Protein synthesis continues. The ISR's translational brake is released.
+
+What's notable about this mechanism is its precision. ISRIB doesn't eliminate the stress response globally — cells can still respond to stress in many other ways. It specifically overcomes the translational shutdown component. The cell can still detect stress; it just doesn't stop making proteins because of it.
+
+<ResearchCallout title="Zyryanova et al., 2018 — Science" source="Science 2018">
+The crystal structure of ISRIB bound to eIF2B revealed the exact binding site and mechanism. The compound bridges the two halves of the eIF2B complex, stabilizing the decamer against the conformational changes induced by phospho-eIF2α. This structural data explains both ISRIB's potency and why it works even at nanomolar concentrations — it's acting at a mechanistically critical interface.
+</ResearchCallout>
+
+## Why four kinases converge on one target
+
+The convergence of HRI, PKR, PERK, and GCN2 onto a single phosphorylation site on eIF2α is not an accident. It's an architectural feature of how the cell integrates information about its stress state.
+
+Each kinase monitors something different. HRI monitors heme levels and mitochondrial stress. PKR detects double-stranded RNA — the signature of viral infection. PERK responds to ER stress from misfolded proteins. GCN2 senses amino acid deprivation.
+
+These are completely different cellular problems with completely different solutions. But they all share one common initial response: stop making new proteins until we figure this out. The single convergence point on eIF2α allows four different threat-detection systems to coordinate a unified translational response.
+
+From a drug development standpoint, this architecture is useful. One compound acting on eIF2B can override the translational suppression regardless of which kinase is driving it. You don't need four different drugs for four different stress pathways. ISRIB addresses the common downstream bottleneck.
+
+## The cognitive connection — what the research shows
+
+The 2013 Sidrauski paper was the first to show that ISR inhibition could enhance cognition in healthy animals. Mice given ISRIB showed faster maze learning and better fear-memory retention than controls. This surprised people. The assumption had been that a compound targeting a stress-response pathway would only show effects in stressed or diseased animals.
+
+It showed effects in normal animals too. Which meant the ISR pathway was doing something to baseline cognition — not just pathological cognition — that ISRIB was reversing.
+
+The subsequent papers filled in the picture. In 2017, a study from Susanna Rosi and Peter Walter showed that ISRIB reversed cognitive deficits in mice with traumatic brain injury — even when treatment started months after the injury. Cognition returned to uninjured levels. Synaptic density normalized. The effects persisted after dosing stopped.
+
+The 2020 Krukowski paper was the one that got the most attention outside neuroscience. Aged mice — the equivalent of 65+ year-old humans — regained spatial memory performance comparable to young mice after a short course of ISRIB. The aging brain, the authors concluded, had not permanently lost cognitive capacity. It had lost the ability to express that capacity, because chronic ISR activation was suppressing the protein synthesis required for memory consolidation.
+
+This is a specific and falsifiable claim. And it replicated.
+
+<ResearchCallout title="Krukowski et al., 2020 — eLife" source="eLife 2020">
+Old mice treated with ISRIB performed on spatial memory tasks like young mice. The effect lasted weeks after dosing ended. Controls — old mice without treatment — showed the expected age-related deficits throughout. The authors interpreted this as evidence of latent cognitive capacity that ISR activation had been masking rather than eliminating.
+</ResearchCallout>
+
+I've read that paper several times. The result isn't subtle. These aren't borderline effects that require careful statistical argument to defend. Old mice performing like young mice is a result you can see in the raw data.
+
+Whether it generalizes to humans — that's the question we're waiting on. The Calico ALS trial will provide some data. It won't be in healthy aging populations, and it won't be specifically about memory. But it will be the first substantial human safety and efficacy dataset for ISRIB in a clinical context.
+
+## What chronic ISR activation feels like
+
+This is speculative territory, and I want to flag that clearly. We don't have biomarkers for ISR activation state in humans that you can check with a blood test. We can't directly measure whether your eIF2α is chronically phosphorylated.
+
+What we can do is reason from the mechanism to expected symptoms and check whether they match what people experiencing cognitive decline actually report.
+
+Chronic ISR activation should produce: reduced efficiency of new memory formation, difficulty encoding new information, preserved access to old memories (already-consolidated memories don't require ongoing protein synthesis), reduced cognitive stamina, normal wakefulness and alertness (the ISR isn't targeting arousal systems).
+
+This profile — "I can still function but I can't learn as well, things don't stick like they used to, I'm not slow exactly but something is off" — is exactly what people report in burnout, in chronic stress, in early aging-related cognitive change. It's also exactly what they don't report from modafinil, which addresses alertness without touching this pathway.
+
+This is one reason the ISRIB mechanism has attracted serious scientific attention beyond just nootropic circles. It offers a potential biological explanation for a class of cognitive symptoms that have been poorly characterized mechanistically.
+
+## The A15 connection
+
+Original ISRIB has limited oral bioavailability. The structural modifications in A15 — the dichlorophenoxy substitution — improve this while maintaining the same eIF2B binding mechanism. The target is identical. The binding geometry is similar enough that the pharmacology is expected to be equivalent.
+
+In practice, A15 appears to be more potent per milligram than original ISRIB, which is consistent with improved absorption and potentially improved binding affinity. Users report effective doses in the 10-20mg range. The original ISRIB required substantially higher doses for equivalent in vivo effects in the scenarios where oral bioavailability was tested.
+
+The mechanism described throughout this article applies equally to A15. When you take A15, you're inhibiting eIF2B's inactivation by phospho-eIF2α, allowing protein synthesis to continue in neurons that the ISR had been suppressing. The cognitive effects that follow — if you experience them — are a downstream consequence of neurons regaining their normal translational capacity.
+
+That's the story. It's a simpler story than most nootropic mechanisms, and it has better preclinical evidence behind it than almost anything else in this space.
+
+Whether the story ends the way we think it will in humans — that's still being written.

@@ -27,11 +27,22 @@ rather than scanning the whole directory.
   ready-to-use VOC quote bank *(stub — expand on ingest)*
 - [`marketing/competitive-landscape.md`](./marketing/competitive-landscape.md) —
   reagent-supplier competitors vs. the positioning gap isrib.shop owns
+- [`marketing/organic-content-strategy.md`](./marketing/organic-content-strategy.md) —
+  **the `/journal` organic-growth engine** — topic clusters, content roadmap,
+  promotion + acquisition channels, KPIs, compliance guardrails
+
+## Journal / SEO hub
+
+- [`journal/writing-rules.md`](./journal/writing-rules.md) — voice, article formula,
+  frontmatter + MDX component rules, compliance (read before writing any article)
 
 ## Architecture knowledge
 
 - [`architecture/migration-plan.md`](./architecture/migration-plan.md) —
   **the master Track A / Track B migration runbook (read before building)**
+- [`architecture/journal-migration-plan.md`](./architecture/journal-migration-plan.md) —
+  **the `isrib-research.com` → `/journal` port spec** (source inventory, target shape,
+  301 redirect map, build gates) — read before the journal build session
 - [`architecture/track-a-runbook.md`](./architecture/track-a-runbook.md) —
   **Day 0–4 ready-to-paste orchestrator prompts + gates + cutover checklist**
 - [`architecture/agent-roles.md`](./architecture/agent-roles.md) —
@@ -76,6 +87,7 @@ rather than scanning the whole directory.
 - [`decisions/0012-legacy-orders-import-and-customers.md`](./decisions/0012-legacy-orders-import-and-customers.md)
 - [`decisions/0013-customer-accounts-auth.md`](./decisions/0013-customer-accounts-auth.md)
 - [`decisions/0014-referral-discount.md`](./decisions/0014-referral-discount.md)
+- [`decisions/0015-journal-migration-and-organic-growth.md`](./decisions/0015-journal-migration-and-organic-growth.md)
 
 ## Planning
 
@@ -104,12 +116,28 @@ rather than scanning the whole directory.
   — **Referral discount (ADR 0014, phase 2):** two-sided (referee 10% + referrer credit), non-stacking
   with crypto, `?ref` link. Built + verifier-approved (a reward-credit double-spend TOCTOU was caught +
   fixed). **GATED on Anton: `db:push` (BEFORE deploy) + `backfill:referral-codes`.**
+- [`sessions_summary/2026-09-05-session-accounts-widget-referral.md`](./sessions_summary/2026-09-05-session-accounts-widget-referral.md)
+  — **Session wrap:** customer accounts v1 + header account widget + referral phase 2 — all built +
+  full-E2E runtime-verified. Deploy state + pending commit/deploy bundle inside. **Next: journal
+  migration (301s).**
+- [`sessions_summary/2026-09-06-journal-migration-plan-and-organic-strategy.md`](./sessions_summary/2026-09-06-journal-migration-plan-and-organic-strategy.md)
+  — **Docs-only:** agreed the `isrib-research.com` → `/journal` port approach (ADR 0015: sub-brand
+  identity, CTA → `/products/isrib-a15`, infra+7-articles+301s scope, point-domain-at-app 301s) +
+  wrote the organic-content strategy, journal migration plan (with 301 map), and writing rules.
+  **Next: journal BUILD.**
+- [`sessions_summary/2026-09-06-journal-build.md`](./sessions_summary/2026-09-06-journal-build.md)
+  — **Journal BUILD:** `isrib-research.com` ported into `/journal` (infra + 7 articles + host-gated
+  301s), restyled onto the shop DS. Verifier-APPROVE + prober ALL-PASS + build-green. **GATED: commit +
+  deploy + add `isrib-research.com` to Vercel** (activates the 301s). Latent source bug (unrendered
+  ResearchCallout citations) caught + fixed.
 
 ## Backlog (sources not yet fully ingested)
 
 - Full research-evidence ingest → flesh out `product/mechanism-and-science.md`
 - Full VOC phrase bank → `marketing/voice-of-customer.md`
 - Email lead-gen system → `architecture/email-leadgen.md` (Track B)
-- Journal writing rules → `journal/writing-rules.md` (Track B, when SEO hub migrates)
+- Journal content phases → finish the TBI stub, then write the roadmap articles in
+  [`marketing/organic-content-strategy.md`](./marketing/organic-content-strategy.md) §4
+  (journal infra is BUILT — see the 2026-09-06 build summary)
 
 See [`log.md`](./log.md) for the chronological record.
