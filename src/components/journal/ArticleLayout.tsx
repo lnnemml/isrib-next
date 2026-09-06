@@ -66,22 +66,6 @@ export default function ArticleLayout({
     <div className="mx-auto max-w-[--container-page] px-8 pt-8 pb-16">
       <ReadingProgress />
 
-      {/* Editorial sub-brand masthead — "The Synthesis Lab / Journal" (ADR 0015) */}
-      <div className="mb-10 flex items-center gap-3 border-b border-border pb-4">
-        <Link
-          href="/journal"
-          className="font-mono text-[0.75rem] uppercase tracking-[0.16em] text-accent-strong"
-        >
-          The Synthesis Lab
-        </Link>
-        <span aria-hidden="true" className="text-text-faint">
-          /
-        </span>
-        <Link href="/journal" className="text-[0.875rem] font-semibold text-text">
-          Journal
-        </Link>
-      </div>
-
       {/* Desktop grid: sidebar | content (single column on mobile) */}
       <div className="grid grid-cols-1 items-start gap-16 lg:grid-cols-[16rem_1fr]">
         {/* Sidebar — hidden on mobile; MobileTOC covers small screens */}
