@@ -1868,3 +1868,26 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - Runtime-verified (LEAD, dev browser): logo renders left, nav/cart balanced right. `tsc` green.
   **Not committed/deployed.**
 - **Roles run:** LEAD (recon + spec + runtime verify) → 1× implementer.
+
+## [2026-09-06] phase | Cutover prep — legacy isrib.shop 301 redirect map (G4)
+
+- Migration entry point. Assessed cutover readiness against the Track-A gates: G0/G1 done,
+  **G2 checkout** built + prober-verified (Neon insert, both Resend emails, NowPayments invoice,
+  signed IPN webhook) + crypto flow live/hardened, **G3 analytics DONE**. Remaining G4 code gap:
+  `next.config.ts` only had the host-gated journal 301s (isrib-research.com→/journal); the legacy
+  `isrib.shop` static URLs had NO 301 to the new routes → SEO/bookmark loss risk at cutover.
+- **Closed it:** added 27 host-agnostic `permanent` (308) legacy redirects to `next.config.ts`
+  (30 total incl. the 3 journal host-gated), mapping every old sitemap URL + all `product_*.html`
+  + old vercel.json paths + checkout/buy/success flow → new slugs. Source list enumerated from the
+  legacy donor (`~/Documents/ISRIB/isrib shop website/ISRIB/*.html` + old sitemap.xml + vercel.json).
+  Host-agnostic so they also fire on the preview domain for QA. Existing journal redirects preserved.
+- **Deliberately NOT redirected** (no new public equivalent): `/404.html` (native), `/campaign*.html`,
+  `/batch-splitter.html`, `/admin-resubscribe.html`, `/admin-unsubscribe.html`, `/unsubscribe.html`.
+  ⚠ **FLAG:** `/unsubscribe.html` — old nurture emails in inboxes may link here; the email lead-gen
+  system is Track B (kept as the domain-independent Vercel-serverless system). Decide before/at cutover
+  whether old unsubscribe links need handling.
+- Runtime-verified (LEAD, dev curl): `product_isrib_A15.html`→`/products/isrib-a15`,
+  `/product_MPEP.html`→`/products/mpep-oxalate`, `/about.html`→`/about`, `/isrib-a15`→`/products/isrib-a15`,
+  `/checkout.html`→`/checkout`, `/success.html`→`/checkout/success`, `/zzl-7`→`/products/zzl-7` — all 308.
+  `tsc` + `next build` green. **Not committed/deployed.**
+- **Roles run:** LEAD (gate assessment + recon + spec + runtime verify) → 1× implementer.
