@@ -2126,3 +2126,41 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   formula correct, no double-count; `tsc`+`next build` green.
 - **Roles run:** LEAD (xlsx read + model recon + decisions + prod commit + Resend + BI verify + ADR/wiki)
   → 1× implementer → 1× verifier (APPROVE).
+
+## [2026-09-08] ingest+decision | Relaunch email rewritten to the winning-email-formula
+
+- Ingested `docs/raw/winning-email-formula.md` (empirically "lands in Gmail Important": Email 8/USA15)
+  and rewrote `marketing/relaunch-announcement-email.md` to it: personal 1:1 voice from Danylo, 4 short
+  paragraphs, ONE plain link (isrib.shop w/ `?promo=RELAUNCH10`), promo in plain text (not bold), reply-invite
+  line referencing "your last order", NO branded footer, no button/arrow/bold. Dropped the old draft's bullets,
+  button CTA, footer, and referral block (too many messages for an Important-targeted email).
+- **⚠ Surfaced conflict (needs Anton's call before send):** the formula deliberately uses NO `List-Unsubscribe`
+  header + a plain unsubscribe link, but the ADR-0017 Resend Broadcasts path ALWAYS injects `List-Unsubscribe`
+  + managed unsubscribe. Path A (broadcast) = easy + managed unsub but risks Promotions tab; Path B (plain
+  `resend.emails.send` loop, formula-faithful) = best shot at Important but needs a new-site plain unsubscribe
+  endpoint built first (old `/api/leads` gone post-cutover). 607 < Gmail's 5k/day bulk threshold, so
+  List-Unsubscribe isn't legally mandatory for Path B. LEAD lean: Path B. Copy is send-path-agnostic.
+- **Roles run:** LEAD (ingest + copy rewrite + infra-conflict surfacing + wiki).
+
+## [2026-09-08] phase | Path-B relaunch send built (formula-faithful) + promo auto-apply
+
+- Anton chose **Path B** (plain 1:1 `resend.emails.send` loop, NO List-Unsubscribe — best shot at Gmail
+  Important) over the ADR-0017 Resend Broadcast path, for THIS relaunch send. Built + verifier-APPROVE:
+  - `scripts/send-relaunch.ts` — dry-run / `--test <email>` / `--commit`; formula-compliant HTML (one
+    isrib.shop CTA w/ `?promo=RELAUNCH10`, plain-text code, reply-invite, no footer, no List-Unsubscribe);
+    throttled ~2s+jitter; **resumable** via `data/relaunch-sent.json` (crash-safe, no double-send);
+    recipients = `marketing_contacts WHERE unsubscribed_at IS NULL` (607).
+  - `src/app/api/unsubscribe/route.ts` + `src/lib/unsubscribe.ts` — signed-token (HMAC-SHA256 over
+    `unsubscribe:v1:<email>` keyed by `CUSTOMER_AUTH_SECRET`) plain unsubscribe endpoint (the old site's
+    `/api/leads` is gone post-cutover); stamps Neon `unsubscribed_at` idempotently + best-effort Resend
+    suppression; no membership leak.
+  - `?promo=` auto-apply: `PromoCapture` (mirrors `RefCapture`) → `isrib_promo` cookie → checkout reads it
+    on mount + auto-validates (server authority in `submitOrder` unchanged; cosmetic preview only).
+- **Verifier: APPROVE** — checkout pricing path unchanged/fails-closed; unsubscribe sign/verify symmetric +
+  constant-time; send has no List-Unsubscribe, resume is crash-safe, opted-out excluded; compliant; tsc+build green.
+- **GATES before send (Anton, in order):** 1) commit + **deploy** (unsubscribe endpoint + promo auto-apply must
+  be LIVE before links are mailed); 2) confirm **`CUSTOMER_AUTH_SECRET` in Vercel == .env.local** (else tokens
+  won't verify — post-deploy check with a fake-email token); 3) `npm run seed:promo-code` (RELAUNCH10 must
+  validate for the link + code); 4) `NEXT_PUBLIC_BASE_URL=https://isrib.shop npm run send:relaunch -- --test
+  <anton>` → verify inbox/Important, links, promo auto-apply, unsubscribe; 5) `--commit` for the full 607.
+- **Roles run:** LEAD (recon + spec + dry-run eyeball + wiki) → 1× implementer → 1× verifier (APPROVE).

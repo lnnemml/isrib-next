@@ -15,7 +15,8 @@
     "seed:promo-code": "node --env-file=.env.local --import tsx scripts/seed-promo-code.ts",
     "export:legacy-unsubscribes": "node --env-file=.env.local --import tsx scripts/export-legacy-unsubscribes.ts",
     "consolidate:marketing-list": "node --env-file=.env.local --import tsx scripts/consolidate-marketing-list.ts",
-    "sync:resend-audience": "node --env-file=.env.local --import tsx scripts/sync-resend-audience.ts"
+    "sync:resend-audience": "node --env-file=.env.local --import tsx scripts/sync-resend-audience.ts",
+    "send:relaunch": "node --env-file=.env.local --import tsx scripts/send-relaunch.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

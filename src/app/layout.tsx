@@ -7,6 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ChromeGate } from "@/components/layout/ChromeGate";
 import { RefCapture } from "@/components/RefCapture";
+import { PromoCapture } from "@/components/PromoCapture";
 import {
   GoogleTagManager,
   GoogleTagManagerNoScript,
@@ -52,6 +53,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               marketing pages aren't bailed out of static rendering. Renders no UI. */}
           <Suspense fallback={null}>
             <RefCapture />
+            {/* ADR 0016/0017 — capture a `?promo` code into a cookie from any landing
+                page (the relaunch email's /products?promo=RELAUNCH10 CTA) so it auto-
+                applies at checkout. Same Suspense boundary as RefCapture (useSearchParams
+                can bail static rendering). Renders no UI. */}
+            <PromoCapture />
             {/* Fires GA4-only page_view on SPA route changes (client nav doesn't reload
                 the document). Suspense-wrapped alongside RefCapture — consistent and safe
                 if cacheComponents is later enabled (usePathname can suspend). Renders no UI. */}

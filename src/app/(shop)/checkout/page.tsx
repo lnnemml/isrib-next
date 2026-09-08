@@ -57,14 +57,18 @@ export default function CheckoutPage() {
   const [promoPct, setPromoPct] = useState(0);
   const [promoValid, setPromoValid] = useState<boolean | null>(null);
 
-  function applyPromo(): void {
-    const code = promoCode.trim().toUpperCase();
-    if (!code) {
+  // Optional `code` arg lets the mount effect (auto-apply from the `isrib_promo` cookie)
+  // validate a code directly without waiting for `promoCode` state to flush. Manual "Apply"
+  // still calls applyPromo() with no arg, defaulting to the state. Cosmetic preview only —
+  // the server re-validates in submitOrder and is authoritative on price.
+  function applyPromo(code?: string): void {
+    const normalized = (code ?? promoCode).trim().toUpperCase();
+    if (!normalized) {
       setPromoValid(null);
       setPromoPct(0);
       return;
     }
-    fetch("/api/promo/validate?code=" + encodeURIComponent(code))
+    fetch("/api/promo/validate?code=" + encodeURIComponent(normalized))
       .then((r) => r.json())
       .then((data: { valid?: boolean; discountPct?: number }) => {
         setPromoValid(!!data.valid);
@@ -99,6 +103,22 @@ export default function CheckoutPage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // ADR 0016/0017 — promo auto-apply. PromoCapture wrote the `?promo=` code into the
+  // `isrib_promo` cookie on any landing page (the relaunch email CTA). On mount we read it,
+  // seed the promo field for visibility, and run the SAME validation the manual "Apply"
+  // button uses so the discount shows automatically. Passing the cookie code straight to
+  // applyPromo() avoids waiting on setPromoCode's state flush. Server re-validates at submit.
+  useEffect(() => {
+    const match = document.cookie.match(/(?:^|;\s*)isrib_promo=([^;]*)/);
+    const code = match ? decodeURIComponent(match[1]).trim().toUpperCase() : "";
+    if (!code) return;
+    setPromoCode(code);
+    applyPromo(code);
+    // Intentionally runs once on mount only (mirrors the isrib_ref effect above);
+    // applyPromo is stable enough for this one-shot read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [state, formAction, pending] = useActionState<SubmitState, FormData>(submitOrder, null);
@@ -340,7 +360,7 @@ export default function CheckoutPage() {
                 autoComplete="off"
                 className={FIELD_CLASS}
               />
-              <Button type="button" variant="secondary" onClick={applyPromo} className="shrink-0">
+              <Button type="button" variant="secondary" onClick={() => applyPromo()} className="shrink-0">
                 {"Apply"}
               </Button>
             </div>
