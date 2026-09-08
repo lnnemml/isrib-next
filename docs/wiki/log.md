@@ -2048,3 +2048,81 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Next (09-07):** deliverability work → commit promo+TBI+docs (SCOPED, excluding Anton's PasswordInput
   WIP) → deploy → `seed:promo-code` → real test order with RELAUNCH10 → Resend test-send → send to 500+.
 - **Roles run:** LEAD (session summary + wiki).
+
+## [2026-09-08] decision+phase | Email-campaign infra built (ADR 0017) — marketing list + Resend Broadcasts
+
+- **Task:** Anton asked to port the old site's `batch-splitter.html` + `campaign.html` (+ `/api/send-campaign`)
+  to send the relaunch email. Recon superseded a faithful port: the old flow depended on a Redis unsubscribe
+  store with no equivalent here, and the recipient list is **fragmented** — Neon `customers` (213 unique) vs the
+  legacy `/home/laptop/Documents/ISRIB/customers.json` (555 unique; **396 net-new**, 159 overlap, 54 Neon-only) =
+  **609 union**. A naive port would miss ~65% of the list OR re-mail opt-outs (the deliverability failure that
+  deferred this email). **ADR 0017.**
+- **Decisions (Anton):** (1) consolidate into Neon as source of truth + send via **Resend Broadcasts**
+  (managed unsubscribe + `List-Unsubscribe` header — the deliverability fix); (2) gate the tooling behind the
+  existing **admin session** (no `CAMPAIGN_SECRET`). Batch-splitter retired (609 < Resend's 1000/batch).
+- **Old opt-out list is recoverable but at risk:** it lives ONLY in the old Upstash Redis (`unsub:*`), never
+  synced to Resend (5 auto-bounce suppressions only). Must be exported via the OLD Vercel project's KV creds
+  before any send. Resend account verified live: `isrib.shop` domain verified/sending, "General" segment
+  (`d8632a0a…`) empty (clean import).
+- **Built (implementer ×2, all `src/`):** `marketing_contacts` Drizzle table (separate from the `customers`
+  LTV anchor, ADR 0012); scripts `export:legacy-unsubscribes` (old Upstash REST via namespaced
+  `LEGACY_KV_REST_API_*`), `consolidate:marketing-list` (union + opt-out stamp, idempotent), `sync:resend-audience`
+  (non-opted-out → Resend segment; opted-out excluded); `/admin/campaigns` page + actions + controls (list-health,
+  broadcasts list, send-test-to-admin, send-broadcast) gated by `isAdminAuthed()`; `.gitignore` `/data/` (PII).
+- **Email content DEFERRED** (Anton revising copy) — no relaunch HTML authored; the admin page reads broadcasts
+  from Resend dynamically so the finalized broadcast drops in with no code change.
+- **Verifier: APPROVE** — 8 checks: schema additive (`customers` byte-identical), auth re-check per action
+  (ADR 0011), no card/guarantee/cancer copy, **opt-out safety** (re-run never resets `unsubscribedAt`; sync
+  excludes opted-out — highest severity), PII in gitignored `/data/`, Resend SDK shapes correct (`segments`/
+  `segmentId`, not deprecated `audienceId`), `tsc` + `next build` green.
+- **GATES (Anton, in order):** 1) set OLD `LEGACY_KV_REST_API_URL`/`_TOKEN` → `npm run export:legacy-unsubscribes`;
+  2) `npm run db:push` (adds `marketing_contacts`); 3) stage `data/customers.json` → `npm run consolidate:marketing-list`;
+  4) `npm run sync:resend-audience`; 5) author + finalize the broadcast in Resend; 6) `/admin/campaigns` → send test to
+  self (confirm inbox, `{{FIRST_NAME}}`, unsubscribe link, `List-Unsubscribe`); 7) `seed:promo-code` (RELAUNCH10) THEN
+  send broadcast. Runtime prove of the page is blocked until `db:push` (page queries the new table).
+- **Roles run:** LEAD (recon + Neon/Resend probing + ADR + orchestration) → 2× implementer → 1× verifier (APPROVE).
+
+## [2026-09-08] phase | Marketing list consolidated + synced to Resend — opt-out leak caught + fixed
+
+- Anton ran `db:push` + `consolidate:marketing-list` + `sync:resend-audience`. Result: `marketing_contacts`
+  = **609** (396 legacy-json + 213 customers), **606 synced** to the Resend "General" segment. From-address
+  confirmed: `Danylo from ISRIB <noreply@isrib.shop>`.
+- **Phase-A recovery correction:** the old `unsub:*` Upstash store was EMPTY (127 keys exist — cart_recovery/
+  leads/pending_order — but zero `unsub:*`). The real opt-out system was `api/leads.js` → old Neon `leads`
+  table (`status='unsubscribed'`), mirrored to Redis `leads:*` with a 90-day TTL. Redis held only **1**
+  unsubscribe (`dave_far_away@hotmail.com`), which IS a buyer in the audience. **Anton's call: skip the old
+  leads-table export** (that population is newsletter leads, not buyers); honor only the 1 overlapping buyer
+  opt-out + the 5 known Resend hard-bounces.
+- **Opt-out leak caught (LEAD post-sync verification):** dave was NOT stamped opted-out and had synced into the
+  606 → an explicit opt-out in the send audience. **Root cause = timing, not a bug:** consolidate ran while
+  `data/legacy-unsubscribes.json` was still the empty `[]` from the Phase-A export, so only the hardcoded
+  bounces applied. Re-running consolidate (idempotent) loaded the file and stamped dave. Fixed dave in Resend
+  too: `add-suppression` (account-level) + `update-contact unsubscribed:true`. Final: Neon 605 active / 4
+  opted-out; Resend mailable 605 (dave unsubscribed + suppressed). Verified via get-contact + Neon recount.
+- **Operational caveat exposed:** `sync:resend-audience` is **one-directional** — it only ADDS active contacts;
+  it never removes/suppresses a contact that becomes opted-out later. Any opt-out discovered AFTER a sync must
+  be suppressed in Resend manually (as done here). Ensure the opt-out file is final BEFORE consolidate, and
+  re-verify opt-out stamps after every sync.
+- **Roles run:** LEAD (Upstash forensics + post-sync opt-out audit + Neon/Resend corrective + wiki).
+
+## [2026-09-08] decision+phase | September orders backfill + $10/order shipping-cost BI (ADR 0018)
+
+- **Part 1 — 3 September-2026 orders** (from `/home/laptop/Downloads/september.xlsx`: Diego Medina 5g A15
+  $850 · Mihails Umanskis 25 caps A15 $150 · David Daniel 500mg A15 $130) imported ADDITIVELY into
+  `legacy_orders` + `customers` + `marketing_contacts` + Resend. New `scripts/import-september-orders.ts`
+  (idempotent; NOT the destructive full importer). Diego + David new (`source="legacy-sep2026"` to dodge the
+  `delete where source='legacy'` landmine); **ahim@inbox.lv already existed → client→regular** (2nd order).
+  Committed to prod: legacy_orders 223→**226** ($43,637.75→**$44,767.75**), marketing_contacts 609→**611**
+  (607 active); Diego+David added to the Resend "General" segment (ahim already synced).
+- **Part 2 — $10/order shipping cost as a computed BI metric.** System was revenue-only (no cost/profit
+  concept); on these compounds margin ≈ full price, so `amount_cents` doubles as profit basis. Added
+  `SHIPPING_COST_CENTS=1000` + `lifetimeShipping()` (all legacy + PAID live orders) → admin panel now shows
+  **Lifetime orders / Lifetime revenue / Shipping cost / Net after shipping**. No schema change. Current:
+  **226 orders · $44,767.75 · −$2,260 shipping · $42,507.75 net** (0 paid live orders yet post-cutover).
+- **Decision (Anton):** store the Sep "profit per order" as the order amount like the 223 (data matches:
+  5g A15 = $850 in both); model shipping as a computed BI metric, not a stored column. **ADR 0018.**
+- **Verifier: APPROVE** — additive/no-destructive-delete; source-tag dodges the re-import landmine; dup-guard
+  idempotent; marketing upsert preserves `unsubscribed_at`; shipping counts paid-live-only (no unpaid), net
+  formula correct, no double-count; `tsc`+`next build` green.
+- **Roles run:** LEAD (xlsx read + model recon + decisions + prod commit + Resend + BI verify + ADR/wiki)
+  → 1× implementer → 1× verifier (APPROVE).

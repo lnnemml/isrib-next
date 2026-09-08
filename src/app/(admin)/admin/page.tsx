@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { ADMIN_COOKIE } from "@/lib/admin/auth";
-import { biSummary, listOrders, groupByCustomer } from "@/lib/admin/queries";
+import { biSummary, listOrders, groupByCustomer, lifetimeShipping } from "@/lib/admin/queries";
 import type { AdminOrderRow, AdminOrderItemRow } from "@/lib/admin/queries";
 import { formatCents, getProduct } from "@/lib/copy/products";
 import { OrderRow, type OrderRowData } from "./OrderRow";
@@ -141,10 +142,11 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
 }
 
 export default async function AdminDashboardPage() {
-  const [bi, orders, customers] = await Promise.all([
+  const [bi, orders, customers, shipping] = await Promise.all([
     biSummary(),
     listOrders(),
     groupByCustomer(),
+    lifetimeShipping(),
   ]);
 
   const ratioLabel =
@@ -165,14 +167,22 @@ export default async function AdminDashboardPage() {
             {"ISRIB "}
             <span className="text-text-faint">{"Admin"}</span>
           </div>
-          <form action={logout}>
-            <button
-              type="submit"
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/campaigns"
               className="rounded-md border border-border bg-surface px-3 py-1.5 text-small font-semibold text-text transition hover:bg-surface-soft"
             >
-              {"Log out"}
-            </button>
-          </form>
+              {"Campaigns"}
+            </Link>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded-md border border-border bg-surface px-3 py-1.5 text-small font-semibold text-text transition hover:bg-surface-soft"
+              >
+                {"Log out"}
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -344,6 +354,30 @@ export default async function AdminDashboardPage() {
             customerLifetimeRevenueCents,
           )} lifetime revenue`}
         </p>
+
+        {/* Lifetime shipping economics (ADR 0018 — all legacy + live-paid orders) */}
+        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Card
+            label="Lifetime orders"
+            value={String(shipping.lifetimeOrders)}
+            sub="legacy + live paid, all-time"
+          />
+          <Card
+            label="Lifetime revenue"
+            value={formatCents(shipping.lifetimeRevenueCents)}
+            sub="legacy + live paid, all-time"
+          />
+          <Card
+            label="Shipping cost"
+            value={formatCents(shipping.shippingCostCents)}
+            sub={`${shipping.lifetimeOrders} orders × $10`}
+          />
+          <Card
+            label="Net after shipping"
+            value={formatCents(shipping.netAfterShippingCents)}
+            sub="lifetime, after shipping"
+          />
+        </div>
         <div className="overflow-x-auto rounded-lg border border-border bg-surface">
           <table className="w-full min-w-[860px]">
             <thead className="border-b border-border bg-surface-soft">

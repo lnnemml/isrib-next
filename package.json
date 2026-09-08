@@ -10,8 +10,12 @@
     "db:push": "node --env-file=.env.local node_modules/.bin/drizzle-kit push",
     "db:studio": "node --env-file=.env.local node_modules/.bin/drizzle-kit studio",
     "import:legacy": "node --env-file=.env.local --import tsx scripts/import-legacy-orders.ts",
+    "import:september-orders": "node --env-file=.env.local --import tsx scripts/import-september-orders.ts",
     "backfill:referral-codes": "node --env-file=.env.local --import tsx scripts/backfill-referral-codes.ts",
-    "seed:promo-code": "node --env-file=.env.local --import tsx scripts/seed-promo-code.ts"
+    "seed:promo-code": "node --env-file=.env.local --import tsx scripts/seed-promo-code.ts",
+    "export:legacy-unsubscribes": "node --env-file=.env.local --import tsx scripts/export-legacy-unsubscribes.ts",
+    "consolidate:marketing-list": "node --env-file=.env.local --import tsx scripts/consolidate-marketing-list.ts",
+    "sync:resend-audience": "node --env-file=.env.local --import tsx scripts/sync-resend-audience.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

@@ -96,6 +96,8 @@ rather than scanning the whole directory.
 - [`decisions/0014-referral-discount.md`](./decisions/0014-referral-discount.md)
 - [`decisions/0015-journal-migration-and-organic-growth.md`](./decisions/0015-journal-migration-and-organic-growth.md)
 - [`decisions/0016-launch-promo-codes.md`](./decisions/0016-launch-promo-codes.md)
+- [`decisions/0017-email-campaign-broadcasts-and-marketing-list.md`](./decisions/0017-email-campaign-broadcasts-and-marketing-list.md)
+- [`decisions/0018-shipping-cost-and-september-orders.md`](./decisions/0018-shipping-cost-and-september-orders.md)
 
 ## Planning
 

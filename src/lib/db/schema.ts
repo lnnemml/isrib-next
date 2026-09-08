@@ -159,6 +159,22 @@ export const customers = pgTable("customers", {
 export type Customer = typeof customers.$inferSelect;
 export type NewCustomer = typeof customers.$inferInsert;
 
+// ── marketing_contacts ─────────────────────────────────────────────────────────
+// ADR 0017 — canonical newsletter/broadcast list. Deliberately SEPARATE from
+// `customers` (the NOT-NULL name/clientType LTV/BI anchor, ADR 0012) so never-ordered
+// marketing leads never pollute repeat/LTV metrics. Deduped union of customers + the
+// legacy customers.json export; Resend mirrors this and owns unsubscribe status after send.
+export const marketingContacts = pgTable("marketing_contacts", {
+  id:             text("id").primaryKey(),        // nanoid
+  email:          text("email").notNull().unique(),   // always stored lowercased/trimmed
+  firstName:      text("first_name"),             // nullable
+  source:         text("source").notNull(),       // "customers" | "legacy-json"
+  unsubscribedAt: timestamp("unsubscribed_at"),   // nullable; set = opted out, never mail
+  createdAt:      timestamp("created_at").defaultNow().notNull(),
+});
+export type MarketingContact = typeof marketingContacts.$inferSelect;
+export type NewMarketingContact = typeof marketingContacts.$inferInsert;
+
 // ── legacy_orders ────────────────────────────────────────────────────────────
 // ADR 0012 — one row per historical order; productsRaw is coarse free-text,
 // NOT normalised to the typed catalog. Never touches the live orders table.

@@ -17,6 +17,10 @@ import { and, count, desc, eq, gte, inArray, isNull, isNotNull, ne, sql, sum } f
 const PAID_STATUSES = ["paid", "fulfilled"] as const;
 const UNPAID_STATUSES = ["pending_payment_instructions", "awaiting_payment"] as const;
 
+// ADR 0018 — flat per-order shipping cost; shipping is free to the customer, so $10
+// comes off our margin per shipped order.
+export const SHIPPING_COST_CENTS = 1000;
+
 function cutoff30d(): Date {
   return new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 }
@@ -475,4 +479,51 @@ export async function groupByCustomer(): Promise<CustomerGroup[]> {
 
   groups.sort((a, b) => b.revenueCents - a.revenueCents || b.orderCount - a.orderCount);
   return groups;
+}
+
+// ── lifetimeShipping ─────────────────────────────────────────────────────────
+// ADR 0018 — lifetime shipping-cost fold. Shipping is free to the customer, so a flat
+// SHIPPING_COST_CENTS comes off our margin per SHIPPED order. Legacy orders are all
+// historically shipped, so ALL legacy rows count; live orders count only when paid/
+// fulfilled (we only ship paid). Amounts stay integer cents (UI formats at the edge).
+export interface LifetimeShipping {
+  lifetimeOrders: number; // ALL legacy_orders + live orders in PAID_STATUSES
+  lifetimeRevenueCents: number; // Σ legacy.amountCents + Σ live paid total_price
+  shippingCostCents: number; // lifetimeOrders * SHIPPING_COST_CENTS
+  netAfterShippingCents: number; // lifetimeRevenueCents - shippingCostCents
+}
+
+export async function lifetimeShipping(): Promise<LifetimeShipping> {
+  // LEGACY — every historical order shipped; count + sum all rows.
+  const [legacyRow] = await db
+    .select({
+      n: count(),
+      revenueCents: sum(legacyOrders.amountCents),
+    })
+    .from(legacyOrders);
+  const legacyOrderCount = legacyRow?.n ?? 0;
+  const legacyRevenueCents = toCents(legacyRow?.revenueCents ?? null);
+
+  // LIVE — only paid/fulfilled orders ship; count + sum those.
+  const [liveRow] = await db
+    .select({
+      n: count(),
+      revenueCents: sum(orders.totalPrice),
+    })
+    .from(orders)
+    .where(inArray(orders.status, [...PAID_STATUSES]));
+  const livePaidOrderCount = liveRow?.n ?? 0;
+  const livePaidRevenueCents = toCents(liveRow?.revenueCents ?? null);
+
+  const lifetimeOrders = legacyOrderCount + livePaidOrderCount;
+  const lifetimeRevenueCents = legacyRevenueCents + livePaidRevenueCents;
+  const shippingCostCents = lifetimeOrders * SHIPPING_COST_CENTS;
+  const netAfterShippingCents = lifetimeRevenueCents - shippingCostCents;
+
+  return {
+    lifetimeOrders,
+    lifetimeRevenueCents,
+    shippingCostCents,
+    netAfterShippingCents,
+  };
 }

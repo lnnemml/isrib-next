@@ -43,3 +43,6 @@ next-env.d.ts
 
 # architect transfer patches (applied then discarded)
 *.patch
+
+# PII exports (customers.json, legacy-unsubscribes.json) — never commit
+/data/
