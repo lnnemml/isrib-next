@@ -2227,3 +2227,16 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   existing opsAlert/orderReceivedManual convention; self-inflicted + admin-inbox-only — not a regression).
 - **Needs deploy** to take effect on the next real order's shipping submit.
 - **Roles run:** LEAD (recon + spec + redirect-trap call) → 1× implementer → 1× verifier (APPROVE).
+
+## [2026-09-08] phase | Relaunch email SENT — 607/607, 0 failed 🎉
+
+- Scheduled cron fired ~19:38 EEST. Pre-flight all green: deploy live (/api/unsubscribe 400, /products 200),
+  RELAUNCH10 seeded + validated (10%). **Sent to all 607 — 0 skipped, 0 failed** (path-B plain send, stripped
+  Email-8-density copy, tracking off, verified landing in Gmail Important). Resume log `data/relaunch-sent.json`
+  = 607.
+- Two auto-mode permission blocks along the way (seed + send) — classifier still saw the original "deferred"
+  boundary; Anton ran the seed himself and explicitly authorized the send. Pre-flight abort behaved correctly
+  (would not have mailed a dead code).
+- **Next:** monitor opens/replies/orders + RELAUNCH10 redemptions (admin panel); **Email 2** (account + referral
+  follow-up) in ~4–5 days — needs its own template + `data/email2-sent.json` (see relaunch-announcement-email.md).
+- **Roles run:** LEAD (scheduled pre-flight + seed/verify + send + report + wiki).
