@@ -22,7 +22,7 @@ export function generateMetadata(): Metadata {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" subtitle={SUBTITLE} lastUpdated="Last updated: September 27, 2025">
+    <LegalPage title="Privacy Policy" subtitle={SUBTITLE} lastUpdated="Last updated: September 8, 2026">
       <LegalParagraph>
         {"This Privacy Policy explains how "}
         <LegalStrong>{"ISRIB.shop"}</LegalStrong>
@@ -41,12 +41,10 @@ export default function PrivacyPage() {
         </li>
         <li>
           <LegalStrong>{"Technical data:"}</LegalStrong>
-          {" IP address, browser type, device info, pages visited (via standard server logs and minimal analytics, if enabled)."}
+          {" IP address, browser type, device info, pages visited (via standard server logs and analytics)."}
         </li>
-        <li>
-          <LegalStrong>{"Chat data:"}</LegalStrong>
-          {" messages sent through our live chat widget (Tawk.to) processed on our behalf."}
-        </li>
+        <li><LegalStrong>{"Account data:"}</LegalStrong>{" if you create an account: your name, email, a hashed password (we never store it in plaintext), email‑verification status, a personal referral code, and your account id and creation date."}</li>
+        <li><LegalStrong>{"Order history:"}</LegalStrong>{" orders placed under your account, including earlier orders you placed before accounts existed, so you can view them when signed in."}</li>
       </LegalList>
 
       <LegalHeading>{"2) Cart & Local Storage"}</LegalHeading>
@@ -57,6 +55,9 @@ export default function PrivacyPage() {
         <em>{"submit"}</em>
         {" a form (e.g., checkout request) — only then the cart contents are included in the request payload. You can clear this data any time by emptying the cart or clearing your browser storage."}
       </LegalParagraph>
+
+      <LegalHeading>{"Accounts & Sessions"}</LegalHeading>
+      <LegalParagraph>{"Accounts are optional. When you register, your password is hashed and salted before storage — we never store or see your plaintext password. Signing in sets a secure, http‑only session cookie (isrib_customer_session) that keeps you logged in for about 30 days. Email‑verification and password‑reset links are single‑use and time‑limited."}</LegalParagraph>
 
       <LegalHeading>{"3) How We Use Your Data"}</LegalHeading>
       <LegalList>
@@ -78,7 +79,7 @@ export default function PrivacyPage() {
         </li>
         <li>
           <LegalStrong>{"Consent:"}</LegalStrong>
-          {" where required (e.g., certain cookies/marketing, if enabled)."}
+          {" where required (e.g., certain cookies and analytics/marketing)."}
         </li>
         <li>
           <LegalStrong>{"Legal obligation:"}</LegalStrong>
@@ -102,6 +103,7 @@ export default function PrivacyPage() {
           <LegalStrong>{"Authorities"}</LegalStrong>
           {" when required by law or to protect our rights and safety."}
         </li>
+        <li><LegalStrong>{"Sub‑processors"}</LegalStrong>{" listed below in “Third‑Party Services”, each strictly to operate the store, take payment, send email, and measure performance."}</li>
       </LegalList>
       <LegalSubHeading>{"Email Communications"}</LegalSubHeading>
       <LegalParagraph>
@@ -118,26 +120,23 @@ export default function PrivacyPage() {
         {"Depending on your jurisdiction, you may have rights to access, correct, delete, restrict, object, port your data, or withdraw consent. To exercise these rights, contact us via the details below."}
       </LegalParagraph>
 
+      <LegalHeading>{"Referral Program Data"}</LegalHeading>
+      <LegalParagraph>{"If you take part in the referral program, we store your referral code, a record of which orders were referred, and any discount credits you earn, so we can run the program and apply your rewards."}</LegalParagraph>
+
       <LegalHeading>{"9) Cookies & Analytics"}</LegalHeading>
-      <LegalParagraph>
-        {"We use minimal cookies necessary to operate the site. If we enable additional analytics or marketing cookies, we will update this Policy and, where required, request your consent."}
-      </LegalParagraph>
+      <LegalParagraph>{"We use cookies that are essential to operate the site — including your sign‑in session (isrib_customer_session) and, where relevant, referral and promo cookies (isrib_ref, isrib_promo) that remember a code you arrived with."}</LegalParagraph>
+      <LegalParagraph>{"We also use analytics and advertising measurement: Meta Pixel and Conversions API (which may set _fbp/_fbc cookies), Google Analytics 4, and Microsoft Clarity. These help us understand traffic and improve the site. You can limit cookies via your browser settings."}</LegalParagraph>
 
       <LegalHeading>{"10) Security"}</LegalHeading>
-      <LegalParagraph>
-        {"We implement reasonable technical and organizational measures to protect personal data. However, no online transmission or storage system is 100% secure."}
-      </LegalParagraph>
+      <LegalParagraph>{"We implement reasonable technical and organizational measures to protect personal data: passwords are hashed and salted, data is encrypted in transit (HTTPS), and access is limited to what is needed to operate the store. However, no online transmission or storage system is 100% secure."}</LegalParagraph>
 
       <LegalHeading>{"11) Third‑Party Services"}</LegalHeading>
       <LegalList>
-        <li>
-          <LegalStrong>{"Live chat:"}</LegalStrong>
-          {" Tawk.to — your messages are processed by Tawk.to on our behalf."}
-        </li>
-        <li>
-          <LegalStrong>{"Forms / serverless:"}</LegalStrong>
-          {" If a third‑party handler is used (e.g., Vercel/Netlify or an API endpoint), submissions are processed by that provider for us."}
-        </li>
+        <li><LegalStrong>{"Hosting:"}</LegalStrong>{" Vercel — serves the website and runs our server functions."}</li>
+        <li><LegalStrong>{"Database:"}</LegalStrong>{" Neon (PostgreSQL) — stores orders, account, and referral data."}</li>
+        <li><LegalStrong>{"Email:"}</LegalStrong>{" Resend — sends order, verification, and account emails; Upstash schedules order‑reminder emails."}</li>
+        <li><LegalStrong>{"Payments:"}</LegalStrong>{" NowPayments — processes cryptocurrency payments; we receive confirmation of payment status."}</li>
+        <li><LegalStrong>{"Analytics/Advertising:"}</LegalStrong>{" Meta, Google Analytics, and Microsoft Clarity — measure site usage and marketing performance."}</li>
       </LegalList>
 
       <LegalHeading>{"12) Contact"}</LegalHeading>

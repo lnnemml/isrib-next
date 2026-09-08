@@ -13,6 +13,12 @@ import { Button, Card, FaqAccordion } from "@/components/ui";
 //  (b) "lost or damaged" — "a replacement at no extra cost" (reshipment policy,
 //      adjacent to the no-money-back-guarantee rule).
 //  The COA Q&A below is framed "on request" (never "included") per variant A.
+//
+// Post-port additions: an "👤 Accounts & Referrals" category and three payment-flow
+// questions (payment-flow / crypto-discount / when-address) were added, and the
+// "how-to-order" and "payments" answers were corrected to match the live
+// account/crypto+manual flow (optional accounts + automatic 10% crypto discount;
+// removed the stale SEPA/SWIFT-only wording).
 const HERO_SUBTITLE =
   "Find answers about ISRIB, ordering, shipping, and our research-grade quality standards.";
 
@@ -77,12 +83,12 @@ const CATEGORIES: Category[] = [
       {
         id: "how-to-order",
         q: "How do I place an order?",
-        a: "Add products to cart and proceed to checkout — no account required. We'll confirm shipping details and finalize payment after checkout.",
+        a: "Add products to cart and proceed to checkout — no account required. You can optionally create an account to track your orders and join our referral program. We will confirm shipping details and finalize payment after checkout.",
       },
       {
         id: "payments",
         q: "What payment methods do you accept?",
-        a: "Cryptocurrency (USDT, BTC), bank transfers (SEPA/SWIFT), and Wise. We arrange the method individually for speed and privacy.",
+        a: "Cryptocurrency (BTC, ETH, USDT and more) with an automatic 10% discount, or a manually arranged method (e.g. bank transfer / Wise) for privacy and speed. We confirm the exact method with you after checkout.",
       },
       {
         id: "custom-orders",
@@ -103,6 +109,67 @@ const CATEGORIES: Category[] = [
         id: "invoices",
         q: "Can I get an invoice for my institution?",
         a: "Yes — we provide invoices and documentation required by universities and research institutions.",
+      },
+      {
+        id: "payment-flow",
+        q: "What happens after I place an order?",
+        a: "You choose crypto or manual payment. Crypto takes you to a secure hosted invoice; manual sends payment instructions by email. Once payment is confirmed, we send a private link to enter your shipping address, then we dispatch your order.",
+      },
+      {
+        id: "crypto-discount",
+        q: "Is there a discount for paying with crypto?",
+        a: "Yes — crypto orders receive an automatic 10% discount, applied at checkout.",
+      },
+      {
+        id: "when-address",
+        q: "When do you collect my shipping address?",
+        a: "Only after your payment is confirmed, through a secure one-time link tied to your order — so your address is shared only once the order is real.",
+      },
+    ],
+  },
+  {
+    heading: "👤 Accounts & Referrals",
+    subtitle: "Optional accounts, your order history, and how referrals and promo codes work.",
+    items: [
+      {
+        id: "account-optional",
+        q: "Do I need an account to order?",
+        a: "No — checkout works without one. An account is optional and lets you track your orders, reorder faster, and join the referral program.",
+      },
+      {
+        id: "account-what",
+        q: "What can I do with an account?",
+        a: "See your full order history (including earlier orders), check the status of each order, and access your personal referral code and rewards — all at isrib.shop/account.",
+      },
+      {
+        id: "account-signup",
+        q: "How do I create an account?",
+        a: "Register with your name, email, and a password at isrib.shop/account. You will receive a verification link by email (valid for 24 hours); confirm it to activate sign-in.",
+      },
+      {
+        id: "account-legacy",
+        q: "I have ordered before — will I see my past orders?",
+        a: "Yes. Register with the same email you used previously and your earlier orders are linked to your account automatically — no extra steps.",
+      },
+      {
+        id: "account-password",
+        q: "How is my password protected?",
+        a: "Your password is hashed and salted before it is stored — we never see or store your plaintext password. Your signed-in session uses a secure, http-only cookie.",
+      },
+      {
+        id: "referrals",
+        q: "How does the referral program work?",
+        a: "Every account gets a personal referral code and link. Share it: a friend who orders through it gets 10% off, and once their order is paid you earn a 10% discount credit toward a future order of your own.",
+      },
+      {
+        id: "referral-redeem",
+        q: "How do I use a referral reward?",
+        a: "Available credits appear in your account and apply automatically to your next eligible order. Discounts do not stack — you always receive the single best available discount.",
+      },
+      {
+        id: "promo-codes",
+        q: "Can I use a promo code?",
+        a: "Yes. If you arrive via a promo link, the code applies automatically at checkout; you can also enter one by hand. Only the best single discount applies.",
       },
     ],
   },

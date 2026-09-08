@@ -20,7 +20,7 @@ export function generateMetadata(): Metadata {
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Service" subtitle={SUBTITLE} lastUpdated="Last updated: September 22, 2025">
+    <LegalPage title="Terms of Service" subtitle={SUBTITLE} lastUpdated="Last updated: September 8, 2026">
       <LegalHeading>{"1) Acceptance of Terms"}</LegalHeading>
       <LegalParagraph>
         {"By accessing isrib.shop or placing an order, you agree to these Terms of Service (“Terms”). If you do not agree, please do not use the site."}
@@ -46,55 +46,57 @@ export default function TermsPage() {
       </LegalParagraph>
 
       <LegalHeading>{"5) Pricing & Payments"}</LegalHeading>
-      <LegalParagraph>
-        {"Prices are listed on the site and may change without notice. Unless otherwise stated, payments are processed "}
-        <LegalStrong>{"manually"}</LegalStrong>
-        {" after your request (you will receive instructions by email or Telegram). Your order is not confirmed until payment is received and verified."}
-      </LegalParagraph>
+      <LegalParagraph>{"Prices are listed on the site and may change without notice. We do not process card payments. Payment is by cryptocurrency or a manually arranged method, confirmed with you after your request (you will receive instructions by email or Telegram). Your order is not confirmed until payment is received and verified."}</LegalParagraph>
 
-      <LegalHeading>{"6) Shipping, Risk & Delays"}</LegalHeading>
+      <LegalHeading>{"6) Your Account"}</LegalHeading>
+      <LegalParagraph>{"Accounts are optional. If you create one, you agree to provide accurate information, to keep your login credentials secure, and that you are responsible for activity under your account. One account per person. We may suspend or terminate an account for misuse, fraud, or violation of these Terms."}</LegalParagraph>
+
+      <LegalHeading>{"7) Referral Program"}</LegalHeading>
+      <LegalParagraph>{"Referral codes are provided for genuine referrals only. Self‑referrals, fake accounts, and other abuse are not permitted. Referral rewards are discount credits with no cash value, cannot be combined with other discounts (only the single best discount applies), and may be modified or revoked in cases of abuse or if the program changes."}</LegalParagraph>
+
+      <LegalHeading>{"8) Shipping, Risk & Delays"}</LegalHeading>
       <LegalParagraph>
         {"Shipping terms and timelines are estimates and not guarantees. Risk of loss passes to you upon transfer to the carrier. You are responsible for import, customs, duties, and ensuring the shipment is lawful in your location."}
       </LegalParagraph>
 
-      <LegalHeading>{"7) Returns & Cancellations"}</LegalHeading>
+      <LegalHeading>{"9) Returns & Cancellations"}</LegalHeading>
       <LegalParagraph>
         {"Due to the nature of research materials, returns are generally "}
         <LegalStrong>{"not accepted"}</LegalStrong>
         {" once an order has shipped. If you wish to cancel, contact us immediately; we will attempt to assist if the order has not yet been dispatched."}
       </LegalParagraph>
 
-      <LegalHeading>{"8) Quality & Documentation"}</LegalHeading>
+      <LegalHeading>{"10) Quality & Documentation"}</LegalHeading>
       <LegalParagraph>
         {"Where available, batch identifiers and/or analytical notes may be provided. See Quality Control for our general practices. We make reasonable efforts to ensure accuracy of information, but minor variations may occur."}
       </LegalParagraph>
 
-      <LegalHeading>{"9) No Warranties"}</LegalHeading>
+      <LegalHeading>{"11) No Warranties"}</LegalHeading>
       <LegalParagraph>
         {"Products are provided “as is” for research use only, without any express or implied warranties, including but not limited to merchantability, fitness for a particular purpose, or non‑infringement."}
       </LegalParagraph>
 
-      <LegalHeading>{"10) Limitation of Liability"}</LegalHeading>
+      <LegalHeading>{"12) Limitation of Liability"}</LegalHeading>
       <LegalParagraph>
         {"To the maximum extent permitted by law, isrib.shop shall not be liable for indirect, incidental, special, consequential, or punitive damages, or any loss arising from misuse, improper handling, or unlawful use of products."}
       </LegalParagraph>
 
-      <LegalHeading>{"11) Compliance & Indemnity"}</LegalHeading>
+      <LegalHeading>{"13) Compliance & Indemnity"}</LegalHeading>
       <LegalParagraph>
         {"You agree to comply with all applicable laws and to indemnify and hold isrib.shop harmless from claims arising out of your use, handling, storage, import, or resale of products."}
       </LegalParagraph>
 
-      <LegalHeading>{"12) Intellectual Property"}</LegalHeading>
+      <LegalHeading>{"14) Intellectual Property"}</LegalHeading>
       <LegalParagraph>
         {"All site content (text, graphics, logos, layout) is owned by or licensed to isrib.shop and protected by applicable laws. You may not copy or reuse content without permission."}
       </LegalParagraph>
 
-      <LegalHeading>{"13) Privacy"}</LegalHeading>
+      <LegalHeading>{"15) Privacy"}</LegalHeading>
       <LegalParagraph>
         {"Your use of the site is also subject to our Privacy Policy. By submitting any personal data, you consent to its processing as described there."}
       </LegalParagraph>
 
-      <LegalHeading>{"14) Changes to the Terms"}</LegalHeading>
+      <LegalHeading>{"16) Changes to the Terms"}</LegalHeading>
       <LegalParagraph>
         {"We may update these Terms from time to time. Continued use of the site following changes constitutes acceptance of the revised Terms."}
       </LegalParagraph>
