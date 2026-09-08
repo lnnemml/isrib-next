@@ -2164,3 +2164,19 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   validate for the link + code); 4) `NEXT_PUBLIC_BASE_URL=https://isrib.shop npm run send:relaunch -- --test
   <anton>` → verify inbox/Important, links, promo auto-apply, unsubscribe; 5) `--commit` for the full 607.
 - **Roles run:** LEAD (recon + spec + dry-run eyeball + wiki) → 1× implementer → 1× verifier (APPROVE).
+
+## [2026-09-08] iterate | Relaunch email stripped to Email-8 density + SPF fix flagged (deliverability)
+
+- Test send did NOT land in Gmail Important. Diagnosed two levers:
+  - **Technical:** `isrib.shop` has TWO SPF TXT records → `permerror` (SPF fails entirely). Fix (Anton, DNS):
+    one record `v=spf1 include:amazonses.com include:_spf.resend.com include:spf.efwd.registrar-servers.com ~all`.
+    DKIM (Resend) present + aligned; DMARC `p=none` (ok). SPF merge = main technical lever.
+  - **Content:** the draft carried 6 topics vs the proven Email 8 (3 short sentences, 1 offer). Stripped to
+    Email-8 density — kept rebuild + RELAUNCH10 offer + reply-invite; **cut** account/history, referral,
+    journal, crypto detail (→ a future separate email; one idea per message is what worked). One link
+    (isrib.shop `?promo=RELAUNCH10`), UTMs kept (Email 8 had them and still hit Important → density was the issue).
+  - Updated both `marketing/relaunch-announcement-email.md` (body v2) and `scripts/send-relaunch.ts` template;
+    dry-run confirms one CTA + plain-text code + no orphaned copy. Send logic/resume/unsubscribe unchanged.
+- **Note:** Gmail Important is per-recipient + behavioral — a cold self-test underrepresents it; a reply
+  trains it. Re-test to 2–3 addresses (reply from one) after the SPF fix, then the full 607.
+- **Roles run:** LEAD (DNS/deliverability diagnosis + copy rewrite + wiki) → 1× implementer (template swap).

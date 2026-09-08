@@ -68,13 +68,11 @@ No preheader (the verified emails used none — keep it looking 1:1, not designe
 
 Hi {{firstName}},
 
-Quick update — I've spent the last while rebuilding ISRIB.shop from the ground up. Same lab, same in-house synthesis, same independent NMR and COA on every batch. The site around it is just faster and cleaner now, and everything, checkout included, lives in one place.
+Quick note — I've rebuilt ISRIB.shop from the ground up. Same lab, same compounds and same independent NMR and COA on every batch; the site's just faster now, and everything including checkout is in one place.
 
-A couple of things that might be handy: you can make an account with the same email you've ordered with before, and your full order history is already sitting there. Paying with crypto now takes 10% off automatically, and if you'd rather pay another way, RELAUNCH10 gets you the same 10% this week. Your account also has a referral link — your friend gets a discount on their first order, and you earn a credit toward your next.
+If you've been meaning to reorder, RELAUNCH10 takes 10% off this week — any payment method (crypto already gives you the 10% automatically). Everything's in stock at isrib.shop.
 
-Everything's in stock at isrib.shop, and the journal there now collects my research writing — mechanism notes and honest compound comparisons.
-
-How have things been since your last order? Happy to talk through anything for your work — just reply here.
+How's everything been since your last order? Happy to talk through anything for your work — just reply here.
 
 Danylo
 
@@ -112,10 +110,16 @@ Unsubscribe
 - **Одне посилання** (isrib.shop із `?promo=RELAUNCH10`), журнал — просто текстом (правило single-CTA).
 - **Офер чесний до механіки:** крипто дає 10% автоматично, RELAUNCH10 — ті самі 10% іншим способом
   оплати (не стакається, щоб не думали про 20%).
-- **Компресія:** свідомо викинув марковані списки/кнопку/футер зі старого драфту — формула вимагає
-  короткий особистий лист (3–4 абзаци), а не newsletter. Реферал — одне коротке речення в абзаці про
-  акаунт (без окремого CTA/лінка, щоб зберегти правило single-CTA). Тон стерильний: прибрав
-  "written by me rather than a marketer".
+- **Компресія (v2, 2026-09-08):** тестовий лист (4 абзаци, 6 тем) НЕ потрапив у Important. Стиснув до
+  щільності Email 8 (доведений winner): 3 короткі абзаци, ОДНА пропозиція (RELAUNCH10 10%). **Викинув**
+  акаунт/історію, реферал, журнал, деталі крипто — це піде окремим листом пізніше (одна ідея на лист = те,
+  що спрацювало в Email 8). Одне посилання (isrib.shop із `?promo=RELAUNCH10`), UTM залишив (Email 8 їх мав
+  і все одно потрапив у Important → щільність, а не UTM, була проблемою).
+- **Технічний фікс (Anton, DNS):** у `isrib.shop` було ДВА SPF-записи → `permerror` (SPF повністю падає).
+  Об'єднати в один: `v=spf1 include:amazonses.com include:_spf.resend.com include:spf.efwd.registrar-servers.com ~all`.
+  DKIM (Resend) ок, DMARC `p=none` ок. Це головний технічний важіль для доставляльності.
+- **Important — це поведінковий, per-recipient сигнал:** холодний self-test погано його показує. Найсильніший
+  сигнал — **відповідь** на лист (reply тренує Gmail). Тестувати на 2–3 адреси + відповісти з іншого акаунта.
 - **Тест:** спершу на себе (інбокс-таб, {{firstName}}, посилання, відписка), тоді на весь список.
 - **Send time:** 8–11am ET (US-heavy list), per formula checklist.
 - **Не згадуємо** money-back, конкретні хвороби/показання, назви рецептурних препаратів — свідомо.

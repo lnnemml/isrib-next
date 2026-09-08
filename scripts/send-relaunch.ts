@@ -75,10 +75,9 @@ function buildHtml(firstName: string, unsubUrl: string): string {
   return `<body style="background:#ffffff;">
   <div style="max-width:600px;margin:40px auto;padding:0 20px;">
     <p style="${P}">Hi ${firstName},</p>
-    <p style="${P}">Quick update &mdash; I've spent the last while rebuilding ISRIB.shop from the ground up. Same lab, same in-house synthesis, same independent NMR and COA on every batch. The site around it is just faster and cleaner now, and everything, checkout included, lives in one place.</p>
-    <p style="${P}">A couple of things that might be handy: you can make an account with the same email you've ordered with before, and your full order history is already sitting there. Paying with crypto now takes 10% off automatically, and if you'd rather pay another way, RELAUNCH10 gets you the same 10% this week. Your account also has a referral link &mdash; your friend gets a discount on their first order, and you earn a credit toward your next.</p>
-    <p style="${P}">Everything's in stock at ${link}, and the journal there now collects my research writing &mdash; mechanism notes and honest compound comparisons.</p>
-    <p style="${P}">How have things been since your last order? Happy to talk through anything for your work &mdash; just reply here.</p>
+    <p style="${P}">Quick note &mdash; I've rebuilt ISRIB.shop from the ground up. Same lab, same compounds and same independent NMR and COA on every batch; the site's just faster now, and everything including checkout is in one place.</p>
+    <p style="${P}">If you've been meaning to reorder, RELAUNCH10 takes 10% off this week &mdash; any payment method (crypto already gives you the 10% automatically). Everything's in stock at ${link}.</p>
+    <p style="${P}">How's everything been since your last order? Happy to talk through anything for your work &mdash; just reply here.</p>
     <p style="${P}">Danylo</p>
     <p style="color:#94a3b8;font-size:12px;margin:0;margin-top:48px;"><a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline;">Unsubscribe</a></p>
   </div>
