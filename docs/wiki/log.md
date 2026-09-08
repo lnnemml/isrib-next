@@ -2210,3 +2210,20 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   in a dedicated follow-up ~4–5 days later (one-idea-per-email = what worked). Send-mechanism TODO: send-relaunch.ts
   hardcodes Email 1; Email 2 needs a second template + its own resume file. Playbook saved to memory.
 - **Roles run:** LEAD (sequence plan + Email 2 draft + pre-send checklist + wiki/memory).
+
+## [2026-09-08] hotfix | Admin email on shipping-form submit (full order + shipping data)
+
+- Gap: when a buyer submitted the post-payment shipping form (ADR 0010), NOTHING notified admin → Anton had
+  to hand-copy order + address from the DB. Fixed: `submitShipping.ts` now fetches the order items and sends
+  an admin email (new `shippingReceivedAdmin` template in `email/templates.ts`) with the FULL order block
+  (number, date, status, email, payment, subtotal/total, +conditional crypto%/promo/referral/note) + FULL
+  shipping block (name, address, city, postal, state, country, phone) + line-items table + UTM attribution.
+- Safety: the `sendToAdmin` call is best-effort (its OWN try/catch, logs only) and runs BEFORE `redirect()`,
+  so a mail failure never surfaces as a customer error nor blocks the idempotent redirect. Shipping values
+  come from the submitted form (the pre-update `order` row still had null address); order fields from the row.
+- **Verifier: APPROVE** — redirect/try-catch containment correct; cents→dollars matches opsAlert/itemsTable
+  convention (no 100× error); null-guards safe; admin-only ops copy (no card/guarantee/medical). tsc+build green.
+- Minor known: user-submitted note/address/promo are interpolated raw into the admin-only HTML (matches
+  existing opsAlert/orderReceivedManual convention; self-inflicted + admin-inbox-only — not a regression).
+- **Needs deploy** to take effect on the next real order's shipping submit.
+- **Roles run:** LEAD (recon + spec + redirect-trap call) → 1× implementer → 1× verifier (APPROVE).

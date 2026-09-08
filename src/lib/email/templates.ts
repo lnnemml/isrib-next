@@ -437,6 +437,139 @@ export function opsAlert({
 }
 
 // ════════════════════════════════════════════════════════════════════════════
+// 3b. shippingReceivedAdmin — internal admin notification when the post-payment
+//     shipping form is submitted. Ops email: completeness over brevity — full order
+//     data + full shipping data + line items so the admin can fulfil without touching
+//     the DB. Mirrors opsAlert's style (row() pattern, C palette, itemsTable()).
+//     COMPLIANCE: internal-only, shipping-logistics/ops copy; no card / Pay-Now /
+//     guarantee / medical copy.
+// ════════════════════════════════════════════════════════════════════════════
+export function shippingReceivedAdmin({
+  orderNumber,
+  createdAt,
+  status,
+  email,
+  paymentMethod,
+  subtotalPrice,
+  totalPrice,
+  cryptoDiscountPct,
+  promoCode,
+  referralCodeUsed,
+  note,
+  name,
+  address,
+  city,
+  postalCode,
+  stateRegion,
+  country,
+  phone,
+  items,
+  utmSource,
+  utmCampaign,
+  utmContent,
+}: {
+  orderNumber: string;
+  createdAt: Date;
+  status: string;
+  email: string;
+  paymentMethod: string;
+  subtotalPrice: number; // integer cents (schema)
+  totalPrice: number; // integer cents (schema)
+  cryptoDiscountPct?: number | null;
+  promoCode?: string | null;
+  referralCodeUsed?: string | null;
+  note?: string | null;
+  name: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  stateRegion?: string | null;
+  country: string;
+  phone: string;
+  items: EmailItem[];
+  utmSource?: string | null;
+  utmCampaign?: string | null;
+  utmContent?: string | null;
+}): { subject: string; html: string } {
+  const subject = `Shipping details received: ${orderNumber} — ${name}`;
+
+  // Cents → dollars for the itemsTable subtotal/total rows (same convention as the
+  // other templates: itemsTable receives dollars, computes line totals from cents).
+  const subtotalUsd = subtotalPrice / 100;
+  const totalUsd = totalPrice / 100;
+
+  function row(label: string, valueHtml: string): string {
+    return `
+      <tr>
+        <td style="padding:9px 0;border-bottom:1px solid ${C.hairline};color:${C.muted};font-size:13px;width:130px;vertical-align:top;">${label}</td>
+        <td style="padding:9px 0;border-bottom:1px solid ${C.hairline};color:${C.text};font-size:13px;vertical-align:top;">${valueHtml}</td>
+      </tr>`;
+  }
+
+  const orderDate = createdAt.toISOString().replace("T", " ").slice(0, 16) + " UTC";
+
+  // Optional order rows — rendered only when present.
+  const optionalOrderRows =
+    (cryptoDiscountPct != null ? row("Crypto discount", `${cryptoDiscountPct}%`) : "") +
+    (promoCode ? row("Promo code", promoCode) : "") +
+    (referralCodeUsed ? row("Referral code", referralCodeUsed) : "") +
+    (note ? row("Note", note) : "");
+
+  const orderBlock = `
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px;">
+      ${row("Order number", `<span style="font-family:'SFMono-Regular',Consolas,monospace;font-weight:600;">${orderNumber}</span>`)}
+      ${row("Order date", orderDate)}
+      ${row("Status", status)}
+      ${row("Email", `<a href="mailto:${email}" style="color:${C.brand};text-decoration:none;">${email}</a>`)}
+      ${row("Payment", paymentMethod)}
+      ${row("Subtotal", usd(subtotalUsd))}
+      ${row("Total", `<strong style="color:${C.success};">${usd(totalUsd)}</strong>`)}
+      ${optionalOrderRows}
+    </table>`;
+
+  // Shipping block — the important part. Optional stateRegion row only when present.
+  const shippingBlock = `
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px;">
+      ${row("Full name", name)}
+      ${row("Address", address)}
+      ${row("City", city)}
+      ${row("Postal code", postalCode)}
+      ${stateRegion ? row("State / Region", stateRegion) : ""}
+      ${row("Country", country)}
+      ${row("Phone", phone)}
+    </table>`;
+
+  const attributionPresent = utmSource || utmCampaign || utmContent;
+  const attributionBlock = attributionPresent
+    ? `
+      <p style="color:${C.faint};font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">Attribution</p>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 8px;">
+        ${row("UTM source", utmSource ?? "—")}
+        ${row("Campaign", utmCampaign ?? "—")}
+        ${row("Creative", utmContent ?? "—")}
+      </table>`
+    : "";
+
+  const inner = `
+    <p style="color:${C.brand};font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">Shipping details received</p>
+    <h1 style="color:${C.text};font-size:20px;font-weight:700;margin:0 0 20px;">${orderNumber}</h1>
+
+    <p style="color:${C.faint};font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">Order</p>
+    ${orderBlock}
+
+    <p style="color:${C.faint};font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">Shipping address</p>
+    ${shippingBlock}
+
+    ${itemsTable(items, subtotalUsd, totalUsd)}
+    ${attributionBlock}`;
+
+  return {
+    subject,
+    html: layout(inner, `Shipping details received for ${orderNumber}.`),
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
 // 4. paymentConfirmed — payment received → collect shipping (send wired Step 4)
 // ════════════════════════════════════════════════════════════════════════════
 export function paymentConfirmed({

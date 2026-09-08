@@ -7,10 +7,12 @@
 // state — so a refresh is idempotent.
 
 import { db } from "@/lib/db";
-import { orders } from "@/lib/db/schema";
+import { orders, orderItems } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { shippingReceivedAdmin, type EmailItem } from "@/lib/email/templates";
+import { sendToAdmin } from "@/lib/email/send";
 
 export type ShippingState = { error: string } | { ok: true } | null;
 
@@ -50,6 +52,59 @@ export async function submitShipping(_prev: ShippingState, formData: FormData): 
         shippingDetailsAt: new Date(),
       })
       .where(eq(orders.shippingToken, token));
+
+    // Notify the admin with the FULL order + shipping + line items so fulfilment
+    // needs no DB lookup. Uses the SUBMITTED form values for the address fields
+    // (the `order` row fetched above still holds the OLD null shipping values) and
+    // `order.*` for everything else. BEST-EFFORT: wrapped in its OWN try/catch so a
+    // mail failure can never surface as a user error or block the redirect — and it
+    // must NOT reach the outer catch (which would wrongly return { error } to the
+    // customer after shipping has already saved).
+    try {
+      const dbItems = await db
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.orderId, order.id));
+
+      const items: EmailItem[] = dbItems.map((it) => ({
+        slug: it.productSlug,
+        sizeLabel: it.sizeLabel,
+        format: it.format,
+        quantity: it.quantity,
+        linePrice: it.linePrice,
+      }));
+
+      const { subject, html } = shippingReceivedAdmin({
+        orderNumber: order.orderNumber,
+        createdAt: order.createdAt,
+        status: order.status,
+        email: order.email,
+        paymentMethod: order.paymentMethod,
+        subtotalPrice: order.subtotalPrice,
+        totalPrice: order.totalPrice,
+        cryptoDiscountPct: order.cryptoDiscountPct,
+        promoCode: order.promoCode,
+        referralCodeUsed: order.referralCodeUsed,
+        note: order.note,
+        // submitted form values (order row still has the old null shipping fields)
+        name: fullName,
+        address,
+        city,
+        postalCode,
+        phone: mobile,
+        // order row for the rest of the address
+        stateRegion: order.stateRegion,
+        country: order.country,
+        items,
+        utmSource: order.utmSource,
+        utmCampaign: order.utmCampaign,
+        utmContent: order.utmContent,
+      });
+
+      await sendToAdmin(subject, html);
+    } catch (mailErr) {
+      console.error("submitShipping: admin notification failed (non-fatal):", mailErr);
+    }
 
     // Redirect back to the same token URL — now renders the read-only received state,
     // so a refresh stays idempotent.
