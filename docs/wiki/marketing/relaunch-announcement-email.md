@@ -123,3 +123,40 @@ Unsubscribe
 - **Тест:** спершу на себе (інбокс-таб, {{firstName}}, посилання, відписка), тоді на весь список.
 - **Send time:** 8–11am ET (US-heavy list), per formula checklist.
 - **Не згадуємо** money-back, конкретні хвороби/показання, назви рецептурних препаратів — свідомо.
+
+---
+
+## Email 2 — follow-up (account + referral) — DRAFT, send ~4–5 days AFTER Email 1
+
+Purpose: surface the **account + referral** that Email 1 deliberately omitted (cramming them
+in kept Email 1 out of Important — see log 2026-09-08). Same rules: ONE idea, plain send
+(`send-relaunch.ts` path B), tracking OFF, no `List-Unsubscribe`, reply-invite last. Rides the
+Important reputation Email 1 builds. Recipients auto-exclude anyone who unsubscribed from Email 1
+(`marketing_contacts WHERE unsubscribed_at IS NULL`).
+
+**Subject:** {{firstName}}, one more thing about your account
+
+Hi {{firstName}},
+
+Meant to mention — with the new site there's an account waiting under the email you've ordered with, and it already has your full order history, so reordering is a couple of clicks.
+
+It also has your own referral link: pass it to someone and they get 10% off their first order, while you get a credit toward your next one.
+
+Anything I can help with? Just reply.
+
+Danylo
+
+Unsubscribe
+
+- **One link:** the words "an account" → `https://isrib.shop/account` (login/account page). UTMs optional.
+- **Send-mechanism TODO:** `scripts/send-relaunch.ts` currently hardcodes Email 1's copy — Email 2 needs a
+  second template (a `--template` arg or a sibling script). Build when scheduling the follow-up; keep the same
+  from/replyTo, throttle, resume-file (use a SEPARATE `data/email2-sent.json`), and unsubscribe-token wiring.
+
+---
+
+## Pre-send checklist for Email 1 (run when sending, evening = US morning, 8–11am ET)
+1. `npm run seed:promo-code` (RELAUNCH10, 10%, +7d) — **right before sending** (7-day clock starts at seed).
+2. (Recommended, ADR 0016) one real test order on isrib.shop with `RELAUNCH10` → confirm 10% applies + the
+   `?promo=RELAUNCH10` auto-apply link works + it's stored.
+3. `NEXT_PUBLIC_BASE_URL=https://isrib.shop npm run send:relaunch -- --commit` (607, ~20 min, resumable).

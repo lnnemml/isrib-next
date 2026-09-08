@@ -2180,3 +2180,33 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Note:** Gmail Important is per-recipient + behavioral — a cold self-test underrepresents it; a reply
   trains it. Re-test to 2–3 addresses (reply from one) after the SPF fix, then the full 607.
 - **Roles run:** LEAD (DNS/deliverability diagnosis + copy rewrite + wiki) → 1× implementer (template swap).
+
+## [2026-09-08] iterate | mail-tester diagnosis → Resend click/open tracking OFF (deliverability)
+
+- Ran the stripped email through mail-tester (test send via `send:relaunch --test`). **Authentication all PASS:**
+  DMARC=pass (header.from=isrib.shop), DKIM=pass aligned to isrib.shop (Resend selector) + amazonses, SPF=Pass
+  (envelope-from=amazonses). **Confirms the isrib.shop duplicate-SPF is a NON-issue** — the return-path is
+  amazonses and DMARC aligns via DKIM, so the domain SPF is never evaluated for our mail. (Earlier "fix SPF"
+  was a false lead — dropped.)
+- SpamAssassin content 2.8/5.0 ("not spam"). Deductions: **FREEMAIL_FORGED_REPLYTO +2.5** (Reply-To
+  protonmail.com vs From isrib.shop), HEADER_FROM_DIFFERENT_DOMAINS +0.25, URI_HEX +0.1.
+- **Root bulk-signal found:** Resend had **click tracking ON** for isrib.shop → links were rewritten through
+  `resend-links.com/CL0/…` (a tracking-redirect domain) — the opposite of the formula's 1:1 look, and the
+  URI_HEX trigger. **Fixed: disabled click+open tracking** on the isrib.shop Resend domain (via API); links now
+  send as the clean `isrib.shop` URL.
+- **Reply-To:** kept `isrib.shop@protonmail.com` (Anton's call — the formula's proven "real inbox = Important"
+  signal; Email 8 landed in Important with it despite the SpamAssassin freemail flag; Gmail ≠ SpamAssassin).
+- **Next:** re-test (fresh mail-tester + 2–3 real Gmails, reply to one) to confirm the clean-link improvement,
+  then the full 607.
+- **Roles run:** LEAD (mail-tester analysis via browser + Resend domain fix + wiki).
+
+## [2026-09-08] phase | Relaunch Email 1 READY (lands in Important) — send deferred to US-morning; Email 2 drafted
+
+- Email 1 (stripped, tracking-off, path-B) **verified landing in Gmail Important** on a real test. Full 607
+  send **deferred by Anton to this evening (US morning, 8–11am ET window)** — deliberately not sent now (US night).
+- **RELAUNCH10 NOT seeded yet — by design.** Seed `npm run seed:promo-code` RIGHT BEFORE the send (7-day expiry
+  starts at seed). Pre-send checklist filed in `marketing/relaunch-announcement-email.md`.
+- **Email 2 (follow-up: account + referral) drafted** — the features Email 1 omitted for Important placement go
+  in a dedicated follow-up ~4–5 days later (one-idea-per-email = what worked). Send-mechanism TODO: send-relaunch.ts
+  hardcodes Email 1; Email 2 needs a second template + its own resume file. Playbook saved to memory.
+- **Roles run:** LEAD (sequence plan + Email 2 draft + pre-send checklist + wiki/memory).
