@@ -2240,3 +2240,10 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Next:** monitor opens/replies/orders + RELAUNCH10 redemptions (admin panel); **Email 2** (account + referral
   follow-up) in ~4–5 days — needs its own template + `data/email2-sent.json` (see relaunch-announcement-email.md).
 - **Roles run:** LEAD (scheduled pre-flight + seed/verify + send + report + wiki).
+
+## [2026-09-08] phase | Session close — email campaign + relaunch sent + shipping hotfix
+- Full record: [`sessions_summary/2026-09-08-email-campaign-relaunch-and-shipping-hotfix.md`](sessions_summary/2026-09-08-email-campaign-relaunch-and-shipping-hotfix.md).
+- Delivered end-to-end: email-campaign infra (ADR 0017) + list consolidation/opt-out recovery + Sep-orders
+  backfill & $10 shipping BI (ADR 0018) + relaunch email rewritten/tuned/**SENT 607/0-fail (Gmail Important)**
+  + shipping→admin hotfix. All on `main`, deployed. **Next: Email 2 (account+referral) in ~4–5 days.**
+- **Roles run:** LEAD (session summary + wiki).

@@ -146,6 +146,10 @@ rather than scanning the whole directory.
   product_viewed/page_view/email_subscribed/scroll_depth coverage. Verifier-APPROVE + prober-PASS +
   **deployed + E2E verified (GTM Preview + Meta Test Events, server CAPI confirmed) + cleaned up. DONE.**
   Pre-cutover blocker closed. Next: cutover.
+- [`sessions_summary/2026-09-08-email-campaign-relaunch-and-shipping-hotfix.md`](./sessions_summary/2026-09-08-email-campaign-relaunch-and-shipping-hotfix.md)
+  — **Relaunch email SENT (607/607, 0 failed, lands in Gmail Important)** + email-campaign infra (ADR 0017,
+  marketing_contacts + `/admin/campaigns`) + list consolidation & opt-out recovery + Sep-orders backfill &
+  $10 shipping-cost BI (ADR 0018) + Path-B send/unsubscribe/promo-auto-apply + shipping→admin hotfix. Next: Email 2.
 - [`sessions_summary/2026-09-06-cutover-complete-and-relaunch-prep.md`](./sessions_summary/2026-09-06-cutover-complete-and-relaunch-prep.md)
   — **CUTOVER COMPLETE** (isrib.shop serves the new app; G2 manual+crypto verified live; crypto-webhook
   308 bug fixed via non-www-apex canonical flip) + **journal domain migrated** (isrib-research.com 301s
