@@ -346,9 +346,12 @@ Lead magnet is **research/education only** — boundary-clean, no results/health
   = 0; SSR 200; no dev-log errors). NOT committed/deployed (LEAD writes docs only).
 - Decisions locked: lead identity = stuck-brake high-performer; keep real prices; cancer FAQ
   OMITTED from `/go`; scarcity/urgency dropped (no honest deadline).
-- **Dropped vs the ported draft (flag for Anton):** the "Get the research" email-capture +
-  modal are gone (belief-gate is an order funnel). If a soft opt-in for non-buyers is wanted,
-  that's a follow-up — re-add a compliant capture section, not the old one.
+- **Soft opt-in RE-ADDED (S8.5, compliant):** "Get the research" section between FAQ and Final
+  CTA — research/education lead magnet only, persists to `marketingContacts` (source
+  `go_research`, idempotent) + fires `email_subscribed`. Anton sends the research to that
+  segment via `/admin/campaigns`. (The old modal/inline capture stay deleted.)
+- **Committed to branch `feat/go-landing-rewrite`:** commit 1 = the rewrite; commit 2 = the
+  opt-in. NOT merged/deployed — Anton reviews, merges, deploys.
 - Image/claims tracking: none (page is text-only). No `claims-to-confirm` items outstanding.
 - **Next (Anton):** read `/go`, then commit + deploy when satisfied. Optional: ad
   creatives + organic angles can reuse this diagnosis/copy.

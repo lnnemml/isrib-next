@@ -2401,3 +2401,19 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   committed/deployed. Flag: dropped email-capture path — re-add a compliant soft opt-in later if wanted.
 - **Roles run:** LEAD (skills: dr-swipe-file + boron-letters + orchestration + visual gate + wiki) → implementer ×1
   (11 files, 2 deleted) → verifier ×1 (APPROVE).
+
+## [2026-09-09] phase | `/go` rewrite committed (branch) + soft "Get the research" opt-in built
+- **Branch `feat/go-landing-rewrite`** (off main): commit 1 = the `/go` rewrite (src/app/go/** + ChromeGate + wiki
+  docs); commit 2 = the S8.5 soft opt-in. NOT merged/deployed.
+- **Soft opt-in (S8.5)** re-adds a compliant secondary path for non-buyers (the belief-gate order funnel had none):
+  new section between FAQ and Final CTA. Lead magnet is research/education ONLY (how the ISR brake works, UCSF
+  findings, how to judge purity) — no results/health claims. New server action `subscribeResearch` inserts into
+  `marketingContacts` (ADR 0017) with `source: "go_research"`, lowercased email, `onConflictDoNothing` (idempotent);
+  client fires `trackEvent("email_subscribed")`. Anton broadcasts to the `go_research` segment via `/admin/campaigns`;
+  Resend's one-directional sync picks up the new contact.
+- Gates: `tsc` clean · LEAD code review of the action + island (validation, idempotency, Drizzle-only, boundary
+  copy) · LEAD visual gate PASS (rendered section, correct placement/DS; form NOT submitted — dev writes to prod
+  Neon). Verified without a runtime submit per [[qa-use-synthetic-not-real-customers]].
+- Minor: post-commit wiki status edits (this entry + go-rewrite status) are uncommitted on the branch working tree.
+- **Roles run:** LEAD (marketing_contacts recon + section design + code/visual gate + wiki) → implementer ×1
+  (2 commits: rewrite + opt-in; server action + island + GoLanding wire).
