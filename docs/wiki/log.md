@@ -2417,3 +2417,10 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - Minor: post-commit wiki status edits (this entry + go-rewrite status) are uncommitted on the branch working tree.
 - **Roles run:** LEAD (marketing_contacts recon + section design + code/visual gate + wiki) → implementer ×1
   (2 commits: rewrite + opt-in; server action + island + GoLanding wire).
+
+## [2026-09-09] phase | Session summary written — `/go` port + skill rewrite + merge
+- [`sessions_summary/2026-09-09-go-landing-port-and-skill-rewrite.md`](sessions_summary/2026-09-09-go-landing-port-and-skill-rewrite.md).
+- Covers: Phase 1 faithful port (superseded) → Phase 2 skill-driven rewrite (breakthrough-advertising → 100m-offers
+  → dr-swipe-file → boron-letters) → compliant "Get the research" opt-in → merged to `main` (e8c81b4, not pushed).
+  4 Anton decisions, boundary discipline, open items (opt-in runtime-verify, research email sequence, push/deploy).
+- **Roles run:** LEAD (wiki). No code changed.

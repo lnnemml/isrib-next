@@ -155,6 +155,11 @@ rather than scanning the whole directory.
   — **Relaunch email SENT (607/607, 0 failed, lands in Gmail Important)** + email-campaign infra (ADR 0017,
   marketing_contacts + `/admin/campaigns`) + list consolidation & opt-out recovery + Sep-orders backfill &
   $10 shipping-cost BI (ADR 0018) + Path-B send/unsubscribe/promo-auto-apply + shipping→admin hotfix. Next: Email 2.
+- [`sessions_summary/2026-09-09-go-landing-port-and-skill-rewrite.md`](./sessions_summary/2026-09-09-go-landing-port-and-skill-rewrite.md)
+  — **`/go` landing: faithful port → full skill-driven rewrite** (breakthrough-advertising →
+  100m-offers → dr-swipe-file → boron-letters) into a compliant mechanism-led DR funnel +
+  "Get the research" opt-in. Merged to `main` (not pushed). Decisions, boundary discipline,
+  open items (opt-in runtime-verify, research email sequence). Read with `marketing/go-rewrite.md`.
 - [`sessions_summary/2026-09-09-nowpayments-hardening-and-crypto-ux.md`](./sessions_summary/2026-09-09-nowpayments-hardening-and-crypto-ux.md)
   — **NowPayments hardening (3 fixes) + crypto-payment UX.** Fix 1 floating-rate invoices + Fix 2 `webhook_logs`
   audit / non-finished ops alert / crypto duplicate-invoice dedup (both LIVE) + Fix 3 partial-payment tolerance
