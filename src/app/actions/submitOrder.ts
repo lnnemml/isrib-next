@@ -25,7 +25,7 @@ import { getCurrentCustomer } from "@/lib/customer/auth";
 import { orderReceivedManual, opsAlert, type EmailItem } from "@/lib/email/templates";
 import { createInvoice } from "@/lib/nowpayments";
 import { Client } from "@upstash/qstash";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, desc, isNotNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -251,6 +251,35 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // spending the same credit — the read in getAvailableRewardCredit is not a lock).
     // These are assigned their final values from INSIDE the transaction so downstream
     // email/analytics report the amount actually charged.
+    // Dedup duplicate crypto submits (incident 2026-09-08): the client idempotencyKey is
+    // regenerated per page mount, so a customer who returns to checkout mints a fresh order
+    // + invoice. If this same email already has a recent, still-unpaid crypto order with a
+    // live invoice for the SAME total, send them back to THAT invoice instead of minting
+    // another. Invoices are floating-rate now (ADR — no rate-lock), so a <60-min-old invoice
+    // is still payable. Matches email + total to avoid reusing a stale invoice for a changed cart.
+    if (paymentMethod === "crypto") {
+      const sixtyMinAgo = new Date(Date.now() - 60 * 60 * 1000);
+      const [dupe] = await db
+        .select({ orderNumber: orders.orderNumber, paymentUrl: orders.nowpaymentsPaymentUrl })
+        .from(orders)
+        .where(
+          and(
+            eq(orders.email, raw.email),
+            eq(orders.paymentMethod, "crypto"),
+            eq(orders.status, "pending_payment_instructions"),
+            eq(orders.totalPrice, totalCents),
+            isNotNull(orders.nowpaymentsPaymentUrl),
+            gt(orders.createdAt, sixtyMinAgo),
+          ),
+        )
+        .orderBy(desc(orders.createdAt))
+        .limit(1);
+      if (dupe?.paymentUrl) {
+        console.log("[submitOrder] reusing live invoice for duplicate crypto submit:", dupe.orderNumber);
+        return { redirectUrl: dupe.paymentUrl };
+      }
+    }
+
     let effectiveTotalCents = totalCents;
     let effectiveDiscountLedgerId: string | null = discountLedgerId;
     try {

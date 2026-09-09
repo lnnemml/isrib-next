@@ -2271,3 +2271,16 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - STILL OPEN (not touched by this fix): webhook handles only `finished` (no alert/logging on deposit-bearing
   non-`finished` statuses); duplicate-invoice churn. Runtime-verify floating rate on a new invoice post-deploy.
 - **Roles run:** LEAD (investigate + report + plan + wiki) → implementer (1-file edit, verified).
+
+## [2026-09-09] fix | NowPayments webhook hardening + duplicate-invoice dedup
+- Follow-up (Fix 2) to the 2026-09-08 incident: [`sessions_summary/2026-09-08-nowpayments-expired-payment-incident.md`](sessions_summary/2026-09-08-nowpayments-expired-payment-incident.md#fix-2--2026-09-09-webhook-hardening--duplicate-invoice-dedup). Closes backlog items 1 + 3.
+- **Webhook** (`api/webhooks/nowpayments/route.ts`): (a) new `webhook_logs` Drizzle table — every verified IPN
+  logged best-effort (order, payment_id, status, actually_paid, raw_json); (b) deposit-bearing non-`finished`
+  statuses (`partially_paid` / `actually_paid > 0`) now fire a loud `sendToAdmin` alert instead of a silent 200.
+  `finished` happy path + never-throw contract unchanged.
+- **Dedup** (`actions/submitOrder.ts`): root cause = client `idempotencyKey` is per-page-mount (`useState(nanoid)`),
+  so a re-visit mints a new order+invoice. Fix: before a new crypto order, reuse a recent (<60 min) same-email,
+  same-total, unpaid crypto invoice → redirect to the existing `nowpaymentsPaymentUrl` (early-return, no double-fire).
+- **Roles run:** LEAD (recon + design + 2 forks confirmed) → implementer (3 files) → verifier (APPROVE). tsc clean.
+- **GATED on Anton:** `db:push` (creates `webhook_logs`) BEFORE deploy; then runtime-verify floating rate + invoice
+  reuse + webhook_logs rows. Still open: no `partially_paid` auto-handling (alert only); no API payment-list access.

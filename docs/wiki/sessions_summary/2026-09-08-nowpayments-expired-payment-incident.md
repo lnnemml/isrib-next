@@ -68,11 +68,44 @@ are untouched. Confirmed the only call site is `submitOrder.ts:453` (crypto bran
 confirmation (floating). This is the intended fix — a small rate drift is far better
 than a hard "Failed" that needs a manual NowPayments support ticket to recover.
 
-**Still OPEN / not addressed by this fix (backlog above still stands):**
-1. Webhook handles only `finished` — non-`finished` statuses carrying a deposit are still
-   silently 200-OK'd, with no raw IPN logging. This fix does NOT touch the webhook.
-2. Duplicate-invoice churn (one customer → 4 invoices in 9 min) — not addressed.
-3. This fix is code-only; it takes effect for **new** invoices after deploy
-   (`NEXT_PUBLIC_BASE_URL`-style build-time inlining does not apply — this is a request-time
-   fetch body, so a normal redeploy suffices). Runtime-verify post-deploy that a new crypto
-   invoice shows a floating (non-fixed) rate in the NowPayments dashboard.
+This fix is code-only; it takes effect for **new** invoices after deploy (request-time
+fetch body — no build-time inlining, a normal redeploy suffices). Runtime-verify post-deploy
+that a new crypto invoice shows a floating (non-fixed) rate in the NowPayments dashboard.
+
+## Fix 2 — 2026-09-09 (webhook hardening + duplicate-invoice dedup)
+
+**Roles run:** LEAD (recon + design + 2 forks confirmed with Anton) → implementer (3-file edit) → verifier (APPROVE). `npx tsc --noEmit` clean.
+
+Addresses backlog items **1** (webhook only `finished` + no logging) and **3** (duplicate-invoice churn) from above.
+
+**Webhook** (`src/app/api/webhooks/nowpayments/route.ts`):
+- **Durable audit log** — new `webhook_logs` table (`src/lib/db/schema.ts`): every VERIFIED
+  IPN is inserted best-effort (`id, provider, order_number, payment_id, payment_status,
+  actually_paid, raw_json, created_at`). No payment signal is blind again. Insert is wrapped
+  (non-fatal) so it degrades gracefully until `db:push` runs.
+- **Ops alert on deposit-bearing non-`finished` statuses** — the old silent `!= "finished" → 200`
+  now, when funds landed (`partially_paid` OR `actually_paid > 0`), fires a loud `sendToAdmin`
+  alert (order, status, payment_id, actually_paid, expected price) so a stuck deposit is caught
+  by hand. Still returns 200; does NOT auto-mark-paid (needs a human decision). This is the
+  safety net that would have surfaced the original incident. `finished` happy path unchanged.
+
+**Dedup** (`src/app/actions/submitOrder.ts`):
+- Root cause found: client `idempotencyKey` is `useState(() => nanoid())` — **per page mount**,
+  so a customer returning to checkout mints a fresh key → new order + new invoice (exactly how
+  Michael made 4). The unique-key constraint only stops same-page double-submits.
+- Fix: before creating a new **crypto** order, if the same email has a recent (**<60 min**),
+  still-unpaid (`pending_payment_instructions`) crypto order with the **same total** and a live
+  `nowpaymentsPaymentUrl`, redirect the buyer to **that existing invoice** instead of minting
+  another. Early-returns before insert/analytics/email/QStash (no double-fire). Match on
+  email + total (Anton's call) so a changed cart still gets a fresh invoice. Floating-rate
+  invoices stay payable, so reuse is safe. Narrows (does not eliminate) a sub-second race.
+
+**STILL OPEN / not addressed:**
+2. NowPayments API from our env can't list payments (no email/password → no Bearer JWT); still
+   dashboard/support only for lookups.
+- Does NOT auto-handle `partially_paid` (underpayment) — only alerts. Manual resolution stands.
+
+**GATED on Anton before deploy:** `db:push` (creates `webhook_logs`; until then IPN audit
+inserts hit the non-fatal catch and log an error). Then deploy + runtime-verify: (a) new crypto
+invoice is floating; (b) a duplicate crypto submit reuses the same invoice; (c) `webhook_logs`
+receives rows.

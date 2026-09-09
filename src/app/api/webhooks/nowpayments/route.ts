@@ -12,7 +12,7 @@
 //  - No secrets are logged.
 
 import { db } from "@/lib/db";
-import { orders } from "@/lib/db/schema";
+import { orders, webhookLogs } from "@/lib/db/schema";
 import { verifyIpnSignature } from "@/lib/nowpayments";
 import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { paymentConfirmed } from "@/lib/email/templates";
@@ -20,6 +20,7 @@ import { trackServerEvent } from "@/lib/analytics/server";
 import { cancelAbandonedNurture } from "@/lib/qstash";
 import { createReferrerReward } from "@/lib/referral";
 import { eq } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export async function POST(req: Request): Promise<Response> {
   const body = await req.text();
@@ -44,13 +45,52 @@ export async function POST(req: Request): Promise<Response> {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  // Only act on fully completed payments; acknowledge everything else with 200.
-  if (data.payment_status !== "finished") {
+  // Audit-log EVERY verified IPN (incident 2026-09-08). Best-effort: a logging failure
+  // must never break the webhook — wrap and swallow so we still 200/continue.
+  const orderId = typeof data.order_id === "string" ? data.order_id : null;
+  const paymentStatus = typeof data.payment_status === "string" ? data.payment_status : null;
+  const paymentId = data.payment_id != null ? String(data.payment_id) : null;
+  const actuallyPaidRaw = data.actually_paid != null ? String(data.actually_paid) : null;
+  try {
+    await db.insert(webhookLogs).values({
+      id: nanoid(),
+      provider: "nowpayments",
+      orderNumber: orderId,
+      paymentId,
+      paymentStatus,
+      actuallyPaid: actuallyPaidRaw,
+      rawJson: body,
+    });
+  } catch (err) {
+    console.error("NowPayments IPN: webhook_logs insert failed (non-fatal):", err);
+  }
+
+  // Non-finished statuses: acknowledge with 200 (so NowPayments stops retrying), but if the
+  // customer's crypto ALREADY landed (actually_paid > 0, or partially_paid) on a status that
+  // is NOT finished, that is the incident scenario — a deposit that won't auto-credit. Alert
+  // ops loudly so it can be recovered by hand. No auto-mark-paid (needs a human decision).
+  if (paymentStatus !== "finished") {
+    const actuallyPaidNum = Number(data.actually_paid ?? 0);
+    const depositLanded = paymentStatus === "partially_paid" || (Number.isFinite(actuallyPaidNum) && actuallyPaidNum > 0);
+    if (depositLanded) {
+      const payCurrency = typeof data.pay_currency === "string" ? data.pay_currency : "?";
+      const priceAmount = data.price_amount != null ? String(data.price_amount) : "?";
+      const alertHtml =
+        `<p><strong>⚠ NowPayments deposit on a NON-finished payment — manual review needed.</strong></p>` +
+        `<p>Order <strong>${orderId ?? "(unknown)"}</strong> — status <strong>${paymentStatus ?? "(none)"}</strong></p>` +
+        `<p>payment_id: ${paymentId ?? "?"} · actually_paid: ${actuallyPaidRaw ?? "?"} ${payCurrency} · expected: $${priceAmount}</p>` +
+        `<p>The funds may be in NowPayments custody but were NOT auto-credited. Check the dashboard / open a support ticket if needed.</p>`;
+      try {
+        await sendToAdmin(`⚠ NowPayments ${paymentStatus} (deposit) — ${orderId ?? "unknown order"}`, alertHtml);
+      } catch (err) {
+        console.error("NowPayments IPN: non-finished ops alert failed (non-fatal):", err);
+      }
+    }
     return new Response("OK");
   }
 
   // We passed orderNumber as order_id when creating the invoice.
-  const orderNumber = data.order_id as string;
+  const orderNumber = orderId!;
   const [order] = await db
     .select({
       id: orders.id,

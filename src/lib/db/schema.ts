@@ -262,3 +262,21 @@ export const promoCodes = pgTable("promo_codes", {
 
 export type PromoCode = typeof promoCodes.$inferSelect;
 export type NewPromoCode = typeof promoCodes.$inferInsert;
+
+// ── webhook_logs ─────────────────────────────────────────────────────────────
+// NowPayments (and any future provider's) IPN audit log. Every VERIFIED IPN is recorded
+// here best-effort, so no payment signal is ever blind again (incident 2026-09-08 — a
+// deposit that never reached `finished` was invisible). Write-only from the webhook.
+export const webhookLogs = pgTable("webhook_logs", {
+  id:            text("id").primaryKey(),                       // nanoid, generated in the route
+  provider:      text("provider").notNull().default("nowpayments"),
+  orderNumber:   text("order_number"),                          // order_id from the payload; nullable
+  paymentId:     text("payment_id"),                            // NowPayments payment_id (dashboard id)
+  paymentStatus: text("payment_status"),
+  actuallyPaid:  text("actually_paid"),                         // raw string of the deposited crypto amount (audit; avoids float precision issues)
+  rawJson:       text("raw_json").notNull(),                    // full verified payload as received
+  createdAt:     timestamp("created_at").defaultNow().notNull(),
+});
+
+export type WebhookLog = typeof webhookLogs.$inferSelect;
+export type NewWebhookLog = typeof webhookLogs.$inferInsert;
