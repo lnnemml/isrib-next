@@ -2308,3 +2308,11 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - Copy is compliance-clean (no guarantee/refund/health claims) and factually matches the live flow (floating rate,
   auto-confirm webhook, post-payment /shipping link — ADR 0010).
 - **Roles run:** LEAD (recon + copy) → implementer → verifier (APPROVE) → LEAD visual gate (kitchen-sink, collapsed+expanded, PASS). tsc clean. NOT yet committed.
+
+## [2026-09-09] phase | Session close — NowPayments hardening (3 fixes) + crypto UX
+- Full record: [`sessions_summary/2026-09-09-nowpayments-hardening-and-crypto-ux.md`](sessions_summary/2026-09-09-nowpayments-hardening-and-crypto-ux.md).
+- Fix 1 (floating rate) + Fix 2 (webhook_logs + non-finished alert + crypto dedup) LIVE (Anton db:push+deploy,
+  commits a14f5c5/353b334; prober non-invasive PASS). Fix 3 (partial-payment tolerance, ADR 0019) + checkout
+  crypto explainer built + verifier-APPROVE + visual-PASS, NOT yet committed (no schema change → redeploy only).
+- 3 forks Anton owned: durable webhook_logs; dedup on email+total/60min; partial auto-accept @2%.
+- **Roles run:** LEAD (orchestration + wiki + runtime/visual gates) → implementer ×4 → verifier ×3 → prober ×1.

@@ -151,6 +151,11 @@ rather than scanning the whole directory.
   — **Relaunch email SENT (607/607, 0 failed, lands in Gmail Important)** + email-campaign infra (ADR 0017,
   marketing_contacts + `/admin/campaigns`) + list consolidation & opt-out recovery + Sep-orders backfill &
   $10 shipping-cost BI (ADR 0018) + Path-B send/unsubscribe/promo-auto-apply + shipping→admin hotfix. Next: Email 2.
+- [`sessions_summary/2026-09-09-nowpayments-hardening-and-crypto-ux.md`](./sessions_summary/2026-09-09-nowpayments-hardening-and-crypto-ux.md)
+  — **NowPayments hardening (3 fixes) + crypto-payment UX.** Fix 1 floating-rate invoices + Fix 2 `webhook_logs`
+  audit / non-finished ops alert / crypto duplicate-invoice dedup (both LIVE) + Fix 3 partial-payment tolerance
+  (ADR 0019, ≤2% auto-accept — built, not committed) + expandable "How does crypto payment work?" checkout hint
+  (built, visual-PASS). Deploy state + 2-commit plan + first-real-order verification checklist inside.
 - [`sessions_summary/2026-09-06-cutover-complete-and-relaunch-prep.md`](./sessions_summary/2026-09-06-cutover-complete-and-relaunch-prep.md)
   — **CUTOVER COMPLETE** (isrib.shop serves the new app; G2 manual+crypto verified live; crypto-webhook
   308 bug fixed via non-www-apex canonical flip) + **journal domain migrated** (isrib-research.com 301s
