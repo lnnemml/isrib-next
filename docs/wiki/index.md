@@ -33,6 +33,10 @@ rather than scanning the whole directory.
 - [`marketing/relaunch-announcement-email.md`](./marketing/relaunch-announcement-email.md) —
   **the relaunch/announce email draft** (audience, subject lines, body, RELAUNCH10 offer,
   Resend + gating). Send only after the promo code is verified live.
+- [`marketing/go-rewrite.md`](./marketing/go-rewrite.md) —
+  **the skill-driven `/go` landing rewrite** (Breakthrough Advertising DIAGNOSE + ratified
+  "stuck-brake high-performer" identity + belief-gate copy deck). Boundary-first; mechanism,
+  never a health-outcome promise. S1–S6 drafted; offer (100m-offers) + FAQ passes pending.
 
 ## Journal / SEO hub
 
