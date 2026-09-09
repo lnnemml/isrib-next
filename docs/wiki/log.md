@@ -2316,3 +2316,88 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   crypto explainer built + verifier-APPROVE + visual-PASS, NOT yet committed (no schema change → redeploy only).
 - 3 forks Anton owned: durable webhook_logs; dedup on email+total/60min; partial auto-accept @2%.
 - **Roles run:** LEAD (orchestration + wiki + runtime/visual gates) → implementer ×4 → verifier ×3 → prober ×1.
+
+## [2026-09-09] phase | `/go` — ISRIB A15 standalone lander ported + restyled onto the DS
+- Ported the standalone `isrib-a15-lander` (dark/gold Tailwind-v3 funnel) onto `src/app/go/` as a faithful CONTENT
+  port, fully RESTYLED onto the locked light "scientific" DS (handoff-spec tokens). All 11 source sections reproduced
+  verbatim (Hero, Problem, WhoIsThisFor, Evidence, MiniOffer, Experience, EmailCaptureInline, Discovery [the single
+  dark `bg-surface-inverse` mechanism section], CtaSection, FAQ, EmailModal). New files: `go/page.tsx` (server,
+  `robots.index:false` — ad funnel, no SEO dup) + `go/_components/*` (13 islands incl. shared `BuyNowButton`).
+- **Two decisions carried from Anton (AskUserQuestion):** (1) wire interactive bits to THIS site — buy CTAs →
+  `useCart().addLine` + `router.push('/checkout')`; email forms → `trackEvent('email_subscribed')` + local success
+  (no persistence backend exists — event-only is the ceiling). (2) Keep lander prices verbatim.
+- **Money path verified safe:** the lander's SALE prices exactly match the A15 catalog (`products.ts`): 25 caps
+  "25 × 20mg"=$170, 50 caps "50 × 20mg"=$240, powder "500mg"=$130 (trial), "1g"=$200 (tier). `submitOrder.ts`
+  recomputes server-side from the typed catalog, so displayed price == charged price for all 4 SKUs. Strikethrough
+  "originals" ($260/$360/$200/$300) + "AMSBIO $415" are display-only anchors, never enter the cart.
+- **Page shell:** `ChromeGate` now hides the global Header/Footer on `/go` too (was `/admin`-only) — a chromeless
+  standalone funnel matching the source. 1-line guard change, nothing else.
+- **⚠ Compliance flag for Anton (NOT auto-changed — needs sign-off):** CtaSection carries the source's
+  guarantee-adjacent line "If you follow the protocol for 2 weeks and notice no difference, contact us. We'll work
+  something out." — brushes the CLAUDE.md no-money-back-guarantee constraint. Ported verbatim per "keep copy"; decide
+  soften/remove before any deploy.
+- Gates: `npx tsc --noEmit` clean · verifier APPROVE (money path + analytics-constraint + DS fidelity + ChromeGate) ·
+  LEAD visual gate PASS (headless-Chrome full-page desktop+mobile, all 10 sections faithful, dark Discovery correct,
+  no site chrome, SSR 200, zero console/dev-log errors). NOT committed/deployed (LEAD writes docs only).
+- **Roles run:** LEAD (2× AskUserQuestion + catalog/price recon + wiring recon + visual gate + wiki) → explorer ×2
+  (source inventory + site-wiring recon) → implementer ×1 (14 files) → verifier ×1 (APPROVE).
+
+## [2026-09-09] decision | `/go` rewrite — DIAGNOSE + ratified lead identity (book-skills pipeline)
+- Kicked off the skill-driven `/go` rewrite per [`docs/raw/skills-session-summary.md`](../raw/skills-session-summary.md)
+  (the NORA method, reused for ISRIB). New page: [`marketing/go-rewrite.md`](marketing/go-rewrite.md).
+- Ran **breakthrough-advertising DIAGNOSE** (ch01/02/03) grounded in avatar + beliefs-and-objections + overview +
+  messaging-angles: **Awareness** = Problem→Solution-Aware; **Sophistication** = Stage 3→4 (lead with a NEW
+  MECHANISM — the ISR/eIF2B "biological brake" — mechanism in headline, claim in subhead); **Dominant desire** =
+  "get my edge back / stop losing it" (channel, don't create). **Key insight:** Schwartz's Stage-3 "sell the how,
+  not the what" and our Meta/FTC guardrail (mechanism, never a health-outcome promise) point the SAME direction.
+- **Decision (Anton ratified):** lead identity = **"stuck-brake high-performer," NOT "55+ aging-decline."** ch08
+  identification — attach the role they long for (capped high-performer), never the one they flee (declining
+  patient). One page fits a 35-yo burned-out founder AND a 58-yo exec; the 55–64 low-CPA over-index is a
+  targeting/creative choice, not decline copy. This reverses the current ported draft's premise.
+- Drafted the belief-gate copy deck S1–S6 (hero → agitation → mechanism → differentiation → trust/safety →
+  identity CTA), strategy + boundary correct (no outcome/timeframe claims, no testimonials, no guarantee, no rx
+  brand names; Walter quote scoped to tolerability; Calico trial = legitimacy not efficacy). Belief 4 satisfied via
+  research lineage + identification, never invented reviews.
+- **Pending:** S7 offer (100m-offers pass) · S8 FAQ (objection pass) · then dr-swipe-file (layout) → boron-letters
+  (voice) → implementer rebuilds `/go`. The current ported `/go` remains as the draft to be replaced.
+- **Roles run:** LEAD (skill: breakthrough-advertising DIAGNOSE + 1× AskUserQuestion + wiki). No code changed.
+
+## [2026-09-09] phase | `/go` rewrite — offer (100m-offers) + FAQ passes; copy deck S1–S8 complete
+- Continued [`marketing/go-rewrite.md`](marketing/go-rewrite.md): drafted S7 (offer/order) and S8 (FAQ) → full
+  belief-gate copy deck now complete (S1–S8), strategy + boundary correct.
+- **S7 via 100m-offers** (ch06 value equation, ch14 bonuses, ch15 guarantees — adapted): under the compliance ban
+  on outcome-promises + money-back, we WIN ON THE BOTTOM of the value equation (Time Delay + Effort & Sacrifice —
+  capsules = no scale/solvents/prep, pre-dosed, ships 48h; the harder-to-copy lever per ch06). Perceived-likelihood
+  reframed from "it will work" → "certainty of exactly what's in the bottle" (NMR/COA/chemist). Risk reversal
+  replaces the banned guarantee with a ch15 anti-guarantee ("all sales final, research compound") FUSED with
+  reversing the REAL #1 fear (purity, objection map #1) via proof: request the batch COA before you buy. Price
+  anchor: reagent supplier $415/50mg vs 1g $200 ≈ 20× value/dose. Scarcity/urgency DROPPED (no honest deadline —
+  do not fake). Naming: "Starter/Full Protocol" (MAGIC container word). Real catalog SKUs only.
+- **S8 FAQ** rewritten boundary-clean from the objection map (ch10 redefinition): killed the draft's "days 3–7"
+  results promise (→ "we don't make results/timeframe claims" + mechanism), scoped legal to "most jurisdictions we
+  ship to" (never worldwide), safety framed as tolerability. Cancer objection (map #3) FLAGGED as optional — a
+  boundary-clean answer exists, but adding a cancer mention to a Meta destination can introduce fear → Anton decides.
+- **Next:** dr-swipe-file (section layout) → boron-letters (voice, LAST) → implementer rebuilds `/go` from the deck.
+- **Roles run:** LEAD (skill: 100m-offers BUILD ch06/14/15 + objection pass + wiki). No code changed.
+
+## [2026-09-09] phase | `/go` rewrite — layout + voice passes + REBUILD (full skill pipeline done)
+- Completed the pipeline on [`marketing/go-rewrite.md`](marketing/go-rewrite.md): **dr-swipe-file** (layout) +
+  **boron-letters** (voice) → then implementer REBUILT `/go` from the deck.
+- **dr-swipe-file:** confirmed belief-gate order; Stage-3/4 fixes — proof-sandwich around the hero (borrowed
+  authority, not reviews), agitation in identification register, mechanism chips = BIOLOGY steps (NOT a
+  results-timeline swipe — that pattern is banned), comparison stays high + anonymized, **S5 Trust does double
+  duty as the "social-proof" block via 4 independent borrowed-authority proof types** (no customer voices),
+  proof-based risk reversal (plain/human, lead with the purity FUD), repeat CTA after each value beat, and it
+  caught a **missing Final CTA → added S9**.
+- **boron-letters (voice, LAST layer):** slippery-slide/you-orientation polish of every headline+body; boundary
+  held through the polish (e.g. resisted "…so you think clearly again" — kept mechanism-only). Final voiced lines
+  are the build source-of-truth in the deck.
+- **REBUILD (implementer):** `/go` rebuilt into 11 belief-gate section islands (Hero → Agitation → Mechanism[dark]
+  → Differentiation → TrustSafety → IdentityCta → Offer → Faq → FinalCta + BuyNowButton + GoLanding shell).
+  Email-capture + modal DROPPED (order funnel); real-catalog buy CTAs (17000/24000/13000/20000); chromeless;
+  `robots.index:false`; no analytics (cart/checkout owns conversion).
+- Gates: `tsc` clean · verifier APPROVE (claim-boundary scan + money path + structure + analytics + DS fidelity) ·
+  LEAD visual gate PASS (headless full-page desktop; banned-claim grep = 0; SSR 200; no dev-log errors). NOT
+  committed/deployed. Flag: dropped email-capture path — re-add a compliant soft opt-in later if wanted.
+- **Roles run:** LEAD (skills: dr-swipe-file + boron-letters + orchestration + visual gate + wiki) → implementer ×1
+  (11 files, 2 deleted) → verifier ×1 (APPROVE).
