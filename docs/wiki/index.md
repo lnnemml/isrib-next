@@ -98,6 +98,7 @@ rather than scanning the whole directory.
 - [`decisions/0016-launch-promo-codes.md`](./decisions/0016-launch-promo-codes.md)
 - [`decisions/0017-email-campaign-broadcasts-and-marketing-list.md`](./decisions/0017-email-campaign-broadcasts-and-marketing-list.md)
 - [`decisions/0018-shipping-cost-and-september-orders.md`](./decisions/0018-shipping-cost-and-september-orders.md)
+- [`decisions/0019-partial-payment-tolerance.md`](./decisions/0019-partial-payment-tolerance.md)
 
 ## Planning
 

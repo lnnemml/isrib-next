@@ -2284,3 +2284,27 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
 - **Roles run:** LEAD (recon + design + 2 forks confirmed) → implementer (3 files) → verifier (APPROVE). tsc clean.
 - **GATED on Anton:** `db:push` (creates `webhook_logs`) BEFORE deploy; then runtime-verify floating rate + invoice
   reuse + webhook_logs rows. Still open: no `partially_paid` auto-handling (alert only); no API payment-list access.
+
+## [2026-09-09] phase | NowPayments fixes deployed + non-invasively verified
+- Anton ran `db:push` + deployed (HEAD 353b334). All three fixes (floating rate, webhook_logs + non-finished
+  alert, crypto dedup) are live. Prober PASS: `webhook_logs` table present in prod Neon (correct 8 cols, 0 rows);
+  isrib.shop + /checkout 200; tree clean. Behavioral synthetic E2E deferred (sandboxed browser couldn't persist
+  cart — env limitation) → monitor first real crypto order for floating invoice + dedup reuse + webhook_logs rows.
+- **Roles run:** LEAD (runtime verify orchestration + browser attempt) → prober (non-invasive PASS).
+
+## [2026-09-09] decision | Partial crypto payment tolerance (ADR 0019)
+- New ADR: [`decisions/0019-partial-payment-tolerance.md`](decisions/0019-partial-payment-tolerance.md). Also Fix 3 in the incident summary.
+- Policy (Anton): NowPayments `partially_paid` with `actually_paid / pay_amount` ≥ **0.98** (≤2% short) → treat like
+  `finished` (mark paid, ship, full-value Purchase, absorb the gap; ops alert tagged `(partial)`). < 0.98 → hold + ops
+  alert with received % for a top-up/refund decision. `PARTIAL_PAYMENT_TOLERANCE = 0.98`; missing `pay_amount` → never auto-accepts.
+- Rationale: small underpayments are almost always the network withdrawal fee; asking a customer to top-up a few $ of BTC
+  costs more in fees than the shortfall. Implemented in `api/webhooks/nowpayments/route.ts` (1 file).
+- **Roles run:** LEAD (research + fork confirmed) → implementer → verifier (APPROVE). tsc clean. NOT yet committed/deployed.
+
+## [2026-09-09] phase | Checkout: expandable "How does crypto payment work?" hint
+- Added a collapsible explainer under the Crypto card in `src/components/ui/PaymentSelector.tsx` (mirrors the FaqAccordion
+  +/− disclosure; sibling of the label so the toggle never flips the radio). 5 plain steps: secure NowPayments page →
+  pick coin → send (cover network fee) → live-rate/late-transfer-still-works → auto-confirm + shipping-link email.
+- Copy is compliance-clean (no guarantee/refund/health claims) and factually matches the live flow (floating rate,
+  auto-confirm webhook, post-payment /shipping link — ADR 0010).
+- **Roles run:** LEAD (recon + copy) → implementer → verifier (APPROVE) → LEAD visual gate (kitchen-sink, collapsed+expanded, PASS). tsc clean. NOT yet committed.

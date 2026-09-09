@@ -25,6 +25,7 @@ interface PaymentSelectorProps {
 
 export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) {
   const [internal, setInternal] = useState("crypto");
+  const [howOpen, setHowOpen] = useState(false);
   const controlled = value !== undefined && onChange !== undefined;
   const method = controlled ? value : internal;
   const setMethod = (next: string) => {
@@ -57,6 +58,30 @@ export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) 
           </span>
         </span>
       </label>
+
+      {/* Expandable explainer for the crypto (auto) flow — sits under the crypto card so buyers
+          know exactly what happens after they place the order. Sibling of the label (not inside
+          it) so the toggle never flips the radio. Mirrors the FaqAccordion +/− disclosure. */}
+      <div className="rounded-xl border border-border bg-surface px-5 py-3">
+        <button
+          type="button"
+          onClick={() => setHowOpen((v) => !v)}
+          aria-expanded={howOpen}
+          className="flex w-full items-center justify-between gap-3 text-left"
+        >
+          <span className="text-[13px] font-semibold text-text">How does crypto payment work?</span>
+          <span className="shrink-0 font-mono text-[16px] leading-none text-primary">{howOpen ? "−" : "+"}</span>
+        </button>
+        {howOpen && (
+          <ol className="mt-3 flex list-none flex-col gap-2 text-[13px] leading-[1.55] text-text-subtle">
+            <li><span className="font-semibold text-text">1. </span>Place your order — you go straight to our secure payment page (NowPayments). No card, no account, and no personal details on that page.</li>
+            <li><span className="font-semibold text-text">2. </span>Choose a coin (BTC, ETH, USDT, XMR). We show the exact amount, a wallet address and a QR code.</li>
+            <li><span className="font-semibold text-text">3. </span>Send it from your wallet. If your exchange takes a network fee out of the amount, add it on top so the full amount arrives.</li>
+            <li><span className="font-semibold text-text">4. </span>The amount is set at the live market rate, so a slow or late transfer still goes through — it settles at the current rate.</li>
+            <li><span className="font-semibold text-text">5. </span>When the payment confirms on-chain (usually a few minutes), your order is confirmed automatically and we email you a link to add your shipping address.</li>
+          </ol>
+        )}
+      </div>
 
       {/* MANUAL arrangement */}
       <label className={cardClass("manual")}>

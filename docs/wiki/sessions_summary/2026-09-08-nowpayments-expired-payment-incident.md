@@ -100,12 +100,30 @@ Addresses backlog items **1** (webhook only `finished` + no logging) and **3** (
   email + total (Anton's call) so a changed cart still gets a fresh invoice. Floating-rate
   invoices stay payable, so reuse is safe. Narrows (does not eliminate) a sub-second race.
 
+## Fix 3 — 2026-09-09 (partial-payment tolerance, ADR 0019)
+
+**Roles run:** LEAD (policy research + fork confirmed with Anton) → implementer (1-file) → verifier (APPROVE). tsc clean.
+
+`partially_paid` is now auto-handled (was: alert-only). The webhook computes
+`paidRatio = actually_paid / pay_amount`: **≥ 0.98 (≤2% short) → treat like `finished`**
+(mark paid, ship, full-value Purchase, absorb the gap; ops alert tagged `(partial)`);
+**< 0.98 → hold + ops alert** showing the received % for a top-up/refund decision. Threshold
+is `PARTIAL_PAYMENT_TOLERANCE = 0.98`; a missing/zero `pay_amount` → ratio 0 → never
+auto-accepts. Rationale (network-fee shortfalls; top-up fee > shortfall) + revisit triggers
+in [ADR 0019](../decisions/0019-partial-payment-tolerance.md).
+
 **STILL OPEN / not addressed:**
 2. NowPayments API from our env can't list payments (no email/password → no Bearer JWT); still
    dashboard/support only for lookups.
-- Does NOT auto-handle `partially_paid` (underpayment) — only alerts. Manual resolution stands.
 
-**GATED on Anton before deploy:** `db:push` (creates `webhook_logs`; until then IPN audit
-inserts hit the non-fatal catch and log an error). Then deploy + runtime-verify: (a) new crypto
-invoice is floating; (b) a duplicate crypto submit reuses the same invoice; (c) `webhook_logs`
-receives rows.
+**DEPLOYED + verified (2026-09-09).** Anton ran `db:push` and deployed (HEAD `353b334`). Prober
+non-invasive checks **PASS**: `webhook_logs` exists in prod Neon with the correct 8 columns (0 rows —
+no IPN fired yet); isrib.shop + /checkout serve 200; working tree clean at the fix commit.
+
+**Behavioral E2E — deferred by choice (Anton).** A synthetic crypto E2E (floating-invoice + dedup-reuse)
+was NOT run: the automated (sandboxed) browser could not persist the cart across navigations
+(localStorage blocked — an environment limitation, not a site bug; the live site takes real orders daily),
+and Anton opted to rely on the verifier APPROVE + confirmed migration/deploy and monitor the **first real
+crypto order** instead. To close the loop when convenient: watch that (a) a new crypto invoice is floating
+(no ~10-min fixed-rate lock in the NowPayments dashboard), (b) a repeat crypto submit reuses the invoice,
+and (c) `webhook_logs` starts receiving rows.

@@ -22,6 +22,13 @@ import { createReferrerReward } from "@/lib/referral";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
+// ADR 0019 — partial-payment tolerance. Accept a crypto underpayment of at most 2%
+// (customer sent ≥98% of the requested amount) as fully paid and absorb the gap: a small
+// shortfall is almost always the network withdrawal fee, and asking a customer to top-up a
+// few dollars of BTC is pointless (the top-up network fee exceeds the shortfall). Below this,
+// the order is held and ops is alerted to decide (top-up request or refund).
+const PARTIAL_PAYMENT_TOLERANCE = 0.98;
+
 export async function POST(req: Request): Promise<Response> {
   const body = await req.text();
   const sig = req.headers.get("x-nowpayments-sig");
@@ -51,6 +58,18 @@ export async function POST(req: Request): Promise<Response> {
   const paymentStatus = typeof data.payment_status === "string" ? data.payment_status : null;
   const paymentId = data.payment_id != null ? String(data.payment_id) : null;
   const actuallyPaidRaw = data.actually_paid != null ? String(data.actually_paid) : null;
+  const payCurrency = typeof data.pay_currency === "string" ? data.pay_currency : "?";
+  const payAmountRaw = data.pay_amount != null ? String(data.pay_amount) : "?";
+  const payAmountNum = Number(data.pay_amount ?? 0);
+  const actuallyPaidNum = Number(data.actually_paid ?? 0);
+  // Fraction of the requested crypto that actually arrived (0 when unknown/invalid → not accepted).
+  const paidRatio =
+    Number.isFinite(payAmountNum) && payAmountNum > 0 && Number.isFinite(actuallyPaidNum)
+      ? actuallyPaidNum / payAmountNum
+      : 0;
+  // ADR 0019 — a partially_paid within tolerance is treated exactly like `finished`.
+  const acceptedPartial = paymentStatus === "partially_paid" && paidRatio >= PARTIAL_PAYMENT_TOLERANCE;
+  const treatAsPaid = paymentStatus === "finished" || acceptedPartial;
   try {
     await db.insert(webhookLogs).values({
       id: nanoid(),
@@ -69,17 +88,18 @@ export async function POST(req: Request): Promise<Response> {
   // customer's crypto ALREADY landed (actually_paid > 0, or partially_paid) on a status that
   // is NOT finished, that is the incident scenario — a deposit that won't auto-credit. Alert
   // ops loudly so it can be recovered by hand. No auto-mark-paid (needs a human decision).
-  if (paymentStatus !== "finished") {
-    const actuallyPaidNum = Number(data.actually_paid ?? 0);
+  if (!treatAsPaid) {
     const depositLanded = paymentStatus === "partially_paid" || (Number.isFinite(actuallyPaidNum) && actuallyPaidNum > 0);
     if (depositLanded) {
-      const payCurrency = typeof data.pay_currency === "string" ? data.pay_currency : "?";
       const priceAmount = data.price_amount != null ? String(data.price_amount) : "?";
       const alertHtml =
         `<p><strong>⚠ NowPayments deposit on a NON-finished payment — manual review needed.</strong></p>` +
         `<p>Order <strong>${orderId ?? "(unknown)"}</strong> — status <strong>${paymentStatus ?? "(none)"}</strong></p>` +
         `<p>payment_id: ${paymentId ?? "?"} · actually_paid: ${actuallyPaidRaw ?? "?"} ${payCurrency} · expected: $${priceAmount}</p>` +
-        `<p>The funds may be in NowPayments custody but were NOT auto-credited. Check the dashboard / open a support ticket if needed.</p>`;
+        `<p>The funds may be in NowPayments custody but were NOT auto-credited. Check the dashboard / open a support ticket if needed.</p>` +
+        (paymentStatus === "partially_paid"
+          ? `<p>Received <strong>${(paidRatio * 100).toFixed(1)}%</strong> of the requested ${payAmountRaw} ${payCurrency} — BELOW the ${(PARTIAL_PAYMENT_TOLERANCE * 100).toFixed(0)}% auto-accept threshold. Decide: request a top-up for the difference, or refund.</p>`
+          : "");
       try {
         await sendToAdmin(`⚠ NowPayments ${paymentStatus} (deposit) — ${orderId ?? "unknown order"}`, alertHtml);
       } catch (err) {
@@ -127,14 +147,18 @@ export async function POST(req: Request): Promise<Response> {
   const shippingUrl = `${baseUrl}/shipping/${order.shippingToken}`;
 
   // Compact inline ops alert — deliberately does NOT re-query order_items.
-  const minimalPaidAdminHtml = `<p>Order <strong>${orderNumber}</strong> — $${(order.totalPrice / 100).toFixed(2)} — <strong>PAID</strong></p>`;
+  // ADR 0019 — surface an accepted partial (absorbed shortfall) in the ops alert for margin visibility.
+  const partialNote = acceptedPartial
+    ? ` <em>(PARTIAL accepted — received ${actuallyPaidRaw ?? "?"} of ${payAmountRaw} ${payCurrency}, ${(paidRatio * 100).toFixed(1)}% — absorbed the gap)</em>`
+    : "";
+  const minimalPaidAdminHtml = `<p>Order <strong>${orderNumber}</strong> — $${(order.totalPrice / 100).toFixed(2)} — <strong>PAID</strong>${partialNote}</p>`;
 
   const confirmed = paymentConfirmed({ firstName: order.name, orderNumber, shippingUrl });
 
   // Best-effort side effects — Promise.allSettled so no single failure throws out of POST.
   const results = await Promise.allSettled([
     sendToCustomer(order.email, confirmed.subject, confirmed.html),
-    sendToAdmin(`Payment confirmed: ${orderNumber}`, minimalPaidAdminHtml),
+    sendToAdmin(`Payment confirmed${acceptedPartial ? " (partial)" : ""}: ${orderNumber}`, minimalPaidAdminHtml),
     // "order_confirmed" → Purchase in the server EVENT_MAP (src/lib/analytics/server.ts).
     trackServerEvent("order_confirmed", {
       // Reuse the eventId stored at checkout so the browser Pixel Purchase (if any) and this
