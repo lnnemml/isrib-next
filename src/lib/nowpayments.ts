@@ -38,7 +38,11 @@ export async function createInvoice(params: {
       success_url:         params.successUrl,
       cancel_url:          params.cancelUrl,
       ipn_callback_url:    params.ipnCallbackUrl,
-      is_fixed_rate:       true,
+      // Floating rate (NOT fixed): the ~10-min fixed-rate lock caused late-confirming
+      // on-chain payments to land in NowPayments "Failed" (incident 2026-09-08, order
+      // ISR-CV2Z9FNG). Floating settles at the current market rate at confirmation, so
+      // slow BTC confirmations complete as `finished` instead of failing.
+      is_fixed_rate:       false,
       is_fee_paid_by_user: false,
     }),
   });

@@ -2247,3 +2247,27 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   backfill & $10 shipping BI (ADR 0018) + relaunch email rewritten/tuned/**SENT 607/0-fail (Gmail Important)**
   + shipping→admin hotfix. All on `main`, deployed. **Next: Email 2 (account+referral) in ~4–5 days.**
 - **Roles run:** LEAD (session summary + wiki).
+
+## [2026-09-08] escalate | NowPayments "expired payment" incident — OPEN, resume tomorrow
+- Full record: [`sessions_summary/2026-09-08-nowpayments-expired-payment-incident.md`](sessions_summary/2026-09-08-nowpayments-expired-payment-incident.md).
+- Customer Michaelmmonahan@mail.com "paid but expired". Live read: **4 duplicate $117 orders, all
+  `pending_payment_instructions`; dashboard shows all Expired, NO funds received** (Balance ≈ one unrelated
+  Finished 153 USD order). Corrected an early wrong hypothesis (not a stuck late-deposit — nothing landed).
+- **OPEN:** Anton already emailed the customer for the **txid**; resolve tomorrow. Nothing marked paid / shipped /
+  changed in code. txid decides: not-sent → fresh link (reuse order_id ISR-CV2Z9FNG); late-to-NP-address →
+  support ticket (Deposit protection Enabled); foreign address → lost.
+- Backlog exposed (decide separately): webhook handles only `finished` (no alert on partial/expired-with-deposit),
+  no raw IPN logging, duplicate-invoice churn, 10-min window = NowPayments `is_fixed_rate` rate-lock (not our hardcode).
+- **Roles run:** LEAD (recon + DB read + API probe + dashboard analysis) → 1× explorer. No code changed.
+
+## [2026-09-09] fix | NowPayments invoices → floating rate (is_fixed_rate: false)
+- Follow-up to the 2026-09-08 incident: [`sessions_summary/2026-09-08-nowpayments-expired-payment-incident.md`](sessions_summary/2026-09-08-nowpayments-expired-payment-incident.md#fix--2026-09-09-floating-rate-invoices).
+- Root cause of "Failed"/"Expired" payments: `createInvoice()` sent `is_fixed_rate: true` → ~10-min rate-lock;
+  slow on-chain BTC confirmations missed the window and died instead of settling.
+- **Fix:** `src/lib/nowpayments.ts:createInvoice()` now sends `is_fixed_rate: false` (floating) + inline comment.
+  Late payments settle at the current market rate at confirmation and complete as `finished`. Only call site is
+  `submitOrder.ts:453` (crypto branch); pricing + IPN verify untouched. `npx tsc --noEmit` clean.
+- Trade-off accepted: customer bears FX drift (floating) — far better than a hard Failed needing a support ticket.
+- STILL OPEN (not touched by this fix): webhook handles only `finished` (no alert/logging on deposit-bearing
+  non-`finished` statuses); duplicate-invoice churn. Runtime-verify floating rate on a new invoice post-deploy.
+- **Roles run:** LEAD (investigate + report + plan + wiki) → implementer (1-file edit, verified).
