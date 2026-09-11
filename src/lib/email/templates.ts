@@ -194,12 +194,12 @@ function manualPaymentBlocks(
   btcEquivalent?: string,
   ltcEquivalent?: string,
 ): string {
-  // PayPal — RECOMMENDED
+  // PayPal (demoted — USDT is now the recommended method)
   const paypal = paymentBlock(
     "PayPal",
-    "RECOMMENDED",
-    payRow("Send to", `<span style="color:${C.brand};font-weight:600;">isrib.shop@protonmail.com</span>`) +
-      payRow("Recipient name", `<span style="color:${C.text};">Danylo Tsymbaliuk</span>`) +
+    null,
+    payRow("Send to", `<span style="color:${C.brand};font-weight:600;">isrib.shop@gmail.com</span>`) +
+      payRow("Recipient name", `<span style="color:${C.text};">Anton Tsymbaliuk</span>`) +
       payRow("Amount", `<span style="color:${C.text};font-weight:700;">${usd(amount)} USD</span>`) +
       payRow(
         "Note / Reference",
@@ -215,7 +215,7 @@ function manualPaymentBlocks(
   // USDT TRC-20
   const usdt = paymentBlock(
     "USDT (TRC-20)",
-    null,
+    "RECOMMENDED",
     payRow(
       "Address",
       `<code style="color:${C.brand};font-size:11px;word-break:break-all;">${"TDRnCaDUQQDRsZEQbBtMPKxa7MgHzuW5re"}</code>`,
@@ -285,7 +285,7 @@ function manualPaymentBlocks(
       </td></tr>
     </table>`;
 
-  return `${paypal}${usdt}${btc}${ltc}${otherMethods}`;
+  return `${usdt}${paypal}${btc}${ltc}${otherMethods}`;
 }
 
 // ════════════════════════════════════════════════════════════════════════════

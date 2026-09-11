@@ -4,8 +4,8 @@
 // card fields / Pay-Now / Stripe).
 
 export const PAYPAL = {
-  email: "isrib.shop@protonmail.com",
-  name: "Danylo Tsymbaliuk",
+  email: "isrib.shop@gmail.com",
+  name: "Anton Tsymbaliuk",
 } as const;
 
 export const USDT_TRC20_ADDRESS = "TDRnCaDUQQDRsZEQbBtMPKxa7MgHzuW5re";
