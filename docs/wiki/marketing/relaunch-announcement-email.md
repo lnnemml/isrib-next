@@ -126,32 +126,48 @@ Unsubscribe
 
 ---
 
-## Email 2 — follow-up (account + referral) — DRAFT, send ~4–5 days AFTER Email 1
+## Email 2 — follow-up (account + referral) — ✅ SENT 2026-09-11 (Variant B), 599/599, 0 failed
 
 Purpose: surface the **account + referral** that Email 1 deliberately omitted (cramming them
-in kept Email 1 out of Important — see log 2026-09-08). Same rules: ONE idea, plain send
-(`send-relaunch.ts` path B), tracking OFF, no `List-Unsubscribe`, reply-invite last. Rides the
-Important reputation Email 1 builds. Recipients auto-exclude anyone who unsubscribed from Email 1
-(`marketing_contacts WHERE unsubscribed_at IS NULL`).
+in kept Email 1 out of Important — see log 2026-09-08). Same rules: plain send, tracking OFF,
+no `List-Unsubscribe`, reply-invite last. Rides the Important reputation Email 1 built.
+Recipients auto-exclude anyone who unsubscribed (`marketing_contacts WHERE unsubscribed_at IS NULL`).
 
-**Subject:** {{firstName}}, one more thing about your account
+**Send mechanism (built):** `scripts/send-email2.ts` — a Path-B sibling of `send-relaunch.ts`,
+SEPARATE resume file `data/email2-sent.json`, single CTA link "an account" → `/account/register`
+(UTM `relaunch_email2_2026`). Run: `NEXT_PUBLIC_BASE_URL=https://isrib.shop node --env-file=.env.local
+--import tsx scripts/send-email2.ts [--test <addr> | --commit]`.
+
+### Deliverability A/B (2026-09-11) — Variant B won
+- **Variant A** (styled HTML, subject "…your account on the new site", copy mentioned "10% off"): cold
+  self-test landed **inbox but NOT Important**. (Consistent with [[email-deliverability-playbook]]: Important
+  is behavioral/per-recipient — a cold self-test under-shows it; Email 1's Important landing was reply-trained.)
+- **Variant B (SHIPPED):** plainer, hand-typed look (dropped the max-width container / background / colored
+  CTA → a plain underlined link), subject **"{{firstName}}, one more thing"**, **dropped the "10% off" number**
+  (soft referral mention only) to cut the promo-classifier signal. → **3/3 Gmail Important** across three cold
+  test addresses. Lesson: for the account/referral follow-up, plainer markup + no promo number beats the styled
+  discount version on placement.
+
+**Subject (SENT):** {{firstName}}, one more thing
 
 Hi {{firstName}},
 
-Meant to mention — with the new site there's an account waiting under the email you've ordered with, and it already has your full order history, so reordering is a couple of clicks.
+One more thing since I rebuilt the site — there's already an account under the email you ordered with, and your full order history is in it. Set a password once and it's yours.
 
-It also has your own referral link: pass it to someone and they get 10% off their first order, while you get a credit toward your next one.
+It's also got a referral link you can pass on if that's ever useful.
 
-Anything I can help with? Just reply.
+How's your work going? Happy to help with anything — just reply.
 
 Danylo
 
 Unsubscribe
 
-- **One link:** the words "an account" → `https://isrib.shop/account` (login/account page). UTMs optional.
-- **Send-mechanism TODO:** `scripts/send-relaunch.ts` currently hardcodes Email 1's copy — Email 2 needs a
-  second template (a `--template` arg or a sibling script). Build when scheduling the follow-up; keep the same
-  from/replyTo, throttle, resume-file (use a SEPARATE `data/email2-sent.json`), and unsubscribe-token wiring.
+- **One link:** the words "an account" → `https://isrib.shop/account/register?...` (register = the "claim your
+  waiting account" action for legacy customers; `customerAuth.ts` links their order history + mints a referral code).
+- **Landing-page polish (deployed 2026-09-11):** `/account/register` subtitle now reassures returning customers
+  their order history will already be there (was a generic "Create account" form).
+- **Result:** 599 active · 599 sent · 0 failed (~23 min, throttled, resumable).
+- **Possible Email 3:** if we want a single-idea promo push, referral (+ its 10%/credit numbers) could go on its own.
 
 ---
 

@@ -2424,3 +2424,75 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   → dr-swipe-file → boron-letters) → compliant "Get the research" opt-in → merged to `main` (e8c81b4, not pushed).
   4 Anton decisions, boundary discipline, open items (opt-in runtime-verify, research email sequence, push/deploy).
 - **Roles run:** LEAD (wiki). No code changed.
+
+## [2026-09-11] phase | Admin panel 500 fixed — raw-sql date aggregates came back as strings
+- **Symptom:** prod `/admin` showed "This page couldn't load. A server error occurred." (`ERROR 2051683091`).
+  Diagnosed via Vercel runtime log tail (`vercel logs isrib.shop`): `TypeError: c.getTime is not a function`,
+  `digest: '2051683091'`, `requestPath: /admin`.
+- **Root cause (latent, NOT a recent regression):** in `src/lib/admin/queries.ts` `groupByCustomer()`, the
+  `liveFirstAt`/`liveLastAt`/`legacyLastAt` fields were built from raw ``sql`min(...)`/`max(...)` `` template
+  expressions. `sql<Date | null>` is only a TS cast — Drizzle applies the timestamp→Date driver mapping ONLY to
+  real column refs, NOT to raw `sql` fragments — so those values arrived as ISO **strings**, and the
+  `earliest()`/`latest()` comparators then called `.getTime()` on a string and threw, crashing the whole dashboard
+  render. First (mis)hypothesis was a Neon/env outage; the runtime log corrected it (infra was healthy: `/admin`
+  307→login, login 200, home 200 — the 500 was only on the authenticated render).
+- **Fix:** added a `toDate()` coercion helper and normalized all four date reads at the boundary (no-op on real
+  `Date`, ISO string→Date, unparseable→null). No SQL/types/UI changed. `tsc` + `next build` clean; verifier APPROVE.
+  Committed `c12477f`; deployed via git push (prod `● Ready`); admin panel confirmed rendering.
+- **Ops note:** the repo was un-linked from Vercel + the CLI token was stale — re-authed (`vercel login`) and
+  `vercel link` → `isribs-projects/isrib-next` (`prj_tMBBnFEYzfIMBPy8ZO9dshOPra48`). Anton's GitHub push was blocked
+  because `~/.ssh/id_ed25519` ("hetzner-orca") was not registered on GitHub (yesterday's key swap); resolved by
+  adding that pubkey to GitHub. See [[drizzle-raw-sql-date-returns-string]].
+- **Roles run:** LEAD (runtime-log diagnosis + Vercel re-link + SSH diagnosis + wiki) → implementer ×1 (one-file
+  coercion) → verifier ×1 (APPROVE).
+
+## [2026-09-11] phase | NowPayments "non-finished deposit" alert (ISR-W2TJQP32) — normal, self-resolved
+- **Trigger:** the Fix-2 ops alert "⚠ NowPayments deposit on a NON-finished payment" fired for order `ISR-W2TJQP32`
+  (2.22702489 LTC = full $117, status `confirming`). Anton saw the order `pending`, no funds on balance, no
+  customer email — feared lost money.
+- **Diagnosis:** queried the live status directly — `GET https://api.nowpayments.io/v1/payment/5821283654` with
+  just `x-api-key` (no Bearer/JWT needed; corrects the old "can't query payment API" note). `payin_hash` present =
+  deposit already on-chain, full amount; `outcome_amount` ≈ 114.96 USDT-TRC20. It was simply mid-confirmation.
+- **Outcome:** monitored via polling — `confirming`(12:14Z) → `confirmed`(12:27Z) → `finished`(12:27:30Z, `payout_hash`
+  set, funds settled to balance) in ~17 min total. Auto-credited path works; recovery lever if a finished IPN is ever
+  missed is the admin **Mark paid** button (`markPaid` in `actions.ts`: sets paid + sends the `/shipping/<token>`
+  email + cancels nurture + referral credit; idempotent). No money was ever at risk.
+- **FOLLOW-UP logged (open):** the alert is too noisy — it fires on EVERY intermediate deposit-bearing status
+  (`confirming`, `confirmed`), so a normal payment throws 2 "manual review" alerts before it self-credits, risking
+  that a genuinely-stuck deposit gets lost in the noise. Narrow it to `partially_paid`/`failed`/`expired` or to a
+  status that has persisted > N min (needs a timer/cron). Captured in memory `nowpayments-webhook-only-finished`.
+- **Roles run:** LEAD (NowPayments API diagnosis + live monitor + wiki/memory). No code changed.
+
+## [2026-09-11] phase | Email 2 (account + referral) SENT — 599/599, plain "Variant B" won a deliverability A/B
+- **Context:** Email 1 (relaunch, 2026-09-08) landed Gmail Important and drove **$600+ profit in 3 days**. Email 2
+  is the planned follow-up that surfaces the two features Email 1 deliberately omitted (one-idea-per-email):
+  **the customer account (with legacy order history pre-linked) + the referral link.**
+- **Build:** new `scripts/send-email2.ts` — a Path-B sibling of `send-relaunch.ts` (same formula-critical props: NO
+  `List-Unsubscribe`/headers, single content hyperlink, plain unsubscribe, tracking off, throttle, resume via a
+  SEPARATE `data/email2-sent.json`; dry/test/commit modes). Single CTA link = the words "an account" →
+  `/account/register` (UTM `relaunch_email2_2026`).
+- **Copy honesty (verified against code):** the claim "there's already an account under the email you ordered with,
+  with your full order history" is TRUE — `customerAuth.ts` register CLAIMS the existing legacy `customers` row
+  (sets passwordHash, preserves name, generates a `REF-` referral code if missing); legacy order history is already
+  linked to that row. So the funnel is: register with your ordering email → history appears + you get a referral
+  link. Tuned the copy to the real mechanism ("set a password once") rather than implying zero-friction.
+- **Register-page polish (deployed):** `/account/register` subtitle now reassures returning customers — "Already
+  ordered with us? Use the same email and your full order history will already be there." (the email's landing page
+  otherwise read as a generic "Create account" form). Committed `02a4bbe` (+ the A-version script), pushed to prod
+  by Anton; reassurance line verified LIVE via curl before the blast.
+- **Deliverability A/B (Anton-driven):** first cold self-test of the styled "Variant A" (account + referral + "10%
+  off") landed **inbox but not Important**. Reframed per [[email-deliverability-playbook]] (Important is a
+  behavioral, per-recipient signal — a cold self-test under-shows it). Anton chose to test variants. Built **Variant
+  B**: plainer, hand-typed look (dropped the designed max-width container / background / colored CTA → a normal
+  underlined link), subject `"{{firstName}}, one more thing"`, and **dropped the "10% off" number** (kept a soft
+  referral mention) to cut the promo-classifier signal. **Variant B landed 3/3 in Gmail Important** across the three
+  cold test addresses → shipped B.
+- **SENT:** `--commit` over the active list (`marketing_contacts WHERE unsubscribed_at IS NULL`) at
+  `NEXT_PUBLIC_BASE_URL=https://isrib.shop`: **599 active · 599 sent · 0 skipped · 0 failed** (~23 min, throttled,
+  resumable). Recipient count 607→599 vs Email 1 = opt-outs/bounces since.
+- **Uncommitted:** the `send-email2.ts` Variant-B rework is on the working tree (Anton pushed the earlier A-version
+  in `02a4bbe`) — commit for the record on the next push. This log entry + doc/memory updates too.
+- **Next:** monitor opens/replies (reply → protonmail), `/account/register` claims + first-order conversions,
+  referral-link shares, unsubscribes. Referral could still get its own Email 3 if we want a single-idea promo push.
+- **Roles run:** LEAD (copy honesty recon vs auth/referral code + 3× AskUserQuestion + pre-flight + A/B test design +
+  scheduled send + wiki/memory) → implementer ×3 (send-email2 build → register reassurance → Variant-B rework).

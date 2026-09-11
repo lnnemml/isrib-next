@@ -4,6 +4,12 @@
  * built to the winning-email-formula (docs/raw/winning-email-formula.md) and the approved
  * copy.
  *
+ * VARIANT B (deliverability test): a plainer, hand-typed-looking version of Email 2.
+ * No designed container (no centered max-width, no background color), the content link is
+ * styled like a normal typed hyperlink rather than a CTA, and the "10% off" number is
+ * dropped. Only the subject + buildHtml (markup and copy) differ from Variant A; all
+ * Path-B formula machinery below is identical.
+ *
  * Formula-critical properties (do not "improve"):
  *   - NO `headers` at all — specifically NO List-Unsubscribe (reads as bulk → Promotions tab).
  *   - Exactly ONE hyperlink: the words "an account" in paragraph 1. "referral link" is PLAIN text.
@@ -54,7 +60,7 @@ function displayFirstName(raw: string | null | undefined): string {
 }
 
 function buildSubject(firstName: string): string {
-  return `${firstName}, your account on the new site`;
+  return `${firstName}, one more thing`;
 }
 
 // The single CTA link. utm_content is the (uri-encoded) firstName per formula.
@@ -65,24 +71,24 @@ function ctaHref(firstName: string): string {
   );
 }
 
-// Builds the formula-faithful HTML. `unsubUrl` is the recipient-specific plain unsubscribe
-// link. firstName is already display-normalized ("there" fallback). The approved copy is
-// reproduced verbatim; the ONLY hyperlink is "an account" in paragraph 1.
+// Builds the Variant B (plain, 1:1-personal) HTML — deliberately undesigned: no centered
+// max-width container, no background color, normal typed hyperlink (not a CTA button).
+// `unsubUrl` is the recipient-specific plain unsubscribe link. firstName is already
+// display-normalized ("there" fallback). The approved copy is reproduced verbatim; the ONLY
+// hyperlink is "an account" in paragraph 1.
 function buildHtml(firstName: string, unsubUrl: string): string {
   const href = ctaHref(firstName);
-  const P = "margin:0 0 16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;font-size:16px;line-height:1.6;";
-  const link = `<a href="${href}" style="color:#0ea5e9;text-decoration:none;">an account</a>`;
+  const P = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#1e293b;margin:0 0 16px;";
+  const link = `<a href="${href}" style="color:#1e293b;text-decoration:underline;">an account</a>`;
 
-  return `<body style="background:#ffffff;">
-  <div style="max-width:600px;margin:40px auto;padding:0 20px;">
-    <p style="${P}">Hi ${firstName},</p>
-    <p style="${P}">One more thing about the new isrib.shop &mdash; there's already ${link} under the email you've ordered with, with your full order history in it. Set a password once and it's yours; reordering is a couple of clicks after that.</p>
-    <p style="${P}">It also comes with your own referral link &mdash; pass it on and whoever uses it gets 10% off their first order, while you get a credit toward your next one.</p>
-    <p style="${P}">Anything I can help with for your work? Just reply.</p>
-    <p style="${P}">Danylo</p>
-    <p style="color:#94a3b8;font-size:12px;margin:0;margin-top:48px;"><a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline;">Unsubscribe</a></p>
-  </div>
-</body>`;
+  return `<div>
+  <p style="${P}">Hi ${firstName},</p>
+  <p style="${P}">One more thing since I rebuilt the site &mdash; there's already ${link} under the email you ordered with, and your full order history is in it. Set a password once and it's yours.</p>
+  <p style="${P}">It's also got a referral link you can pass on if that's ever useful.</p>
+  <p style="${P}">How's your work going? Happy to help with anything &mdash; just reply.</p>
+  <p style="${P}">Danylo</p>
+  <p style="color:#94a3b8;font-size:12px;margin:0;margin-top:48px;"><a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline;">Unsubscribe</a></p>
+</div>`;
 }
 
 // ── Resend send (formula-compliant; NO headers, NO List-Unsubscribe) ─────────────────
