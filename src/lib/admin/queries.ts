@@ -32,6 +32,15 @@ function toCents(v: string | number | null): number {
   return typeof v === "number" ? v : Math.round(Number(v));
 }
 
+// Raw sql`min()/max()` over a timestamp is NOT mapped to a Date by Drizzle (only real
+// column refs are) — it comes back as an ISO string. Coerce to a real Date so the
+// earliest()/latest() comparators (which call .getTime()) never see a string.
+function toDate(v: Date | string | null | undefined): Date | null {
+  if (v == null) return null;
+  const d = v instanceof Date ? v : new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 // ── biSummary ────────────────────────────────────────────────────────────────
 // Return types are exported so C2 (the UI builder) can consume them directly.
 
@@ -443,8 +452,8 @@ export async function groupByCustomer(): Promise<CustomerGroup[]> {
     m.liveCountry = r.country;
     m.liveOrderCount = r.liveOrderCount;
     m.livePaidRevenueCents = toCents(r.livePaidRevenueCents);
-    m.liveFirstAt = r.liveFirstAt;
-    m.liveLastAt = r.liveLastAt;
+    m.liveFirstAt = toDate(r.liveFirstAt);
+    m.liveLastAt = toDate(r.liveLastAt);
   }
 
   for (const r of legacyRows) {
@@ -454,8 +463,8 @@ export async function groupByCustomer(): Promise<CustomerGroup[]> {
     // count() on the joined column is a bigint → number|string depending on driver; coerce.
     m.legacyOrderCount = Math.round(Number(r.legacyOrderCount));
     m.legacyRevenueCents = toCents(r.legacyRevenueCents);
-    m.legacyFirstAt = r.firstOrderAt;
-    m.legacyLastAt = r.legacyLastAt;
+    m.legacyFirstAt = toDate(r.firstOrderAt);
+    m.legacyLastAt = toDate(r.legacyLastAt);
   }
 
   const groups: CustomerGroup[] = [];
