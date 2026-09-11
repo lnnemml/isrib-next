@@ -12,7 +12,7 @@ export default function AccountRegisterPage() {
       <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-sm">
         <h1 className="mb-1 text-h3 font-semibold text-text">Create account</h1>
         <p className="mb-6 text-small text-text-muted">
-          Create an account to track your orders and reorder faster.
+          Create an account to track your orders and reorder faster. Already ordered with us? Use the same email and your full order history will already be there.
         </p>
         <RegisterForm />
       </div>
