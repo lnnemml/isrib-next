@@ -106,6 +106,10 @@ objection it opens** (from [`../product/beliefs-and-objections.md`](../product/b
 **Cadence:** 1–2 articles/week once infra is live (post-migration). Refresh existing
 top pages quarterly (update `updatedAt`, add new research, expand PAA answers).
 
+> **Dated execution:** [`publication-calendar.md`](./publication-calendar.md) sequences
+> this roadmap into a ROI-ordered 12-week ship schedule (bottom-funnel converters +
+> science link-bait first) with the quarterly refresh + migration-watch cycle.
+
 ## 5. On-page SEO conventions
 
 - **Frontmatter** drives title/description/canonical/schema — see
@@ -135,6 +139,10 @@ Value-first, never spam. Every touch respects the compliance guardrails (§8).
 | **Email (owned list)** | New-article digest to the lead-gen list. | Ties to [`../architecture/email-leadgen.md`](../architecture/email-leadgen.md) (Track B). Owned channel = compounding. |
 | **YouTube / creators** (later) | Script/sponsor longevity-nootropic creators; embed articles as references. | Higher cost; Phase 4+. |
 | **Digital PR / backlinks** | Pitch the "independent chemist reviews the ISRIB literature" angle to nootropic/longevity blogs & newsletters. | Editorial backlinks are the ranking lever on a young domain. |
+
+> **Operational detail** for the two highest-effort channels lives in
+> [`organic-social-playbook.md`](./organic-social-playbook.md) — Reddit + X/Twitter
+> accounts, cold-start ramp, per-sub rules, content types, and the weekly cadence.
 
 ## 7. Acquisition channels (how readers arrive)
 
@@ -196,6 +204,8 @@ secondary conversion = **email capture** for non-buyers. All journal CTAs point 
 - **Young-domain ramp** — organic is slow; set expectations at 3–6 months.
 
 ## Related
+- [`organic-social-playbook.md`](./organic-social-playbook.md) — the Reddit + X/Twitter operational layer
+- [`publication-calendar.md`](./publication-calendar.md) — the dated 12-week ship schedule
 - [`../architecture/journal-migration-plan.md`](../architecture/journal-migration-plan.md) — the build spec
 - [`../journal/writing-rules.md`](../journal/writing-rules.md) — voice, formula, frontmatter
 - [`../decisions/0015-journal-migration-and-organic-growth.md`](../decisions/0015-journal-migration-and-organic-growth.md)

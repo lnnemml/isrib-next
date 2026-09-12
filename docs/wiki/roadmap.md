@@ -54,7 +54,8 @@ Order = ROI, not nootropics phase order:
 1. Admin panel (orders list + status + shipping).
 2. Journal / SEO hub — migrate `isrib-research.com` articles into
    `content/journal/*.mdx` **one at a time with 301s**; write pending articles;
-   add `journal/writing-rules.md`.
+   add `journal/writing-rules.md`. Dated ship plan:
+   [`marketing/publication-calendar.md`](./marketing/publication-calendar.md).
 3. `/go` DR landing (17-section standalone, from Master Report copy).
 4. Email lead-gen (port the 4-email nurture, or keep the existing serverless
    system and point forms at it).

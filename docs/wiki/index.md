@@ -30,6 +30,12 @@ rather than scanning the whole directory.
 - [`marketing/organic-content-strategy.md`](./marketing/organic-content-strategy.md) —
   **the `/journal` organic-growth engine** — topic clusters, content roadmap,
   promotion + acquisition channels, KPIs, compliance guardrails
+- [`marketing/organic-social-playbook.md`](./marketing/organic-social-playbook.md) —
+  **the Reddit + X/Twitter operational layer** under the organic strategy — accounts,
+  cold-start ramp, per-sub rules, content types, cadence, the weekly 1–2h rhythm, KPIs
+- [`marketing/publication-calendar.md`](./marketing/publication-calendar.md) —
+  **the dated 12-week journal publication schedule** — ROI-ordered, per-article social
+  coupling, plus the quarterly refresh + migration-watch cycle
 - [`marketing/relaunch-announcement-email.md`](./marketing/relaunch-announcement-email.md) —
   **the relaunch/announce email draft** (audience, subject lines, body, RELAUNCH10 offer,
   Resend + gating). Send only after the promo code is verified live.

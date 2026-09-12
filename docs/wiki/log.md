@@ -2496,3 +2496,22 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   referral-link shares, unsubscribes. Referral could still get its own Email 3 if we want a single-idea promo push.
 - **Roles run:** LEAD (copy honesty recon vs auth/referral code + 3× AskUserQuestion + pre-flight + A/B test design +
   scheduled send + wiki/memory) → implementer ×3 (send-email2 build → register reassurance → Variant-B rework).
+
+## [2026-09-12] ingest | Organic social playbook + publication calendar added and grounded
+
+- Two new marketing pages landed under `docs/wiki/marketing/` and were wired into the wiki graph — the
+  **operational layer** beneath the existing [`organic-content-strategy.md`](./marketing/organic-content-strategy.md):
+  - [`organic-social-playbook.md`](./marketing/organic-social-playbook.md) — the *how* of Reddit + X/Twitter:
+    persona/accounts, cold-start ramp (Reddit karma/age gate → comments-only weeks 1–4), per-sub map + rules,
+    content types, the weekly 1–2h operating rhythm, UTM tagging, KPIs.
+  - [`publication-calendar.md`](./marketing/publication-calendar.md) — the *dated* execution of the content
+    roadmap (§4): a ROI-ordered 12-week ship schedule (start Mon 2026-09-14; bottom-funnel converters +
+    science link-bait first), per-article social coupling, and the quarterly refresh + migration-watch cycle.
+- **Grounding (surgical inserts only, append-only discipline held):** index.md → two catalog entries under
+  "Marketing knowledge" after the organic-content-strategy line; organic-content-strategy.md → §4 pointer to the
+  calendar (dated execution), §6 pointer to the playbook (Reddit + X operational detail), and both pages added to
+  "## Related"; roadmap.md → Track B item 2 (Journal / SEO hub) gains a pointer to the publication calendar.
+- **Links verified:** every relative link inside the two new files resolves (9 targets checked), and every new
+  inbound link from the edits resolves from its source dir. No broken links.
+- **Roles run:** LEAD (docs-only). No `src/` touched, no subagents, no content invented — the two pages were
+  authored separately; this session only wired them into the parents.
