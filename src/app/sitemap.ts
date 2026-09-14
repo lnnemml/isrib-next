@@ -1,5 +1,4 @@
 import type { MetadataRoute } from "next";
-import { getAllArticles, getAllSlugs } from "@/lib/journal/mdx";
 import { getAllProductSlugs } from "@/lib/copy/products";
 
 const BASE_URL = "https://isrib.shop";
@@ -49,46 +48,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.6,
-    });
-  }
-
-  // --- Journal ---
-  const articles = getAllArticles();
-
-  entries.push({
-    url: `${BASE_URL}/journal`,
-    lastModified: now,
-    changeFrequency: "weekly",
-    priority: 0.8,
-  });
-  entries.push({
-    url: `${BASE_URL}/journal/author`,
-    lastModified: now,
-    changeFrequency: "monthly",
-    priority: 0.5,
-  });
-
-  // Only clusters that actually have content — derived from published articles.
-  const clustersWithContent = [...new Set(articles.map((a) => a.cluster))];
-  for (const cluster of clustersWithContent) {
-    entries.push({
-      url: `${BASE_URL}/journal/${cluster}`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.7,
-    });
-  }
-
-  // Every article, using its own updatedAt as lastModified.
-  const updatedBySlug = new Map(
-    articles.map((a) => [`${a.cluster}/${a.slug}`, a.frontmatter.updatedAt])
-  );
-  for (const { cluster, slug } of getAllSlugs()) {
-    entries.push({
-      url: `${BASE_URL}/journal/${cluster}/${slug}`,
-      lastModified: updatedBySlug.get(`${cluster}/${slug}`) ?? now,
-      changeFrequency: "monthly",
-      priority: 0.7,
     });
   }
 
