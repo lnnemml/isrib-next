@@ -29,8 +29,11 @@ details. Never add a card field "for later."**
 1. **Crypto via NowPayments (default, 10% discount)** — discount funded by the
    spread between card fees + chargebacks vs. crypto network fees. Invoice generated
    on submit; webhook (`/api/webhooks/nowpayments`) marks paid.
-2. **Manual arrangement** — note field lets customer pre-state method (PayPal,
-   SEPA/SWIFT, Western Union, bank transfer) before first contact.
+2. **Manual arrangement** — note field lets customer pre-state method
+   (SEPA/SWIFT, Western Union, bank transfer) before first contact. **PayPal was
+   removed 2026-09-25** — Anton's PayPal account was blocked again (flagged for
+   "narcotics" sales). The manual-payment email now offers USDT (TRC-20,
+   RECOMMENDED) / BTC / LTC + a "reply to arrange SEPA/SWIFT/WU" fallback only.
 3. **Card online** — permanently disabled UI slot ("coming soon"). Do not enable
    until a high-risk merchant account is approved via ADR.
 

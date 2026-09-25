@@ -2515,3 +2515,93 @@ Types: `setup`, `ingest`, `decision`, `lint`, `phase`, `escalate`.
   inbound link from the edits resolves from its source dir. No broken links.
 - **Roles run:** LEAD (docs-only). No `src/` touched, no subagents, no content invented — the two pages were
   authored separately; this session only wired them into the parents.
+
+## [2026-09-14] decision | Journal articles pulled; rewrite to research-only (no human-use) framing
+
+- **Removed the `Journal` nav tab and all 8 existing MDX articles** (compare ×3, guide ×1,
+  science ×1, blog ×2, tbi ×1). Kept the infra — `src/app/(journal)/` routes,
+  `src/components/journal/`, `src/lib/journal/`, `next.config.ts` 301s, analytics events —
+  so new articles drop in later. Also removed `HomeJournal` from the home page and the
+  journal block from `sitemap.ts` (article/cluster entries were data-driven and dropped
+  with the content). Empty cluster dirs kept via `.gitkeep`.
+- **New hard rule for the rewrite (Anton, this session):** the replacement articles must
+  contain **no mention and no hint of human consumption** — research-only framing.
+- **⚠ This contradicts [ADR 0015](./decisions/0015-journal-migration-and-organic-growth.md)
+  and [`journal/writing-rules.md`](./journal/writing-rules.md)** — which currently mandate
+  first-person "first-hand ISRIB A15 experience", a `User reports`/`<UserQuote>` section,
+  and a `<DoseProtocol>` dosing block. Those must be reconciled/rewritten before any new
+  article ships. Flagged the constraint at the top of `writing-rules.md`.
+- **Roles run:** explorer → implementer (removal) · LEAD (docs-only log). No content invented.
+
+## [2026-09-23] escalate | Site outage — apex `isrib.shop` DNS on dead Vercel IP; fixed via ALIAS; IPN reconciliation + domain-conflict open
+
+- **Symptom:** `isrib.shop` stopped opening (Anton's browser); internet fine, Vercel deploy healthy.
+- **Diagnosis (LEAD, on-wire):**
+  - App is **healthy** — apex Host served **`200`** via Vercel edge (`curl --resolve isrib.shop:443:<edge IP>`).
+    `www.isrib.shop` worked throughout (CNAME → `cname.vercel-dns.com` → live edge).
+  - Root cause was **DNS**: apex `A @ = 76.76.21.21` (legacy Vercel anycast IP) was **fully dead** — no ICMP,
+    no TCP 80/443. Since `www` 308-redirects to apex, the whole entry point fell over.
+  - Sibling apex `isrib-research.com` (same project) was already on Vercel's newer apex IP **`216.198.79.1`**.
+- **Fix attempt #1 (didn't work):** moved apex `A @` → `216.198.79.1`. That IP **also failed to serve** these
+  domains — timed out from two independent networks (local + Anthropic WebFetch), *including* the sibling
+  `isrib-research.com` already on it. So the static-IP apex path is not functioning for this setup.
+- **Fix that worked:** apex `@` → **`ALIAS` record → `cname.vercel-dns.com`** (Namecheap BasicDNS supports ALIAS
+  at root — Vercel's recommended apex approach for third-party DNS). Apex now resolves to the **same live edge**
+  as `www` (`76.76.21.164` / `66.33.60.34`), both serving **`200`** in ~0.2–0.4s. **Confirmed opening on mobile
+  data** (fresh resolver). Residual was DNS cache of the dead IP (record TTL **3600s**) — cleared via
+  flush / mobile / ≤1h wait.
+- **IPN impact — structurally unaffected, but a real outage-window risk:** callback is
+  `${NEXT_PUBLIC_BASE_URL}/api/webhooks/nowpayments` = apex `isrib.shop` (`submitOrder.ts:487`). Apex host,
+  app, cert unchanged; verified the webhook path on apex is **direct, no 308** (`POST` → `401` sig-check as
+  expected, empty `redirect`). `NEXT_PUBLIC_BASE_URL` unchanged → no redeploy needed. **BUT** while the apex
+  was down (dead `76.76.21.21` → non-serving `216.198.79.1` → cache window), NowPayments IPN POSTs could not
+  connect. Given the webhook only acts on `finished`, drops the rest without IPN logging, and the prior
+  **2026-09-08 "paid but expired"** incident, any crypto payment finalized in the outage window may have a lost
+  IPN. See related memories: NowPayments-webhook-only-`finished`, IPN-callback-must-match-canonical-host,
+  NEXT_PUBLIC_BASE_URL-build-time-inlined.
+- **OPEN — reconciliation (follow-up):** cross-check crypto orders in the outage window (DB status
+  `pending`/unpaid) against the NowPayments dashboard for `finished`/`confirmed` payments whose IPN never
+  landed; mark paid + send confirmation by hand as needed (read-only DB pull offered, not yet run).
+- **OPEN — ESCALATE to Anton (domain conflict):** `vercel domains inspect isrib.shop` shows the domain assigned
+  to **both** projects `isrib` (old live) **and** `isrib-next` (new) — contradicts
+  [ADR 0004 blue-green cutover](./decisions/0004-blue-green-cutover.md). The apex/`www` are currently served by
+  `isrib-next` (webhook returns the new app's `401`). Decision needed: which project owns the production domain
+  pre-cutover, then remove it from the other. Not blocking site load; needs an ADR.
+- **Recommendation:** lower apex/`www` DNS TTL `3600 → 300` so the next change propagates in minutes, not an hour.
+- **Roles run:** LEAD (diagnosis via `dig`/`curl --resolve`/WebFetch/Vercel MCP + docs-only log). No `src/`
+  touched; DNS change was made by Anton at Namecheap.
+
+## [2026-09-23] decision | Cutover ratified — isrib-next owns production isrib.shop (ADR 0020); domain "conflict" was a false alarm
+
+- **Anton's call:** `isrib-next` owns the production domain. Recorded as
+  [ADR 0020](./decisions/0020-cutover-executed-isrib-next-owns-production.md), completing the blue-green cutover
+  of [ADR 0004](./decisions/0004-blue-green-cutover.md).
+- **The escalated domain conflict was NOT real.** Reconciled the CLI-vs-API discrepancy: `vercel domains inspect`
+  shows `isrib.shop`/`www` under both `isrib` and `isrib-next`, but the Vercel API (`list_project_domains`) shows
+  them bound **only to `isrib-next`** — the old `isrib` project holds just `isrib.vercel.app` (`count:1`). The CLI
+  "Projects" table is a stale/aggregate display artifact. **No domain-removal action taken or needed.**
+- **Rollback preserved:** old `isrib` project + deploy kept live (holds `isrib.vercel.app`) per ADR 0004's ≥7-day
+  window — do NOT delete. Rollback = reassign the domain back to `isrib`.
+- **G2 checkout: confirmed green** (Anton, 2026-09-23) — end-to-end order → IPN → `paid` has run on many real
+  orders. **IPN outage-window reconciliation: closed** — Anton checked; there were no payments during the outage
+  window, so no IPN was lost and no reconciliation is needed. No open items remain from this incident.
+- **Roles run:** LEAD (Vercel MCP reconciliation + docs-only ADR/log). No `src/` touched, no infra change made.
+
+## [2026-09-25] decision | PayPal removed as a payment method
+
+**Roles run:** LEAD (orchestrated) → implementer → LEAD (runtime verify + docs).
+
+Anton's PayPal account was blocked again (flagged for "narcotics" sales), so PayPal
+is removed from the manual-payment flow.
+
+- `src/lib/email/templates.ts` — dropped the PayPal panel from the shared
+  `manualPaymentBlocks()` helper (feeds BOTH `orderReceivedManual` and the
+  abandoned-checkout reminder). Emails now render USDT (TRC-20, RECOMMENDED) / BTC /
+  LTC + the "reply to arrange SEPA/SWIFT/Western Union" fallback only.
+- `src/lib/email/payment-details.ts` — removed the now-dead `PAYPAL` export.
+- Marketing page (`src/app/(marketing)/page.tsx`) step 3 already omitted PayPal
+  ("Bitcoin, USDT, Wise, or SWIFT"); left as-is. Only a code comment still names
+  PayPal, explaining the omission.
+- `architecture/manual-payment-flow.md` updated to match.
+- Verify: `npx tsc --noEmit` → 0 errors; `grep -rni paypal src/` → only the
+  explanatory marketing comment remains (no customer-facing PayPal offer).

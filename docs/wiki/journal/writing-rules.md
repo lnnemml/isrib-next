@@ -5,6 +5,16 @@
 > repo's compliance constraints. Read before writing or editing any journal article.
 > Strategy context: [`../marketing/organic-content-strategy.md`](../marketing/organic-content-strategy.md).
 
+> **⚠ OVERRIDING RULE (2026-09-14, Anton) — research-only, no human use.** The old
+> articles were pulled; the rewrite must contain **no mention and no hint of human
+> consumption** — no dosing-for-people, no "I took / users report / how it feels", no
+> first-person use experience. Frame strictly as research on the compound. This
+> **supersedes** the conflicting rules below pending a full reconciliation: the
+> first-person "first-hand use experience" framing, the **User reports / `<UserQuote>`**
+> section, and the **`<DoseProtocol>`** dosing block must all be reworked or dropped
+> before any new article ships. See [`../log.md`](../log.md) (2026-09-14) and
+> [ADR 0015](../decisions/0015-journal-migration-and-organic-growth.md).
+
 ## Author & positioning
 
 - **Author:** "The Synthesis Lab" — pseudonymous pharmaceutical chemist, small-molecule

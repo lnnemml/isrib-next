@@ -183,7 +183,7 @@ function payRow(label: string, valueHtml: string, last = false): string {
 }
 
 // ── Manual-payment blocks (shared) ────────────────────────────────────────────
-// PayPal / USDT (TRC-20) / BTC / LTC / "other methods" panels, built once and reused
+// USDT (TRC-20) / BTC / LTC / "other methods" panels, built once and reused
 // by BOTH orderReceivedManual AND abandonedCheckout so the real payment addresses,
 // recipient name, and network warnings live in exactly one place (no duplicated
 // addresses — funds to a mistyped address are unrecoverable). Amounts and BTC/LTC
@@ -194,24 +194,6 @@ function manualPaymentBlocks(
   btcEquivalent?: string,
   ltcEquivalent?: string,
 ): string {
-  // PayPal (demoted — USDT is now the recommended method)
-  const paypal = paymentBlock(
-    "PayPal",
-    null,
-    payRow("Send to", `<span style="color:${C.brand};font-weight:600;">isrib.shop@gmail.com</span>`) +
-      payRow("Recipient name", `<span style="color:${C.text};">Anton Tsymbaliuk</span>`) +
-      payRow("Amount", `<span style="color:${C.text};font-weight:700;">${usd(amount)} USD</span>`) +
-      payRow(
-        "Note / Reference",
-        `<span style="color:${C.brand};font-family:'SFMono-Regular',Consolas,monospace;font-size:12px;">${orderNumber}</span>`,
-        true,
-      ),
-    `<p style="color:${C.muted};font-size:12px;margin:10px 0 0;line-height:1.5;">
-       Important: select <strong style="color:${C.text};">"For friends and family"</strong> to avoid fees.
-       Include your Order number in the note field.
-     </p>`,
-  );
-
   // USDT TRC-20
   const usdt = paymentBlock(
     "USDT (TRC-20)",
@@ -285,11 +267,11 @@ function manualPaymentBlocks(
       </td></tr>
     </table>`;
 
-  return `${usdt}${paypal}${btc}${ltc}${otherMethods}`;
+  return `${usdt}${btc}${ltc}${otherMethods}`;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 1. orderReceivedManual — manual-transfer instructions (PayPal / USDT / BTC / LTC)
+// 1. orderReceivedManual — manual-transfer instructions (USDT / BTC / LTC)
 // ════════════════════════════════════════════════════════════════════════════
 export function orderReceivedManual({
   firstName,

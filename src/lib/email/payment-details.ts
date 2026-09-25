@@ -3,11 +3,6 @@
 // to a mistyped address are unrecoverable. Manual-payment coordination only (ADR: no
 // card fields / Pay-Now / Stripe).
 
-export const PAYPAL = {
-  email: "isrib.shop@gmail.com",
-  name: "Anton Tsymbaliuk",
-} as const;
-
 export const USDT_TRC20_ADDRESS = "TDRnCaDUQQDRsZEQbBtMPKxa7MgHzuW5re";
 
 export const BTC_ADDRESS = "bc1q4ujd2mfp6t6lcu3p2vlj4dxzs6rxhzzlcrh07m";
