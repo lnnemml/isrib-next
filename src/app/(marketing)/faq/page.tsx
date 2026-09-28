@@ -118,7 +118,7 @@ const CATEGORIES: Category[] = [
       {
         id: "crypto-discount",
         q: "Is there a discount for paying with crypto?",
-        a: "Yes — crypto orders receive an automatic 10% discount, applied at checkout.",
+        a: "Yes — crypto orders get an automatic 10% discount. If you have never used crypto, our step-by-step guide at /how-to-pay-crypto walks you through paying with a card in a few minutes.",
       },
       {
         id: "when-address",

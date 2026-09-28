@@ -31,6 +31,21 @@ const C = {
 const FONT =
   "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
+// Absolute URL to the crypto-payment guide (crypto-conversion recovery). Built from
+// NEXT_PUBLIC_BASE_URL (baked at build time) with a safe production fallback.
+const GUIDE_URL = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://isrib.shop"}/how-to-pay-crypto`;
+
+// Compact "new to crypto?" line linking to the step-by-step guide. Shared across the
+// manual, crypto, and abandoned-checkout templates so the copy lives in one place.
+function cryptoHelpLine(): string {
+  return `
+    <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0 0 4px;">
+      New to crypto? Our
+      <a href="${GUIDE_URL}" style="color:${C.brand};text-decoration:none;font-weight:600;">step-by-step guide</a>
+      shows you how to pay with a card in a few minutes.
+    </p>`;
+}
+
 // ── Shared line item shape (built from the recomputed order items) ────────────
 export interface EmailItem {
   slug: string;
@@ -197,7 +212,7 @@ function manualPaymentBlocks(
   // USDT TRC-20
   const usdt = paymentBlock(
     "USDT (TRC-20)",
-    "RECOMMENDED",
+    null,
     payRow(
       "Address",
       `<code style="color:${C.brand};font-size:11px;word-break:break-all;">${"TDRnCaDUQQDRsZEQbBtMPKxa7MgHzuW5re"}</code>`,
@@ -267,7 +282,13 @@ function manualPaymentBlocks(
       </td></tr>
     </table>`;
 
-  return `${usdt}${btc}${ltc}${otherMethods}`;
+  const coinHint = `
+    <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0 0 12px;">
+      Pick whichever is easiest — every coin below converts to the same dollar value.
+      USDT keeps the amount exact; Litecoin is the simplest to send from a wallet.
+    </p>`;
+
+  return `${coinHint}${usdt}${btc}${ltc}${otherMethods}`;
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -308,6 +329,7 @@ export function orderReceivedManual({
     </p>
     ${itemsTable(items, subtotalUsd, totalUsd)}
     ${manualPaymentBlocks(orderNumber, amount, btcEquivalent, ltcEquivalent)}
+    ${cryptoHelpLine()}
     ${closing}`;
 
   return {
@@ -338,11 +360,15 @@ export function orderReceivedCrypto({
   // items table renders no discount row.
   const inner = `
     ${heading("Order received", C.brand, `${firstName}, your order is placed.`, orderNumber)}
-    <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 22px;">
+    <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 12px;">
       Complete your payment using the secure link below. We accept BTC, LTC, USDT and 50+ cryptocurrencies.
+    </p>
+    <p style="color:${C.success};font-size:14px;font-weight:700;line-height:1.6;margin:0 0 22px;">
+      You are saving 10% by paying with crypto — the discount is already applied below.
     </p>
     ${itemsTable(items, totalUsd, totalUsd)}
     ${button(invoiceUrl, "Complete Payment →")}
+    ${cryptoHelpLine()}
     <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
       Once payment is received, we will send you a link to provide your shipping details.
       We ship within 1–3 business days of confirmed payment. Typical delivery: 5–12 business days.
@@ -697,10 +723,14 @@ export function abandonedCheckout({
   const paymentSection =
     paymentMethod === "crypto" && invoiceUrl
       ? `
-        <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 16px;">
+        <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 8px;">
           Your crypto payment invoice is still active:
         </p>
+        <p style="color:${C.success};font-size:14px;font-weight:700;line-height:1.6;margin:0 0 16px;">
+          Complete it with crypto and you still save 10%.
+        </p>
         ${button(invoiceUrl, "Complete crypto payment →")}
+        ${cryptoHelpLine()}
         <p style="color:${C.faint};font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 12px;">
           Or pay manually — no login required
         </p>
@@ -709,7 +739,8 @@ export function abandonedCheckout({
         <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 20px;">
           Send payment using any of the methods below:
         </p>
-        ${manualBlocks}`;
+        ${manualBlocks}
+        ${cryptoHelpLine()}`;
 
   const closing = `
     <div style="border-top:1px solid ${C.hairline};padding-top:16px;">

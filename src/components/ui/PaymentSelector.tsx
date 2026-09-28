@@ -54,10 +54,19 @@ export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) 
             </span>
           </span>
           <span className="mt-1 block text-[14px] leading-[1.55] text-text-subtle">
-            BTC, ETH, USDT, XMR. You'll be taken straight to the secure payment page — pay instantly, save 10%.
+            {"BTC, ETH, USDT and more. Pay with crypto and save 10% — you go straight to a secure payment page."}
           </span>
         </span>
       </label>
+
+      {/* Guide link — sibling of the label (not inside it) so clicking it never flips the
+          radio. Points new buyers at the step-by-step crypto-payment guide. */}
+      <a
+        href="/how-to-pay-crypto"
+        className="-mt-1 inline-block text-[13px] font-semibold text-primary"
+      >
+        {"New to crypto? Read our 2-minute guide →"}
+      </a>
 
       {/* Expandable explainer for the crypto (auto) flow — sits under the crypto card so buyers
           know exactly what happens after they place the order. Sibling of the label (not inside

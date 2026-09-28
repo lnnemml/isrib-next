@@ -2605,3 +2605,67 @@ is removed from the manual-payment flow.
 - `architecture/manual-payment-flow.md` updated to match.
 - Verify: `npx tsc --noEmit` → 0 errors; `grep -rni paypal src/` → only the
   explanatory marketing comment remains (no customer-facing PayPal offer).
+
+## [2026-09-25] decision | Crypto-conversion recovery = top priority for next session
+
+**Roles run:** LEAD (docs only).
+
+Follows the PayPal removal (same day). PayPal was the main revenue stream; with it
+gone, crypto is the durable spine (only rail that can't be frozen, and USDT converts
+to cash on demand). Filed as the ⭐ TOP-PRIORITY block at the head of
+[`roadmap.md`](./roadmap.md) for the 2026-09-26 session:
+
+1. Accessible "how to buy + how to transfer crypto" guide in the manual-payment email
+   (biggest lever — most ex-PayPal buyers lack the know-how, not the willingness).
+2. Make the 10% crypto discount far more prominent at checkout + in the email.
+3. More active unpaid-order recovery — abandoned-checkout nurture with a repeat link
+   to the crypto invoice (respect existing QStash T+2h/T+24h suppress-once-paid).
+
+Compliance unchanged (no card/Pay-Now/Stripe; no money-back language).
+
+## [2026-09-28] phase | Crypto-conversion recovery built (guide + louder 10% + recovery links)
+
+**Roles run:** explorer → implementer → verifier (APPROVE) → LEAD (runtime visual + docs).
+
+Delivered the ⭐ top-priority block (all 3 parts). PayPal removal made crypto the
+primary rail; this lowers the "I don't know how to pay" barrier for ex-PayPal buyers.
+
+**Key finding — card-on-invoice REJECTED.** NowPayments' fiat on-ramp (buyer pays the
+invoice by card, merchant gets crypto — via Guardarian/Banxa) requires **KYB**, the same
+business review that banned PayPal. Would re-import the PayPal problem. So all
+fiat→crypto conversion stays on the **buyer's side** (personal KYC only). Recorded in
+[`manual-payment-flow.md`](./architecture/manual-payment-flow.md).
+
+**Built:**
+1. New `/how-to-pay-crypto` guide — a 3-way "ladder" (wallet → on-ramp → exchange),
+   beginner-first. **Coin advice:** we accept BTC/LTC/USDT and NowPayments converts every
+   coin to USD, so buyers pay in whatever is easiest. Wallet path leads with **Litecoin**,
+   NOT USDT-TRC20 — sending USDT on TRON needs separate **TRX for gas** (a beginner trap);
+   LTC/BTC carry the fee natively. USDT kept for exchange/on-ramp (fee handled there).
+2. Louder 10% — checkout order summary now shows a green "You save $X with crypto (−10%)"
+   line + discounted total; PaymentSelector copy strengthened + guide link; crypto email
+   reinforces the saving.
+3. Recovery — `abandonedCheckout` (T+2h/T+24h) gets the guide help-line + louder 10% in
+   both branches. QStash suppress-once-paid logic untouched.
+   Guide linked from: payment + recovery emails, checkout selector, FAQ, footer.
+
+**Files:** new `src/app/(marketing)/how-to-pay-crypto/page.tsx`; edits to
+`src/lib/email/templates.ts`, `src/components/ui/PaymentSelector.tsx`,
+`src/app/(marketing)/faq/page.tsx`, `src/app/(shop)/checkout/page.tsx`,
+`src/components/layout/Footer.tsx`.
+
+**Verify:** `tsc --noEmit` 0 errors · `next build` green (`○ /how-to-pay-crypto` static) ·
+verifier APPROVE · LEAD visual on guide page + populated checkout.
+
+**Follow-up done (same session):** flipped the manual-payment email's coin framing —
+dropped the single **"USDT (TRC-20) RECOMMENDED"** badge; USDT/BTC/LTC now read as equal
+options with a one-line orienting hint ("USDT keeps the amount exact; Litecoin is the
+simplest to send from a wallet"). Rationale (Anton): stablecoin = exact amount but always
+needs a gas token in a wallet; native LTC/BTC = no gas token but volatile amount — the two
+goals can't both be met, so present them evenly and let the buyer pick (matches the guide).
+Added a light **Monero (XMR)** mention to the guide for the auto-invoice path (NowPayments
+accepts it); **no** fixed XMR address in the manual email (Anton's call — XMR only via the
+auto-invoice). See [[nowpayments-fiat-onramp-needs-kyb-rejected]] memory for the coin-choice
+gotcha.
+
+**Still open:** emails verified by code + verifier, not live render (offered; not needed).

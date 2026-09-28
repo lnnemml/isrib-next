@@ -37,6 +37,30 @@ details. Never add a card field "for later."**
 3. **Card online** — permanently disabled UI slot ("coming soon"). Do not enable
    until a high-risk merchant account is approved via ADR.
 
+### Card-on-invoice (NowPayments fiat on-ramp) — evaluated & REJECTED (2026-09-28)
+
+NowPayments can let the buyer pay the invoice **by card** (fiat), merchant receives
+crypto, via a fiat on-ramp partner (Guardarian / Banxa). This would be the ideal
+ex-PayPal experience ("pay by card, no crypto"). **Rejected:** both providers require
+**KYB (business verification)** — the exact business-level review that got Anton's
+PayPal banned ("narcotics"). Enabling it would re-import the PayPal problem one layer
+down. Instead, **all fiat→crypto conversion stays on the BUYER's side** (they buy crypto
+with their card in their own wallet/on-ramp — personal KYC only, no business review).
+See the crypto-buying guide below.
+
+### Crypto-buying guide — `/how-to-pay-crypto` (2026-09-28)
+
+Lowers the knowledge barrier for buyers new to crypto (the biggest ex-PayPal
+conversion lever). A "ladder" of three ways to pay: (1) buy in a wallet app and send
+it — leads with **Litecoin** for wallet users; (2) on-ramp direct to our address
+(e.g. Paybis); (3) exchange withdrawal (USDT-TRC20 cheapest there). **Coin choice:** we
+accept BTC/LTC/USDT and NowPayments converts every coin to its USD value, so the buyer
+pays in whatever is easiest. Do **not** push USDT-TRC20 to a wallet user — sending it
+needs separate **TRX for gas**; LTC/BTC carry their fee natively. Linked from the
+payment + abandoned-checkout emails, the checkout payment selector, FAQ, and footer.
+The 10% crypto discount is surfaced prominently at checkout (savings line) and in
+emails.
+
 ## Emails (Resend)
 
 1. Order received + payment instructions (customer, automatic on submit — crypto: invoice

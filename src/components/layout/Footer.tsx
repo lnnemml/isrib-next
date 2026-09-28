@@ -7,6 +7,7 @@ import { getAllProductSlugs, getProduct } from "@/lib/copy/products";
 const INFORMATION_LINKS: { label: string; href: string }[] = [
   { label: "About Us", href: "/about" },
   { label: "FAQ", href: "/faq" },
+  { label: "How to Pay with Crypto", href: "/how-to-pay-crypto" },
   { label: "Contact", href: "/contact" },
   { label: "Quality Control", href: "/quality" },
   { label: "Safety Guidelines", href: "/safety" },

@@ -134,6 +134,8 @@ export default function CheckoutPage() {
   const redirecting = state !== null && "redirectUrl" in state;
 
   const cryptoTotalCents = subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100);
+  // Dollar amount the buyer saves by paying with crypto — surfaced prominently at the total.
+  const cryptoSavingsCents = subtotalCents - cryptoTotalCents;
   // Non-stacking (ADR 0014): a referral is worth the same flat 10% as crypto, so on the
   // manual path a valid ref previews the same discounted total.
   const referralTotalCents = subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100);
@@ -282,8 +284,10 @@ export default function CheckoutPage() {
         </div>
       ) : method === "crypto" ? (
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-small text-success">{"Crypto total (−10%)"}</span>
-          <span className="font-mono text-[16px] font-semibold text-success">
+          <span className="text-small font-semibold text-success">
+            {"You save " + formatCents(cryptoSavingsCents) + " with crypto (−10%)"}
+          </span>
+          <span className="font-mono text-[18px] font-bold text-success">
             {formatCents(cryptoTotalCents)}
           </span>
         </div>
