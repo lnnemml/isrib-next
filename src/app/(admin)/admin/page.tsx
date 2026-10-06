@@ -90,6 +90,7 @@ function toRowData(o: AdminOrderRow): OrderRowData {
       o.status === "pending_payment_instructions" || o.status === "awaiting_payment",
     address: o.address,
     city: o.city,
+    stateRegion: o.stateRegion,
     postalCode: o.postalCode,
     country: o.country,
     phone: o.phone,

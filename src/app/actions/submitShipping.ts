@@ -24,6 +24,8 @@ export async function submitShipping(_prev: ShippingState, formData: FormData): 
     const city = (formData.get("city") as string | null)?.trim() ?? "";
     const postalCode = (formData.get("postalCode") as string | null)?.trim() ?? "";
     const mobile = (formData.get("mobile") as string | null)?.trim() ?? "";
+    // Optional — not part of the required-field check; empty string stored as null.
+    const stateRegion = (formData.get("stateRegion") as string | null)?.trim() || null;
 
     if (!token) {
       return { error: "Missing shipping link. Please use the link from your email." };
@@ -47,6 +49,7 @@ export async function submitShipping(_prev: ShippingState, formData: FormData): 
         name: fullName,
         address,
         city,
+        stateRegion,
         postalCode,
         phone: mobile,
         shippingDetailsAt: new Date(),
@@ -90,10 +93,10 @@ export async function submitShipping(_prev: ShippingState, formData: FormData): 
         name: fullName,
         address,
         city,
+        stateRegion,
         postalCode,
         phone: mobile,
-        // order row for the rest of the address
-        stateRegion: order.stateRegion,
+        // order row for the rest of the address (country is fixed at checkout)
         country: order.country,
         items,
         utmSource: order.utmSource,

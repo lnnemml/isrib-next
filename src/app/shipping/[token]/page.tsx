@@ -61,6 +61,10 @@ export default async function ShippingPage({ params }: ShippingPageProps) {
                 <dd className="text-body text-text">{order.city ?? "—"}</dd>
               </div>
               <div>
+                <dt className="text-small font-medium text-text-subtle">{"State / Region"}</dt>
+                <dd className="text-body text-text">{order.stateRegion ?? "—"}</dd>
+              </div>
+              <div>
                 <dt className="text-small font-medium text-text-subtle">{"Postal code"}</dt>
                 <dd className="text-body text-text">{order.postalCode ?? "—"}</dd>
               </div>

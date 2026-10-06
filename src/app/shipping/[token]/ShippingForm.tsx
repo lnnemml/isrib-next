@@ -50,12 +50,18 @@ export function ShippingForm({ token, orderNumber, country }: ShippingFormProps)
           <input id="city" name="city" type="text" required autoComplete="address-level2" className={FIELD_CLASS} />
         </div>
         <div>
+          <label htmlFor="stateRegion" className={LABEL_CLASS}>
+            {"State / Region (optional)"}
+          </label>
+          <input id="stateRegion" name="stateRegion" type="text" autoComplete="address-level1" className={FIELD_CLASS} />
+        </div>
+        <div>
           <label htmlFor="postalCode" className={LABEL_CLASS}>
             {"Postal code *"}
           </label>
           <input id="postalCode" name="postalCode" type="text" required autoComplete="postal-code" className={FIELD_CLASS} />
         </div>
-        <div className="sm:col-span-2">
+        <div>
           <label htmlFor="mobile" className={LABEL_CLASS}>
             {"Mobile *"}
           </label>

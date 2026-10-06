@@ -25,6 +25,7 @@ export interface OrderRowData {
   // expand view
   address: string | null;
   city: string | null;
+  stateRegion: string | null;
   postalCode: string | null;
   country: string;
   phone: string | null;
@@ -86,6 +87,10 @@ export function OrderRow({ row }: { row: OrderRowData }) {
               <div>
                 <span className="font-semibold text-text">{"City: "}</span>
                 {row.city ?? "—"}
+              </div>
+              <div>
+                <span className="font-semibold text-text">{"Region: "}</span>
+                {row.stateRegion ?? "—"}
               </div>
               <div>
                 <span className="font-semibold text-text">{"Postal: "}</span>

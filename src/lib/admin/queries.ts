@@ -264,6 +264,7 @@ export interface AdminOrderRow {
   // expand view
   address: string | null;
   city: string | null;
+  stateRegion: string | null;
   postalCode: string | null;
   phone: string | null;
   items: AdminOrderItemRow[];
@@ -292,6 +293,7 @@ export async function listOrders(): Promise<AdminOrderRow[]> {
       shippingToken: orders.shippingToken,
       address: orders.address,
       city: orders.city,
+      stateRegion: orders.stateRegion,
       postalCode: orders.postalCode,
       phone: orders.phone,
     })
