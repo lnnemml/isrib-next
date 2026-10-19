@@ -274,7 +274,7 @@ function manualPaymentBlocks(
     <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${C.panelBg};border:1px solid ${C.hairline};border-radius:8px;margin:8px 0 20px;">
       <tr><td style="padding:14px 18px;">
         <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
-          Prefer SEPA, SWIFT, or Western Union?
+          Prefer PayPal, SEPA, SWIFT, or Western Union?
           <a href="mailto:isrib.shop@protonmail.com?subject=Payment method for ${encodeURIComponent(orderNumber)}"
              style="color:${C.brand};text-decoration:none;font-weight:600;">Reply to this email</a>
           and we will arrange the details.

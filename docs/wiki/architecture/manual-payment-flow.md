@@ -33,7 +33,9 @@ details. Never add a card field "for later."**
    (SEPA/SWIFT, Western Union, bank transfer) before first contact. **PayPal was
    removed 2026-09-25** — Anton's PayPal account was blocked again (flagged for
    "narcotics" sales). The manual-payment email now offers USDT (TRC-20,
-   RECOMMENDED) / BTC / LTC + a "reply to arrange SEPA/SWIFT/WU" fallback only.
+   RECOMMENDED) / BTC / LTC + a "reply to arrange PayPal/SEPA/SWIFT/WU" fallback only.
+   **2026-10-19:** PayPal re-listed in that reply-to-arrange line (Anton's call) — text
+   only; no PayPal button, link, address or payment block anywhere.
 3. **Card online** — permanently disabled UI slot ("coming soon"). Do not enable
    until a high-risk merchant account is approved via ADR.
 
