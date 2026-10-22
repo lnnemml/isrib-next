@@ -2669,3 +2669,203 @@ auto-invoice). See [[nowpayments-fiat-onramp-needs-kyb-rejected]] memory for the
 gotcha.
 
 **Still open:** emails verified by code + verifier, not live render (offered; not needed).
+
+## [2026-10-21] escalate | Own faceless YouTube long-form channel (vs. deferred creator-sponsorship)
+
+Roles run: LEAD (docs-only; web research on YouTube policy; no `src/` touched).
+
+Anton wants to start a **faceless long-form YouTube channel** (8–20 min, TTS narration +
+diagrams/AI scenes/screens, no face/voice of his own). The production pipeline already exists
+in `~/at-commerce` (ad-video kit, proven 2026-10-21). This **contradicts current scope**:
+`organic-content-strategy.md` §6 defers YouTube to Phase 4+ and frames it as creator
+sponsorship only. Drafted the proposal at
+[`marketing/youtube-track.md`](./marketing/video-track.md) *(renamed → video-track.md same day)*.
+
+**Key finding that shapes the fork:** YouTube's regulated-goods policy bans *facilitating the
+sale* of pharmaceuticals sold without a prescription "by posting links" to a provider. Per
+secondary summaries the ban covers descriptions and comments too. ⇒ **no `isrib.shop` link,
+including `/journal`**, anywhere on the channel. A dosing/protocol (`guide/`) cluster must not
+port to YouTube.
+
+**Fork 1 — channel now?**
+- (a) Keep deferred (status quo; Reddit/X/journal only).
+- (b) Own channel now, **science + compare + story only**, under @TheSynthesisLab. ← **lean**
+- (c) Own channel + creator sponsorships in parallel.
+
+**Fork 2 — funnel/link policy (if b/c):**
+- (i) Brand recall only: no links; "The Synthesis Lab" / "A15" name drives search to the
+  site. ← **lean at launch**
+- (ii) Link only to @TheSynthesisLab on X (which links onward). Indirect, so lower risk, but
+  it is still a chain to a vendor; observe (i) first.
+- (iii) Description links to `isrib.shop/journal`. **Not recommended**: on its face it hits
+  the "facilitating sale via links" clause.
+
+Pending an ADR. Technical forks (TTS engine, style guide, pilot topic, where the generalised
+kit lives — **not** in this repo) are resolved with Anton in-session once the ADR lands.
+
+## [2026-10-21] decision | Organic video track ACTIVE — long-form + Shorts/TikTok/Reels, email funnel (ADR 0021)
+
+Roles run: LEAD (docs-only; web research on TikTok/Meta policy; no `src/` touched).
+
+Anton resolved the escalate above in-session: **(b) own channel now**, plus short-form in
+parallel (YouTube Shorts, TikTok, Instagram Reels). **Funnel = video → email opt-in → soft CTA
+to the shop inside emails only**, so the platforms carry no shop links (this replaces Fork 2 options
+i–iii). A brand mark goes in the videos as a soft hook. Production is **low-AI**: infographics,
+reviews, diagrams and editing, with TTS narration. Recorded as
+[ADR 0021](./decisions/0021-organic-video-track-and-email-funnel.md). The track page was renamed
+`youtube-track.md` → [`marketing/video-track.md`](./marketing/video-track.md) and expanded
+with TikTok/IG rules, the funnel and the cut-down step. Roadmap gets a ⭐ section.
+
+**Still open (Anton):**
+- **F1:** the current logo is the wordmark "ISRIB.shop", which is a domain. That puts it
+  close to YouTube's "other means to contact a provider" clause, and it is riskier on
+  TikTok/IG. Lean: hexagon + "The Synthesis Lab", no domain on screen.
+- **F2:** the opt-in page can't be on `isrib.shop`. Lean: a neutral domain we own, which
+  triggers ADR 0002's revisit clause.
+
+Both block the first upload, not the script/teardown/TTS work.
+
+## [2026-10-21] decision | Video track: F1 hexagon-only, F2 neutral domain; F3 (shared channel with NORA) opened
+
+Roles run: LEAD (docs-only; read NORA wiki for brand/compliance; no `src/` touched).
+
+- **F1 resolved (Anton):** videos show only the logo's **hexagon icon**, never the
+  "ISRIB.shop" text.
+- **F2 resolved in principle (Anton):** the opt-in page goes on a **neutral domain**
+  (~1 h build). The name is held until F3 is settled.
+- **F3 opened:** Anton is weighing **one shared nootropics channel** feeding both
+  `isrib.shop` and NORA (sublingual bromantane, `~/Documents/NORA`). Options are two
+  channels, shared under The Synthesis Lab (**lean**), or shared under a new neutral brand.
+  Non-negotiables if shared: disclose the affiliation, mix in non-selling topics, keep one
+  interest-tagged list owned by the funnel, stack per-compound guardrails (bromantane: no
+  sports angle, no Soviet-origin primary hook), and give the channel its own watermark.
+  Analysis in [`marketing/video-track.md`](./marketing/video-track.md) §8; amendment in
+  [ADR 0021](./decisions/0021-organic-video-track-and-email-funnel.md). Mirror into NORA's
+  wiki once decided.
+
+## [2026-10-21] decision | Shared nootropics video channel for ISRIB + NORA (ADR 0022)
+
+Roles run: LEAD (docs-only; also wrote NORA wiki mirror; no `src/` in either repo touched).
+
+Anton chose **F3 (b)**: a single channel, **The Synthesis Lab — "nootropics through a
+chemist's eyes"**, feeding both isrib.shop and NORA. The opt-in sits on a neutral
+Synthesis-Lab domain, and **one funnel-owned list is interest-tagged**, with soft CTAs routed
+per tag. Non-negotiables: disclose the affiliation with both shops (About + every CTA email),
+mix in non-selling topics, stack the per-compound guardrails (bromantane: no sports angle,
+no Soviet-origin primary hook), give the channel its own watermark, and name both shops in
+the consent text (legal review needed).
+Recorded as [ADR 0022](./decisions/0022-shared-nootropics-video-channel.md) (canonical).
+Mirrored as NORA ADR 0021 plus NORA index/log/roadmap.
+**New open item surfaced:** both shops sell bromantane, so the `dopamine-drive` segment
+needs a routing rule (Anton).
+
+## [2026-10-21] phase | Video-channel teardown — PAUSED mid-run (power outage), resume point
+
+Roles run: LEAD, implementer (stopped by LEAD on Anton's request; laptop battery/power cut).
+
+Niche scan is done (see [`marketing/video-track.md`](./marketing/video-track.md) §9). The
+teardown run was paused partway. **State on disk (`~/video-research/`, outside all repos):**
+- `.venv/` has a current yt-dlp (2026.08.19). The system yt-dlp 2024.04 no longer works with
+  YouTube.
+- `teardown/*.mp4`: 6 reference videos at 720p (WIL ×2, Physionic ×2, iluli ×2).
+- `teardown/_wav/` + `teardown/_tx/<name>/transcript.json`: **all 6 Parakeet transcripts
+  done**.
+- `tools/teardown.py` (735 lines) + `tools/calibrate.py`. The implementer was in the middle
+  of **replacing the cut-detector block (~lines 132–250) with a duplicate-frame-aware,
+  per-frame version** after calibration (`teardown/_calib/`). The file may be half-edited,
+  so check it runs before trusting it.
+- Reports exist for 3/6 (`physionic-oats`, `wil-shady-science`, `iluli-multitasking`), but
+  they came from the **pre-fix detector**, so re-run them.
+- Not done: `wil-longevity-doctor`, `physionic-lowcarb`, `iluli-electricity`, and
+  `COMPARE.md`.
+
+**Resume:** re-dispatch an implementer: "finish the detector fix in `tools/teardown.py`,
+re-calibrate on 5 cuts + 5 non-cuts, re-run all 6 with the existing transcripts, write
+COMPARE.md". After that, LEAD reviews the hook sheets and contact sheets by eye and files
+the editing grammar into `video-track.md`. The mp4s are deleted only after the reports are
+final.
+
+## [2026-10-21] phase | Video-channel teardown DONE → editing grammar filed
+
+Roles run: LEAD, implementer (built + calibrated `~/video-research/tools/teardown.py`, ran
+6 videos; verifier n/a — research, no repo code); LEAD reviewed hook sheets + contact
+sheets by eye.
+
+Results and the grammar derived from them are in
+[`marketing/video-track.md`](./marketing/video-track.md) §10. **Correction to §9:** What
+I've Learned and Physionic are *not* faceless (host on camera). Only iluli is. Targets for
+the pilot:
+- median shot 3–5 s, ≥15 animated entrances/90 s, no static 15 s windows;
+- TTS 150–165 wpm, 80–100 words in the first 30 s;
+- hook = question/twist or conflict/"only the data matters", promise ≤30 s;
+- opt-in CTA card after the first payoff (Physionic precedent);
+- master at −14 LUFS;
+- visuals = own diagrams + flat-vector illustration in one fixed style + kinetic type +
+  redrawn paper cards; no third-party footage.
+
+The 6 mp4s and their WAVs were deleted; reports, sheets and transcripts are kept in
+`~/video-research/teardown/`.
+
+## [2026-10-21] decision | TTS = Chatterbox (local, MIT), slowed ~20–25%
+
+Roles run: LEAD (ran the TTS test directly; no repo code).
+
+Anton chose **Chatterbox** after hearing all the samples. Kokoro was the runner-up
+(Michael/Fenrir preferred). Cloud engines were dropped: they cost extra, and Anton's
+earlier ElevenLabs experience sounded worse. Raw Chatterbox speaks at 210–223 wpm, so it
+must be slowed ~20–25% to ~160 wpm. It renders on CPU (the 4 GB GPU runs out of memory),
+at ~40 min per 10-min script. Details in
+[`marketing/video-track.md`](./marketing/video-track.md) §6.1.
+
+## [2026-10-21] decision | TTS production default: Chatterbox standard voice + per-sentence pauses (no stretching)
+
+Roles run: LEAD.
+
+Anton rejected time-stretching (metallic artefacts). The winning approach generates one
+sentence per call and inserts real pauses (0.45 s between sentences, 0.8 s between
+paragraphs) with `cfg_weight 0.3`. It lands at 167 wpm with 0% WER and needs no
+post-processing. The standard Chatterbox voice is the default. The "Michael" clone
+(Kokoro reference) is an acceptable alternative; Fenrir was rejected. Details in
+`marketing/video-track.md` §6.1.
+
+## [2026-10-21] decision | Video kit = WeAreNoCode youtube-edit + our ad-video kit (fit-gap done)
+
+Roles run: LEAD, general-purpose agent (explorer + prober: read both kits, ran Kit 1
+tests 31/31, faceless 6 s smoke render 1080p + 4K OK). LEAD checked the render sheet by
+eye.
+
+Anton: use the tools in the WeAreNoCode skill plus our own ad-video kit rather than writing
+a kit from scratch. The fit-gap shows the following.
+- **Use:** Kit 1's 16:9 composer, checks, assembly, verify and teardown.
+- **Keep from Kit 2:** sfx, the ducked music mix, words fixes, and the 9:16 composer for
+  cut-downs.
+- **Drop:** the talking-head cut stage.
+- **New code needed:**
+  - script checker
+  - `tts_chapter.py`
+  - script↔Parakeet aligner
+  - brand base track
+  - compose beats: kenburns/parallax (the biggest gap), axis chart, pathway diagram, CTA
+    card
+  - gap-scan density mode
+  - snap-beats path fix
+  - NVENC assemble
+  - `cutdown.py`
+- **Style:** swap in our style tokens/font.
+
+Kit 1 has no licence beyond "free", so it stays private and vendored, never pushed
+publicly. Full table in [`marketing/video-track.md`](./marketing/video-track.md) §6A.
+
+## [2026-10-22] decision | Channel named NeuroBench; video track moved to its own project
+
+Roles run: LEAD.
+
+Anton chose the name **NeuroBench**. `@neurobench` is free on YouTube and
+`neurobenchlab.com` is the preferred domain. He also asked to keep the site repo clean, so
+the whole channel track moves to **`~/Documents/NeuroBench`**. That project has its own
+CLAUDE.md, wiki, content plan and roadmap, plus ADR 0001–0006: 0001/0002 mirror this
+repo's 0021/0022; 0003 is TTS, 0004 the kit, 0005 the name, 0006 the project split.
+
+Here, `marketing/video-track.md` and ADR 0021/0022 are kept as **history**, with pointers
+to the new project. What stays in isrib-next: receiving UTM'd email traffic into
+isrib.shop, and the ISRIB compliance rules, which NeuroBench links to.

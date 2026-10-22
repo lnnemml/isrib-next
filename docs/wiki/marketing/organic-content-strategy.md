@@ -137,7 +137,7 @@ Value-first, never spam. Every touch respects the compliance guardrails (§8).
 | **Quora / Biology StackExchange** | Answer "what is the ISR / eIF2B / brain fog cause" questions, cite the science pillar. | Evergreen long-tail referral. |
 | **X/Twitter** | Threads summarising each science/compare article; engage longevity/biohacker accounts. | Repurpose, don't originate. |
 | **Email (owned list)** | New-article digest to the lead-gen list. | Ties to [`../architecture/email-leadgen.md`](../architecture/email-leadgen.md) (Track B). Owned channel = compounding. |
-| **YouTube / creators** (later) | Script/sponsor longevity-nootropic creators; embed articles as references. | Higher cost; Phase 4+. |
+| **YouTube / creators** (later) | Script/sponsor longevity-nootropic creators; embed articles as references. | Higher cost; Phase 4+. **Superseded 2026-10-21 → own faceless video track is ACTIVE: [`video-track.md`](./video-track.md), [ADR 0021](../decisions/0021-organic-video-track-and-email-funnel.md).** |
 | **Digital PR / backlinks** | Pitch the "independent chemist reviews the ISRIB literature" angle to nootropic/longevity blogs & newsletters. | Editorial backlinks are the ranking lever on a young domain. |
 
 > **Operational detail** for the two highest-effort channels lives in

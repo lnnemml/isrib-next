@@ -7,8 +7,9 @@
 > weekly 1–2h operating rhythm. Grounded in [`../product/avatar.md`](../product/avatar.md),
 > [`../product/beliefs-and-objections.md`](../product/beliefs-and-objections.md),
 > [`voice-of-customer.md`](./voice-of-customer.md), and the compliance guardrails in
-> [`../journal/writing-rules.md`](../journal/writing-rules.md). YouTube is a **separate
-> track, deferred** (see organic-content-strategy §6).
+> [`../journal/writing-rules.md`](../journal/writing-rules.md). Video (YouTube +
+> Shorts/TikTok/Reels) is a **separate active track** — see [`video-track.md`](./video-track.md)
+> and [ADR 0021](../decisions/0021-organic-video-track-and-email-funnel.md).
 
 ## 0. The one thing that makes this work
 

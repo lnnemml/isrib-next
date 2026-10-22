@@ -4,6 +4,31 @@
 > [`architecture/migration-plan.md`](./architecture/migration-plan.md). This page
 > is the phase overview.
 
+## Organic video track — MOVED to `~/Documents/NeuroBench` *(2026-10-22)*
+
+Channel = **NeuroBench**; all work, roadmap and wiki now live in that project (its ADR 0006). The text below is the state at hand-over.
+
+### (history) Organic video track — ACTIVE *(2026-10-21)*
+
+Per [ADR 0021](./decisions/0021-organic-video-track-and-email-funnel.md); operating doc
+[`marketing/video-track.md`](./marketing/video-track.md). The hub is faceless YouTube
+long-form; Shorts/TikTok/Reels run in parallel as cut-downs. The CTA everywhere is an
+**email opt-in**, and the shop is soft-CTA'd only inside emails. Production is low-AI
+(infographics/diagrams/editing, TTS voice), using the `~/at-commerce` video kit (outside
+this repo).
+
+Next, in order:
+1. ~~F1/F2/F3~~ decided: hexagon only; neutral domain; **one shared nootropics channel
+   (The Synthesis Lab) for ISRIB + NORA**
+   ([ADR 0022](./decisions/0022-shared-nootropics-video-channel.md)). Next: handles on all
+   4 surfaces, neutral domain, bromantane routing rule, interest tags + lead magnets.
+2. Niche teardown (2–3 winning science/neuro/longevity channels, long + short).
+3. TTS blind test (60 s, 3 engine classes).
+4. Lead magnet + opt-in page + welcome/nurture sequence. The `src/` part is delegated per
+   ADR 0006 and must be live before video #1.
+5. Pilot long-form 8–10 min + 3–5 cut-downs.
+6. Generalise the video kit (16:9 + chapters, `yt-video` skill), outside this repo.
+
 ## ⭐ Crypto-conversion recovery — BUILT *(2026-09-28)*
 
 **Status:** all 3 parts built + verifier-APPROVE + build-green + LEAD visual. See the

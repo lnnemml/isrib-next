@@ -33,6 +33,9 @@ rather than scanning the whole directory.
 - [`marketing/organic-social-playbook.md`](./marketing/organic-social-playbook.md) —
   **the Reddit + X/Twitter operational layer** under the organic strategy — accounts,
   cold-start ramp, per-sub rules, content types, cadence, the weekly 1–2h rhythm, KPIs
+- [`marketing/video-track.md`](./marketing/video-track.md) —
+  **MOVED → `~/Documents/NeuroBench` (2026-10-22), history only.** Organic faceless video — YouTube long-form hub + Shorts/TikTok/Reels,
+  email-funnel CTA (no shop links on platforms), per-platform rules, pipeline, sequence
 - [`marketing/publication-calendar.md`](./marketing/publication-calendar.md) —
   **the dated 12-week journal publication schedule** — ROI-ordered, per-article social
   coupling, plus the quarterly refresh + migration-watch cycle
@@ -110,6 +113,10 @@ rather than scanning the whole directory.
 - [`decisions/0018-shipping-cost-and-september-orders.md`](./decisions/0018-shipping-cost-and-september-orders.md)
 - [`decisions/0019-partial-payment-tolerance.md`](./decisions/0019-partial-payment-tolerance.md)
 - [`decisions/0020-cutover-executed-isrib-next-owns-production.md`](./decisions/0020-cutover-executed-isrib-next-owns-production.md)
+- [`decisions/0021-organic-video-track-and-email-funnel.md`](./decisions/0021-organic-video-track-and-email-funnel.md)
+  — organic video (YT long + Shorts/TikTok/Reels) is active; funnel = email opt-in → soft CTA in email; F1 logo / F2 opt-in host open
+- [`decisions/0022-shared-nootropics-video-channel.md`](./decisions/0022-shared-nootropics-video-channel.md)
+  — **cross-project**: one shared nootropics channel (The Synthesis Lab) feeding isrib.shop + NORA; one interest-tagged list; disclosure mandatory
 
 ## Planning
 
