@@ -2930,3 +2930,44 @@ three `delivered`. In lnnemml@ the email landed in Inbox + Important, under the 
 category. That matches how the first test sends of Emails 1–2 landed in that inbox, so it is
 not a regression. The other two inboxes weren't checked from here. Still open for Anton: the
 §6b timing call, the postal address, and the `--commit` send (weekday, 8–11 am ET, by 30 Oct).
+
+## [2026-10-25] lint | Video 001 email: Primary-tab A/B on 3 internal Gmail inboxes
+
+Roles run: LEAD, implementer.
+
+Anton wants the announcement in Gmail Primary; the test sends went to Promotions (already
+labelled Important). A/B via `--variant` on `scripts/send-video001.ts`, test-only subject tag
+`[variant]`, sent to lnnemml@, isrib.shop@ and droptest86@gmail.com:
+
+| Variant | From | Video link | Result |
+|---|---|---|---|
+| a | `Danylo from ISRIB <noreply@isrib.shop>` | `<a>` on "the first video" | Promotions (3/3) |
+| b | `Danylo <danylo@isrib.shop>` | `<a>` | **Spam** (3/3) |
+| c | `Danylo <danylo@isrib.shop>` | bare URL text | **Spam** (3/3) |
+| d | noreply@ (as a) | bare URL text | Promotions (lnnemml@ read via API) |
+
+Findings: **`danylo@isrib.shop` is burned as a sender** (last used for the BLACK25 blast,
+Nov 2025). b/c were removed from the script so nobody commit-sends from it. Removing the
+HTML link changes nothing. These 3 inboxes have taken every isrib.shop first send since
+June (including Email 2, which went 3/3 Important on fresh addresses) into Promotions, so
+they can't predict Primary for customers any more: tab placement is per-recipient and
+learned. (Superseded by the fresh-Gmail follow-up below.)
+
+**Follow-up, same day: fresh Gmail (never received isrib.shop mail), one send per variant.**
+
+| Send | What it isolates | Tab |
+|---|---|---|
+| video a | approved announcement copy + `<a>` YouTube link | Promotions |
+| video d | same copy, URL as plain text | Promotions |
+| Email 2 (`send-email2.ts --test`) | control: domain/sender health | **Primary** |
+| video e | announcement copy, **no YouTube URL at all** (reply for link) | Promotions |
+| video g | **Email-2-tone rewrite** (no "we started a channel called NeuroBench"), one `<a>` "Here it is" | **Primary** |
+
+Conclusion: the domain and `noreply@` sender are healthy. The YouTube link is not the
+trigger; **the announcement framing of the body is**. The plain, personal 1:1 note (g)
+lands in Primary with the link intact. This is n=1 per variant on one inbox, so read it as a
+direction, not a guarantee. g is new copy: it needs Anton's approval before `--commit`, and
+the NeuroBench launch-email doc should be updated to match.
+
+**Anton approved g (2026-10-25).** It is now the only body in `scripts/send-video001.ts`. The test
+variants are gone, and `--test`/`--commit` refuse a localhost `BASE_URL`.

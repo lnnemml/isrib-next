@@ -12,11 +12,18 @@
  *
  * Formula-critical properties (do not "improve"):
  *   - NO `headers` at all — specifically NO List-Unsubscribe (reads as bulk → Promotions tab).
- *   - Exactly ONE hyperlink: the words "the first video" in paragraph 2 → the 001 YouTube
- *     video, with NO UTM params.
+ *   - Exactly ONE content hyperlink: the words "Here it is" in paragraph 2 → VIDEO_URL (the 001
+ *     YouTube video), with NO UTM params.
  *   - No shop link, no product, no discount, no promo code. The shop is present only as sender.
  *   - No button, no "→", no font-weight:600. Plain link style only.
  *   - Plain unsubscribe LINK (new-site /api/unsubscribe HMAC URL), margin-top:48px, no footer.
+ *   - Sender is "Danylo from ISRIB <noreply@isrib.shop>". NEVER use danylo@isrib.shop: it landed
+ *     in Gmail SPAM on 2026-10-25.
+ *
+ * Why this copy: on 2026-10-25, on a fresh Gmail, the announcement-framed copy ("We started a
+ * small science channel called NeuroBench…") went to Promotions whether it had a link, a bare
+ * URL or no URL. This 1:1-note copy and the Email 2 control went to Primary. Details in
+ * docs/wiki/log.md, 2026-10-25.
  *
  * This sends REAL mail to real customers — correctness matters. It is idempotent and
  * resumable (data/video001-sent.json — SEPARATE from Email 1's and Email 2's resume sets) so
@@ -25,10 +32,14 @@
  * Usage:
  *   node --env-file=.env.local --import tsx scripts/send-video001.ts
  *     → DRY RUN: count active recipients + print ONE fully-rendered sample email. No send.
- *   node --env-file=.env.local --import tsx scripts/send-video001.ts --test you@example.com
+ *   NEXT_PUBLIC_BASE_URL=https://isrib.shop node --env-file=.env.local --import tsx scripts/send-video001.ts --test you@example.com
  *     → send exactly ONE real email to that address (firstName "there") for inbox verification.
- *   node --env-file=.env.local --import tsx scripts/send-video001.ts --commit
+ *   NEXT_PUBLIC_BASE_URL=https://isrib.shop node --env-file=.env.local --import tsx scripts/send-video001.ts --commit
  *     → send to ALL active recipients (throttled, resumable).
+ *   Every --test / --commit MUST be prefixed with NEXT_PUBLIC_BASE_URL=https://isrib.shop:
+ *   .env.local points to localhost, which would bake a localhost unsubscribe URL into real mail.
+ *   --test and --commit refuse to run (exit 1) if BASE_URL contains "localhost"; dry-run still
+ *   works on localhost.
  *
  * DO NOT run --test or --commit without the Anton gate. DRY RUN is safe.
  */
@@ -47,6 +58,10 @@ const BASE_URL = (process.env.NEXT_PUBLIC_BASE_URL ?? "https://isrib.shop").repl
 // The single link. NO UTM: YouTube ignores it (visits show as External / Direct in Analytics).
 const VIDEO_URL = "https://www.youtube.com/watch?v=xWzXJqCrbyg";
 
+// NEVER danylo@isrib.shop (Gmail spam, 2026-10-25).
+const FROM = "Danylo from ISRIB <noreply@isrib.shop>";
+const REPLY_TO = "isrib.shop@protonmail.com";
+
 // Throttle: ~2s between sends (small jitter) to look 1:1; 8s cool-off after an error.
 const THROTTLE_MS = 2000;
 const THROTTLE_JITTER_MS = 600;
@@ -54,6 +69,19 @@ const ERROR_BACKOFF_MS = 8000;
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+// Real sends must never carry a localhost unsubscribe URL (.env.local points to localhost).
+function baseUrlIsLocalhost(): boolean {
+  return BASE_URL.toLowerCase().includes("localhost");
+}
+
+function assertSendableBaseUrl(mode: string): void {
+  if (baseUrlIsLocalhost()) {
+    throw new Error(
+      `${mode} refused: BASE_URL is "${BASE_URL}" (localhost). Re-run with NEXT_PUBLIC_BASE_URL=https://isrib.shop prefixed.`,
+    );
+  }
 }
 
 // "subscriber" (case-insensitive) or empty → "there" (formula: personalizeEmail()).
@@ -72,16 +100,15 @@ function buildSubject(firstName: string): string {
 // undesigned: no centered max-width container, no background color, normal typed hyperlink
 // (not a CTA button). `unsubUrl` is the recipient-specific plain unsubscribe link. firstName
 // is already display-normalized ("there" fallback). The approved copy is reproduced verbatim;
-// the ONLY hyperlink is "the first video" in paragraph 2.
+// the ONLY content hyperlink is "Here it is" in paragraph 2.
 function buildHtml(firstName: string, unsubUrl: string): string {
   const P = "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#1e293b;margin:0 0 16px;";
-  const link = `<a href="${VIDEO_URL}" style="color:#1e293b;text-decoration:underline;">the first video</a>`;
+  const link = `<a href="${VIDEO_URL}" style="color:#1e293b;text-decoration:underline;">Here it is</a>`;
 
   return `<div>
   <p style="${P}">Hi ${firstName},</p>
-  <p style="${P}">We started a small science channel called NeuroBench, where a chemist walks through what molecules actually do and what the papers really show.</p>
-  <p style="${P}">The first long video is about ISRIB: the screen of 106,281 compounds it came from, the old-mouse memory experiments, and what the pharma programmes that followed actually tested. Here's ${link}. It's about ten minutes.</p>
-  <p style="${P}">If you watch it, I'd really like to hear what you think: what landed, what was missing, and what you'd want covered next. Just reply here.</p>
+  <p style="${P}">Something a bit different from me this time. I've been recording short explainers on the chemistry behind these compounds, and the first one is up. It's on ISRIB: where it came from, the old-mouse memory work, and what pharma actually tested after. ${link} &mdash; it's about ten minutes.</p>
+  <p style="${P}">I'd really like your honest take on it. Just reply here.</p>
   <p style="${P}">Danylo</p>
   <p style="color:#94a3b8;font-size:12px;margin:0;margin-top:48px;"><a href="${unsubUrl}" style="color:#94a3b8;text-decoration:underline;">Unsubscribe</a></p>
 </div>`;
@@ -89,6 +116,7 @@ function buildHtml(firstName: string, unsubUrl: string): string {
 
 // ── Resend send (formula-compliant; NO headers, NO List-Unsubscribe) ─────────────────
 async function sendOne(email: string, firstName: string): Promise<void> {
+  assertSendableBaseUrl("Send"); // belt-and-braces: never mail a localhost unsubscribe URL
   const { Resend } = await import("resend");
   const resend = new Resend(process.env.RESEND_API_KEY);
   const { unsubscribeUrl } = await import("../src/lib/unsubscribe");
@@ -97,8 +125,8 @@ async function sendOne(email: string, firstName: string): Promise<void> {
   const html = buildHtml(firstName, unsubscribeUrl(email, BASE_URL));
 
   const { error } = await resend.emails.send({
-    from: "Danylo from ISRIB <noreply@isrib.shop>",
-    replyTo: "isrib.shop@protonmail.com",
+    from: FROM,
+    replyTo: REPLY_TO,
     to: email,
     subject,
     html,
@@ -163,8 +191,8 @@ async function dryRun(): Promise<void> {
 
   console.log("--- SAMPLE (firstName forced to \"there\") ---");
   console.log(`Sample recipient email (for unsubscribe URL only): ${sampleEmail}`);
-  console.log(`From:     Danylo from ISRIB <noreply@isrib.shop>`);
-  console.log(`Reply-To: isrib.shop@protonmail.com`);
+  console.log(`From:     ${FROM}`);
+  console.log(`Reply-To: ${REPLY_TO}`);
   console.log(`Subject:  ${subject}`);
   console.log("");
   console.log("--- HTML ---");
@@ -186,6 +214,9 @@ async function testSend(email: string): Promise<void> {
   console.log("");
   console.log("=== VIDEO 001 ANNOUNCEMENT SEND — TEST (one real email) ===");
   console.log(`Sending to: ${target} (firstName "there")`);
+  console.log(`From:       ${FROM}`);
+  console.log(`Subject:    ${buildSubject("there")}`);
+  console.log(`Base URL:   ${BASE_URL}`);
   console.log("");
   await sendOne(target, "there");
   console.log("Test email sent. (Progress file untouched.)");
@@ -206,6 +237,7 @@ async function commitSend(): Promise<void> {
   console.log(`Already sent (resume):  ${sent.size}`);
   console.log(`To send this run:       ${pending.length}`);
   console.log(`Base URL:               ${BASE_URL}`);
+  console.log(`From:                   ${FROM}`);
   console.log("");
 
   let sentCount = 0;
@@ -248,8 +280,18 @@ async function commitSend(): Promise<void> {
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const testIdx = args.indexOf("--test");
+  const isCommit = args.includes("--commit");
 
-  if (args.includes("--commit")) {
+  // Guard: real sends (--test / --commit) refuse a localhost BASE_URL before anything else runs.
+  if ((isCommit || testIdx !== -1) && baseUrlIsLocalhost()) {
+    console.error(
+      `ERROR: ${isCommit ? "--commit" : "--test"} refused: BASE_URL is "${BASE_URL}" (localhost). ` +
+        "Prefix the command with NEXT_PUBLIC_BASE_URL=https://isrib.shop. No email was sent.",
+    );
+    process.exit(1);
+  }
+
+  if (isCommit) {
     await commitSend();
     return;
   }
