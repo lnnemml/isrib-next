@@ -3072,3 +3072,37 @@ Follow-ups:
   "Huda"). Mixed case is kept, and empty or "subscriber" still gives "there". This
   applies to future sends only; video-001 already went out with some full names in the
   subject.
+
+## [2026-10-25] fix | Unsubscribe: confirm step + resubscribe; stop suppressing opt-outs in Resend
+
+Roles run: LEAD, implementer.
+
+A customer replied to the video-001 email that he'd hit unsubscribe by accident and
+couldn't find a way back. Looking into it turned up three problems with `/api/unsubscribe`:
+1. GET unsubscribed immediately, so link scanners (Outlook Safe Links, corporate AV) and
+   accidental clicks opted people out.
+2. It called `resend.suppressions.add`. Resend suppression blocks ALL mail from the
+   account, so opted-out buyers would never have received order or payment emails.
+3. There was no way to resubscribe.
+
+- **Route rework (`src/app/api/unsubscribe/route.ts`):**
+  - GET now only shows a confirmation page ("Unsubscribe from ISRIB.shop emails?" with a
+    POST form).
+  - POST `action=unsubscribe` stamps Neon `unsubscribed_at` and sets the Resend contact to
+    `unsubscribed: true`, with no suppression. The result page has a "Resubscribe" button.
+  - POST `action=resubscribe` clears Neon, sets the Resend contact flag back, and removes
+    any legacy suppression.
+  - The HMAC token is checked on every request. tsc and build pass. Runtime-tested on the
+    seed inbox (GET changes nothing; unsubscribe and resubscribe both work; a bad token
+    returns 400). The seed was left subscribed.
+- **Data:**
+  - The customer was resubscribed at his request: Neon cleared, Resend suppression
+    removed, contact set back to subscribed.
+  - The other **22 manual suppressions** (every link opt-out since 2026-09-08, 4 of them
+    today) were converted to contact `unsubscribed: true`, with Anton's approval. All 22
+    were already opted out in Neon, so they still get no marketing but will now receive
+    order email. Bounce and complaint suppressions were not touched.
+  - List now: 590 active.
+- **Lesson:** never mutate state on GET in email links, and never use Resend suppression
+  for a marketing opt-out. Neon gates marketing; Resend suppression is reserved for
+  bounces and complaints.
