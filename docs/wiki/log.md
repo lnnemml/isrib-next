@@ -2670,6 +2670,46 @@ gotcha.
 
 **Still open:** emails verified by code + verifier, not live render (offered; not needed).
 
+## [2026-09-28] decision | Two-account organic model codified (wiki + isrib-organic-post skill v4)
+
+Roles run: LEAD (docs-only; no `src/` touched).
+
+Codified the decision that organic growth now runs on **two X accounts in deliberately
+different registers**, so both the strategy wiki and the drafting skill route to the right
+voice.
+
+- **The two lanes.** **@TheSynthesisLab** (Anton) = strict-scientific / category-authority —
+  substance, mechanism, proof-of-work (compute, NMR), correct-and-add. **The moat, and the
+  priority account.** **Brother's handle** = personified / experiential — n=1 self-experiment,
+  relatable, community, memes, questions.
+- **Hard rule** — the brother/personified account makes **ZERO factual / mechanism / citation
+  claims** (experiential voice only), so the citation gate is **N/A** for it. Rationale: a
+  hollow expert take there fails instantly with this audience *and* drags @TheSynthesisLab's
+  credibility down (both point to the same products). Different registers = wider net +
+  de-risk (ban one, the other survives) + covers the emotional lane the chemist voice can't.
+- **No-sockpuppet cross-promo** — the two accounts never stage a fake-independent mutual
+  product endorsement / coordinated ring; light *genuine* interaction is fine. **Priority
+  stays on Anton**; the brother grows his handle on his own hours, in parallel, never at the
+  expense of Anton's account focus.
+
+**Files:** `docs/wiki/marketing/organic-social-playbook.md` (new §2A "Two-account model" +
+pointer from §2); `.claude/skills/isrib-organic-post/` bumped to **v4** — new
+`chapters/voices.md` (two voice profiles + account router), `account`/`voice` input added to
+DRAFT + REVIEW, routing table + "four rules that never bend" + supporting-files updated,
+frontmatter `description` refreshed (994 chars, under the 1024 claude.ai limit).
+
+**Follow-ups (not done here):** (a) re-zip + re-upload the skill to claude.ai; (b) mirror the
+two roles in the tsl-ops Voice tab (cross-ref only — not built here).
+
+## [2026-10-19] decision | PayPal back as reply-to-arrange option in manual-payment email
+
+Roles run: LEAD, implementer.
+
+Anton asked to list PayPal next to SWIFT in the manual-payment email's fallback line.
+`src/lib/email/templates.ts` (`otherMethods`): "Prefer PayPal, SEPA, SWIFT, or Western
+Union? Reply to this email…". Copy only — no PayPal button/link/address/block; crypto stays
+the spine. `tsc` clean. Updated `architecture/manual-payment-flow.md`.
+
 ## [2026-10-21] escalate | Own faceless YouTube long-form channel (vs. deferred creator-sponsorship)
 
 Roles run: LEAD (docs-only; web research on YouTube policy; no `src/` touched).

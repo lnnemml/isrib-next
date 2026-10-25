@@ -53,6 +53,47 @@ bite — vendor association is fine there, so X carries the journal links.
   **4–6 weeks in comments only, zero links**, building karma and history before the first
   link ever appears. On X there is no such gate — start posting immediately.
 
+> The single-persona rules above govern the **@TheSynthesisLab** chemist account. Organic
+> now runs on **two** accounts — see the next section for the second lane and how the two
+> relate.
+
+## 2A. Two-account model
+
+Organic growth now runs on **two X accounts in deliberately different registers.** They
+point to the same products but never pretend to be strangers to each other.
+
+| Account | Owner | Register | Job |
+|---|---|---|---|
+| **@TheSynthesisLab** | Anton | **Strict-scientific / category-authority** | Substance, mechanism, proof-of-work (compute, NMR traces), correct-and-add. First-hand synthesis expertise no reagent supplier can fake — **this is the moat, and the priority account.** |
+| **Brother's handle** | Brother | **Personified / experiential** | n=1 self-experiment, relatable, community, memes, questions. The lived-experience lane the chemist voice can't occupy. |
+
+**Hard rule — the brother account makes ZERO factual / mechanism / citation claims.**
+Experiential voice only: "here's what week 3 felt like," "anyone else notice…" — never "the
+ISR brake works by…". *Why it's a hard rule:* a hollow "expert" take on his account fails
+instantly with this savvy audience, and because both accounts point to the same products, a
+caught-out fake-expert doesn't just sink his account — it **drags @TheSynthesisLab's
+credibility down with it.** The whole value of the second account is that it is honestly a
+*different kind* of voice, not a second expert. Kept experiential, it can't be wrong.
+
+**Why two accounts at all:**
+- **Wider net** — two registers reach people a single chemist voice never would (felt-
+  experience / community vs mechanism).
+- **De-risk** — platform bans are a live threat (cf. the PayPal history). Ban one account and
+  the other survives; the channel never goes to zero.
+- **Coverage** — the experiential lane covers the emotional register the strict-scientific
+  voice structurally can't.
+
+**No-sockpuppet rule (the §2 / §3.1 rule, extended to two accounts).** The two accounts must
+**never** stage a fake-independent mutual product endorsement — no "random happy user" on the
+brother account vouching for A15 as if he'd found it cold, no coordinated reply/upvote rings.
+That is the exact astroturfing that gets both accounts banned. *Light genuine interaction is
+fine* — a real reply, a real question, the way any two accounts in a niche actually talk. The
+line is authenticity, not silence.
+
+**Priority stays on Anton.** @TheSynthesisLab is the moat and the priority account; its focus
+is never traded for the second one. The **brother grows his handle on his own hours, in
+parallel** — additive, never at the expense of Anton's account or the weekly rhythm in §7.
+
 ## 3. Reddit playbook
 
 ### 3.1 The governing rules (verify each sub's live rules before posting)
