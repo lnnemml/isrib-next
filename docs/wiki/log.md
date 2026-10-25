@@ -2909,3 +2909,24 @@ repo's 0021/0022; 0003 is TTS, 0004 the kit, 0005 the name, 0006 the project spl
 Here, `marketing/video-track.md` and ADR 0021/0022 are kept as **history**, with pointers
 to the new project. What stays in isrib-next: receiving UTM'd email traffic into
 isrib.shop, and the ISRIB compliance rules, which NeuroBench links to.
+
+## [2026-10-25] setup | NeuroBench 001 announcement send script + test sends
+
+Roles run: LEAD, implementer.
+
+New `scripts/send-video001.ts`, a Path-B sibling of `send-email2.ts` with the copy from
+NeuroBench `docs/videos/001-isrib/launch-email-isrib-shop.md`: subject A
+(`{{firstName}}, something different this time`), one plain link to the YouTube video
+with no UTM, no shop CTA, no postal-address line (same pattern as Emails 1–2), and its own
+resume file `data/video001-sent.json`. The dry run counts 589 active recipients.
+
+**Gotcha:** `.env.local` sets `NEXT_PUBLIC_BASE_URL` to localhost, so the unsubscribe link
+points to localhost unless the variable is overridden at run time. Every `--test` and
+`--commit` run has to be prefixed with `NEXT_PUBLIC_BASE_URL=https://isrib.shop` (a
+variable set in the shell wins over `--env-file`). `send-email2.ts` has the same trap.
+
+Test sends went to lnnemml@, isrib.shop@ and droptest86@gmail.com, and Resend shows all
+three `delivered`. In lnnemml@ the email landed in Inbox + Important, under the Promotions
+category. That matches how the first test sends of Emails 1–2 landed in that inbox, so it is
+not a regression. The other two inboxes weren't checked from here. Still open for Anton: the
+§6b timing call, the postal address, and the `--commit` send (weekday, 8–11 am ET, by 30 Oct).
