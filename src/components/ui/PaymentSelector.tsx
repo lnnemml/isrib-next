@@ -87,7 +87,7 @@ export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) 
             <li><span className="font-semibold text-text">2. </span>Choose a coin (BTC, ETH, USDT, XMR). We show the exact amount, a wallet address and a QR code.</li>
             <li><span className="font-semibold text-text">3. </span>Send it from your wallet. If your exchange takes a network fee out of the amount, add it on top so the full amount arrives.</li>
             <li><span className="font-semibold text-text">4. </span>The amount is set at the live market rate, so a slow or late transfer still goes through — it settles at the current rate.</li>
-            <li><span className="font-semibold text-text">5. </span>When the payment confirms on-chain (usually a few minutes), your order is confirmed automatically and we email you a link to add your shipping address.</li>
+            <li><span className="font-semibold text-text">5. </span>When the payment confirms on-chain (usually a few minutes), your order is confirmed automatically and we start preparing it for shipping.</li>
           </ol>
         )}
       </div>

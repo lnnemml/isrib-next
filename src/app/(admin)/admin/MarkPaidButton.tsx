@@ -1,7 +1,7 @@
 "use client";
 
 // "Mark paid" for MANUAL orders (admin-panel.md §5, C2). Confirms the manual payment,
-// which fires the paymentConfirmed email (the /shipping/<token> link) server-side. Shown by
+// which fires the paymentConfirmed email (with the checkout address) server-side. Shown by
 // the parent only when the order is still pending/awaiting.
 import { useState, useTransition } from "react";
 import { markPaid } from "./actions";

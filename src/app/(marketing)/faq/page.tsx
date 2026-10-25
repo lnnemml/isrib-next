@@ -83,7 +83,7 @@ const CATEGORIES: Category[] = [
       {
         id: "how-to-order",
         q: "How do I place an order?",
-        a: "Add products to cart and proceed to checkout — no account required. You can optionally create an account to track your orders and join our referral program. We will confirm shipping details and finalize payment after checkout.",
+        a: "Add products to cart and proceed to checkout — no account required. You can optionally create an account to track your orders and join our referral program. You enter your shipping details at checkout; payment is completed by crypto or by the manual method we email you.",
       },
       {
         id: "payments",
@@ -113,7 +113,7 @@ const CATEGORIES: Category[] = [
       {
         id: "payment-flow",
         q: "What happens after I place an order?",
-        a: "You choose crypto or manual payment. Crypto takes you to a secure hosted invoice; manual sends payment instructions by email. Once payment is confirmed, we send a private link to enter your shipping address, then we dispatch your order.",
+        a: "You choose crypto or manual payment. Crypto takes you to a secure hosted invoice; manual sends payment instructions by email. Once payment is confirmed, we prepare and ship your order to the address you gave at checkout.",
       },
       {
         id: "crypto-discount",
@@ -123,7 +123,7 @@ const CATEGORIES: Category[] = [
       {
         id: "when-address",
         q: "When do you collect my shipping address?",
-        a: "Only after your payment is confirmed, through a secure one-time link tied to your order — so your address is shared only once the order is real.",
+        a: "At checkout, together with your contact details. It's stored with your order and used to ship it. If you need to change it, reply to your order email before we dispatch.",
       },
     ],
   },

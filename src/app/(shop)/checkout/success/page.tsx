@@ -46,8 +46,9 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
   // Paid state: either the webhook/admin marked the order "paid", or the buyer
   // returned from the NowPayments hosted invoice via the paid=1 success_url flag.
   const isPaid = order.status === "paid" || paid === "1";
-  // Only a genuine DB-confirmed payment reveals the shipping link — the paid=1 URL flag
-  // is spoofable, so it drives ONLY the optimistic headline during the crypto webhook race.
+  // Only a genuine DB-confirmed payment shows the "preparing your order" copy — the paid=1
+  // URL flag is spoofable, so it drives ONLY the optimistic headline during the crypto
+  // webhook race.
   const confirmedPaid = order.status === "paid";
 
   return (
@@ -107,20 +108,12 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
           </p>
           <h2 className="mb-2 text-h4 font-semibold text-text">{"Thank you — your payment is in."}</h2>
           {confirmedPaid ? (
-            <>
-              <p className="mb-6 text-body text-text-muted">
-                {"We've received your payment. Please provide your shipping details so we can prepare and ship your order."}
-              </p>
-              <Link
-                href={`/shipping/${order.shippingToken}`}
-                className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-6 py-3.5 text-[15px] font-semibold text-white shadow-btn transition hover:-translate-y-px hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-blue-600/35 disabled:pointer-events-none max-sm:w-full"
-              >
-                {"Provide shipping details →"}
-              </Link>
-            </>
+            <p className="text-body text-text-muted">
+              {"We've received your payment and are preparing your order. We ship within 1–3 business days."}
+            </p>
           ) : (
             <>
-              <p className="text-body text-text-muted">{"We're confirming your payment now — this usually takes just a few minutes. This page will update automatically as soon as it's confirmed, and we'll also email you a link to provide your shipping details."}</p>
+              <p className="text-body text-text-muted">{"We're confirming your payment now — this usually takes just a few minutes. This page will update automatically, and we'll email you as soon as it's confirmed."}</p>
               <PaymentConfirmationPoller />
             </>
           )}
@@ -138,7 +131,7 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
             </p>
           ) : (
             <p className="text-body text-text-muted">
-              {"We've emailed you payment instructions. Once we confirm your payment, we'll email you to collect your shipping details."}
+              {"We've emailed you payment instructions. Once we confirm your payment, we'll prepare and ship your order."}
             </p>
           )}
         </div>

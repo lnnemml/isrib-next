@@ -1,5 +1,8 @@
 # Architecture — Data Model
 
+> **Superseded 2026-10-25 by [ADR 0024](../decisions/0024-shipping-address-at-checkout.md):** the shipping address is collected at checkout again, and the post-payment `/shipping/<token>` form is removed. The text below describes the ADR 0010 period.
+
+
 > **Stub — grows with `src/lib/db/schema.ts` (the ground truth for types).** This
 > page explains intent. Based on the nootropics `orders` shape (ADR 0003), extended to
 > **multi-line orders** per [ADR 0008](../decisions/0008-full-migration-and-cart.md).

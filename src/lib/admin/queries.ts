@@ -11,7 +11,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { orders, orderItems, customers, legacyOrders } from "@/lib/db/schema";
 import { getProduct } from "@/lib/copy/products";
-import { and, count, desc, eq, gte, inArray, isNull, isNotNull, ne, sql, sum } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, isNotNull, sql, sum } from "drizzle-orm";
 
 // Status groups reused across aggregates.
 const PAID_STATUSES = ["paid", "fulfilled"] as const;
@@ -71,7 +71,7 @@ export interface CountryRow {
 
 export interface NeedsActionCounts {
   paidNoAddress: number; // status = 'paid' AND shipping_details_at IS NULL
-  awaitingShipment: number; // shipping details provided, not yet shipped, not cancelled
+  awaitingShipment: number; // status = 'paid' AND shipping_details_at IS NOT NULL AND shipped_at IS NULL (ADR 0024)
 }
 
 export interface BiSummary {
@@ -188,11 +188,14 @@ export async function biSummary(): Promise<BiSummary> {
   const [awaitingShipmentRow] = await db
     .select({ n: count() })
     .from(orders)
+    // ADR 0024 — every order now carries an address from submit, so gate on status = 'paid'
+    // (unpaid orders must not count). Shipped orders are stamped shipped_at + status
+    // "fulfilled" by saveTracking, so they drop out on both conditions.
     .where(
       and(
+        eq(orders.status, "paid"),
         isNotNull(orders.shippingDetailsAt),
         isNull(orders.shippedAt),
-        ne(orders.status, "cancelled"),
       ),
     );
   const needsAction: NeedsActionCounts = {

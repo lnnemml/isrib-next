@@ -17,6 +17,7 @@ import { orders, orderItems } from "@/lib/db/schema";
 import { getCryptoRates } from "@/lib/email/rates";
 import { abandonedCheckout, type EmailItem } from "@/lib/email/templates";
 import { sendToCustomer } from "@/lib/email/send";
+import { firstNameFromOrderName } from "@/lib/marketing/addContact";
 import { Receiver } from "@upstash/qstash";
 import { eq } from "drizzle-orm";
 
@@ -95,7 +96,8 @@ export async function POST(req: Request): Promise<Response> {
     const { btcEquivalent, ltcEquivalent } = await getCryptoRates(totalUsd);
 
     const { subject, html } = abandonedCheckout({
-      firstName: order.name,
+      // Greeting = first name only; falls back to the full name.
+      firstName: firstNameFromOrderName(order.name) ?? order.name,
       orderNumber,
       items,
       totalUsd,

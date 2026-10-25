@@ -49,7 +49,7 @@ export type CustomerOrderDetail = {
   subtotalCents: number;
   totalCents: number;
   note: string | null;
-  // shipping address (all nullable — collected post-payment per ADR 0010)
+  // shipping address (nullable — collected at checkout since ADR 0024; older orders may lack it)
   name: string;
   address: string | null;
   city: string | null;

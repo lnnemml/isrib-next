@@ -1,5 +1,8 @@
 # Architecture — Manual Payment Flow
 
+> **Superseded 2026-10-25 by [ADR 0024](../decisions/0024-shipping-address-at-checkout.md):** the shipping address is collected at checkout again, and the post-payment `/shipping/<token>` form is removed. The text below describes the ADR 0010 period.
+
+
 > No payment gateway wired into code beyond NowPayments crypto invoices.
 
 ## Order lifecycle (friction-less DR — [ADR 0010](../decisions/0010-frictionless-dr-checkout.md))

@@ -8,8 +8,9 @@ export function generateOrderNumber(): string {
   return `ISR-${generate()}`;
 }
 
-// Unguessable, URL-safe per-order token for the post-payment /shipping/<token> link
-// (ADR 0010). Distinct from the guessable order_number — a plain 21-char nanoid.
+// Unguessable, URL-safe per-order token (a plain 21-char nanoid). It backed ADR 0010's
+// post-payment shipping link; ADR 0024 removed that form, but the column is NOT NULL +
+// unique so a token is still generated per order.
 export function generateShippingToken(): string {
   return nanoid();
 }

@@ -119,6 +119,8 @@ rather than scanning the whole directory.
   — **cross-project**: one shared nootropics channel (The Synthesis Lab) feeding isrib.shop + NORA; one interest-tagged list; disclosure mandatory
 - [`decisions/0023-buyers-auto-join-marketing-list.md`](./decisions/0023-buyers-auto-join-marketing-list.md)
   — every order (paid or unpaid) auto-joins `marketing_contacts` + Resend segment; insert-only (opt-outs win); supersedes 0017's "seeds once"
+- [`decisions/0024-shipping-address-at-checkout.md`](./decisions/0024-shipping-address-at-checkout.md)
+  — full shipping address collected AT checkout again; post-payment `/shipping/<token>` form removed; supersedes ADR 0010
 
 ## Planning
 

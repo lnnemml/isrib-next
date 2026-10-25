@@ -1,6 +1,6 @@
 # ADR 0010 — Friction-less DR checkout: minimal form + post-payment shipping
 
-**Status:** accepted · 2026-09-04 · refines [ADR 0009](./0009-checkout-backend-neon-qstash.md)
+**Status:** superseded by [ADR 0024](./0024-shipping-address-at-checkout.md) (2026-10-25) · was accepted 2026-09-04 · refines [ADR 0009](./0009-checkout-backend-neon-qstash.md)
 (checkout backend) and the checkout flow in
 [`manual-payment-flow.md`](../architecture/manual-payment-flow.md). Adapts the
 `isrib-a15-lander` conversion pattern (audited 2026-09-04) to our multi-item cart.

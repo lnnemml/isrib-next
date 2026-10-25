@@ -308,17 +308,17 @@ export default function CheckoutPage() {
       ) : null}
 
       {/* Checkout form — posts to the server action, which recomputes every price.
-          ADR 0010: minimal fields at checkout (first name / email / country); the
-          shipping address is collected after payment via /shipping/<token>. */}
+          ADR 0024: the full shipping address is collected here, before payment
+          (supersedes ADR 0010's post-payment form). */}
       <form action={formAction} onSubmit={handleSubmit} className="mt-12 flex flex-col gap-8">
         <section className="flex flex-col gap-5">
           <h2 className="text-h4 font-semibold text-text">{"Your details"}</h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
               <label htmlFor="name" className={LABEL_CLASS}>
-                {"First name *"}
+                {"Full name *"}
               </label>
-              <input id="name" name="name" type="text" required autoComplete="given-name" className={FIELD_CLASS} />
+              <input id="name" name="name" type="text" required autoComplete="name" className={FIELD_CLASS} />
             </div>
             <div>
               <label htmlFor="email" className={LABEL_CLASS}>
@@ -326,7 +326,43 @@ export default function CheckoutPage() {
               </label>
               <input id="email" name="email" type="email" required autoComplete="email" className={FIELD_CLASS} />
             </div>
+            <div>
+              <label htmlFor="phone" className={LABEL_CLASS}>
+                {"Phone *"}
+              </label>
+              <input id="phone" name="phone" type="tel" required autoComplete="tel" className={FIELD_CLASS} />
+            </div>
+          </div>
+        </section>
+
+        <section className="flex flex-col gap-5">
+          <h2 className="text-h4 font-semibold text-text">{"Shipping address"}</h2>
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
+              <label htmlFor="address" className={LABEL_CLASS}>
+                {"Address *"}
+              </label>
+              <input id="address" name="address" type="text" required autoComplete="street-address" className={FIELD_CLASS} />
+            </div>
+            <div>
+              <label htmlFor="city" className={LABEL_CLASS}>
+                {"City *"}
+              </label>
+              <input id="city" name="city" type="text" required autoComplete="address-level2" className={FIELD_CLASS} />
+            </div>
+            <div>
+              <label htmlFor="stateRegion" className={LABEL_CLASS}>
+                {"State / Region (optional)"}
+              </label>
+              <input id="stateRegion" name="stateRegion" type="text" autoComplete="address-level1" className={FIELD_CLASS} />
+            </div>
+            <div>
+              <label htmlFor="postalCode" className={LABEL_CLASS}>
+                {"Postal code *"}
+              </label>
+              <input id="postalCode" name="postalCode" type="text" required autoComplete="postal-code" className={FIELD_CLASS} />
+            </div>
+            <div>
               <label htmlFor="country" className={LABEL_CLASS}>
                 {"Country *"}
               </label>
@@ -334,7 +370,7 @@ export default function CheckoutPage() {
             </div>
           </div>
           <p className="text-caption text-text-faint">
-            {"Shipping details are collected after payment is confirmed."}
+            {"We ship within 1–3 business days of confirmed payment."}
           </p>
         </section>
 
@@ -362,11 +398,16 @@ export default function CheckoutPage() {
                   setPromoPct(0);
                 }}
                 autoComplete="off"
-                className={FIELD_CLASS}
+                className={FIELD_CLASS + " min-w-0 flex-1"}
               />
-              <Button type="button" variant="secondary" onClick={() => applyPromo()} className="shrink-0">
-                {"Apply"}
-              </Button>
+              {/* The secondary variant is max-sm:w-full; cn() doesn't merge classes, so a
+                  content-sized shrink-0 wrapper bounds that 100% width and keeps the button
+                  beside the input instead of squeezing it at 375px. */}
+              <div className="shrink-0">
+                <Button type="button" variant="secondary" onClick={() => applyPromo()}>
+                  {"Apply"}
+                </Button>
+              </div>
             </div>
             {showPromo ? (
               <p className="mt-1.5 text-small text-success">

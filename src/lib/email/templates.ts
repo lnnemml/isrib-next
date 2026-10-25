@@ -155,14 +155,60 @@ function button(href: string, label: string): string {
     </table>`;
 }
 
+// ── Shipping address (ADR 0024) ───────────────────────────────────────────────
+// The address is buyer-typed free text, so every value is HTML-escaped before it is
+// interpolated into an email body.
+export interface EmailShippingAddress {
+  name: string;
+  address: string;
+  city: string;
+  stateRegion?: string | null;
+  postalCode: string;
+  country: string;
+  phone: string;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Inset panel (same shell as the items table / tracking block) listing the delivery
+// address one line per field: name, street, city, state (only when present), postal
+// code, country, phone.
+function addressBlock(a: EmailShippingAddress, label = "Shipping to"): string {
+  const lines = [a.name, a.address, a.city, a.stateRegion ?? "", a.postalCode, a.country, a.phone]
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .map((v) => escapeHtml(v))
+    .join("<br>");
+  return `
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${C.panelBg};border:1px solid ${C.hairline};border-radius:8px;margin:0 0 16px;">
+      <tr><td style="padding:16px 18px;">
+        <p style="color:${C.faint};font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 10px;">
+          ${label}
+        </p>
+        <p style="color:${C.text};font-size:14px;line-height:1.6;margin:0;">
+          ${lines}
+        </p>
+      </td></tr>
+    </table>`;
+}
+
 // Small helper for the section eyebrow + H1 pattern shared by several templates.
+// The title carries the buyer-typed name, so it is HTML-escaped here (every caller passes
+// plain text, never markup).
 function heading(eyebrow: string, eyebrowColor: string, title: string, orderNumber: string): string {
   return `
     <p style="color:${eyebrowColor};font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 14px;">
       ${eyebrow}
     </p>
     <h1 style="color:${C.text};font-size:22px;font-weight:700;line-height:1.3;margin:0 0 6px;">
-      ${title}
+      ${escapeHtml(title)}
     </h1>
     <p style="color:${C.muted};font-size:14px;margin:0 0 24px;">
       Order number: <span style="color:${C.text};font-family:'SFMono-Regular',Consolas,monospace;font-weight:600;">${orderNumber}</span>
@@ -302,6 +348,7 @@ export function orderReceivedManual({
   totalUsd,
   btcEquivalent,
   ltcEquivalent,
+  shippingAddress,
 }: {
   firstName: string;
   orderNumber: string;
@@ -310,6 +357,7 @@ export function orderReceivedManual({
   totalUsd: number;
   btcEquivalent?: string;
   ltcEquivalent?: string;
+  shippingAddress: EmailShippingAddress;
 }): { subject: string; html: string } {
   const subject = "Your ISRIB Shop order — payment details inside";
   const amount = totalUsd; // manual path charges the (undiscounted) total
@@ -328,6 +376,10 @@ export function orderReceivedManual({
       Send payment using one of the methods below. Once received, we will confirm and start preparing your order.
     </p>
     ${itemsTable(items, subtotalUsd, totalUsd)}
+    ${addressBlock(shippingAddress)}
+    <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0 0 24px;">
+      Spotted a typo in your address? Just reply to this email.
+    </p>
     ${manualPaymentBlocks(orderNumber, amount, btcEquivalent, ltcEquivalent)}
     ${cryptoHelpLine()}
     ${closing}`;
@@ -370,7 +422,7 @@ export function orderReceivedCrypto({
     ${button(invoiceUrl, "Complete Payment →")}
     ${cryptoHelpLine()}
     <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
-      Once payment is received, we will send you a link to provide your shipping details.
+      Once payment is received, we will prepare your order and ship it to the address you gave at checkout.
       We ship within 1–3 business days of confirmed payment. Typical delivery: 5–12 business days.
     </p>`;
 
@@ -388,6 +440,11 @@ export function opsAlert({
   firstName,
   email,
   country,
+  phone,
+  address,
+  city,
+  stateRegion,
+  postalCode,
   items,
   totalUsd,
   paymentMethod,
@@ -399,6 +456,11 @@ export function opsAlert({
   firstName: string;
   email: string;
   country: string;
+  phone: string;
+  address: string;
+  city: string;
+  stateRegion?: string | null;
+  postalCode: string;
   items: EmailItem[];
   totalUsd: number;
   paymentMethod: "crypto" | "manual";
@@ -415,6 +477,12 @@ export function opsAlert({
     })
     .join("<br>");
 
+  // ADR 0024 — address on one line: address, city, state (if present), postal code.
+  const addressLine = [address, city, stateRegion ?? "", postalCode]
+    .map((v) => v.trim())
+    .filter(Boolean)
+    .join(", ");
+
   function row(label: string, valueHtml: string): string {
     return `
       <tr>
@@ -427,9 +495,11 @@ export function opsAlert({
     <p style="color:${C.brand};font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">New order</p>
     <h1 style="color:${C.text};font-size:20px;font-weight:700;margin:0 0 20px;">${orderNumber}</h1>
     <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-      ${row("Name", firstName)}
-      ${row("Email", `<a href="mailto:${email}" style="color:${C.brand};text-decoration:none;">${email}</a>`)}
-      ${row("Country", country)}
+      ${row("Name", escapeHtml(firstName))}
+      ${row("Email", `<a href="mailto:${escapeHtml(email)}" style="color:${C.brand};text-decoration:none;">${escapeHtml(email)}</a>`)}
+      ${row("Phone", escapeHtml(phone))}
+      ${row("Address", escapeHtml(addressLine))}
+      ${row("Country", escapeHtml(country))}
       ${row("Items", itemsSummary)}
       ${row("Total", `<strong style="color:${C.success};">${usd(totalUsd)}</strong>`)}
       ${row("Payment", paymentMethod)}
@@ -445,166 +515,82 @@ export function opsAlert({
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// 3b. shippingReceivedAdmin — internal admin notification when the post-payment
-//     shipping form is submitted. Ops email: completeness over brevity — full order
-//     data + full shipping data + line items so the admin can fulfil without touching
-//     the DB. Mirrors opsAlert's style (row() pattern, C palette, itemsTable()).
-//     COMPLIANCE: internal-only, shipping-logistics/ops copy; no card / Pay-Now /
-//     guarantee / medical copy.
+// 4. paymentConfirmed — payment received → we prepare + ship (ADR 0024)
 // ════════════════════════════════════════════════════════════════════════════
-export function shippingReceivedAdmin({
-  orderNumber,
-  createdAt,
-  status,
-  email,
-  paymentMethod,
-  subtotalPrice,
-  totalPrice,
-  cryptoDiscountPct,
-  promoCode,
-  referralCodeUsed,
-  note,
-  name,
-  address,
-  city,
-  postalCode,
-  stateRegion,
-  country,
-  phone,
-  items,
-  utmSource,
-  utmCampaign,
-  utmContent,
-}: {
-  orderNumber: string;
-  createdAt: Date;
-  status: string;
-  email: string;
-  paymentMethod: string;
-  subtotalPrice: number; // integer cents (schema)
-  totalPrice: number; // integer cents (schema)
-  cryptoDiscountPct?: number | null;
-  promoCode?: string | null;
-  referralCodeUsed?: string | null;
-  note?: string | null;
-  name: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  stateRegion?: string | null;
-  country: string;
-  phone: string;
-  items: EmailItem[];
-  utmSource?: string | null;
-  utmCampaign?: string | null;
-  utmContent?: string | null;
-}): { subject: string; html: string } {
-  const subject = `Shipping details received: ${orderNumber} — ${name}`;
-
-  // Cents → dollars for the itemsTable subtotal/total rows (same convention as the
-  // other templates: itemsTable receives dollars, computes line totals from cents).
-  const subtotalUsd = subtotalPrice / 100;
-  const totalUsd = totalPrice / 100;
-
-  function row(label: string, valueHtml: string): string {
-    return `
-      <tr>
-        <td style="padding:9px 0;border-bottom:1px solid ${C.hairline};color:${C.muted};font-size:13px;width:130px;vertical-align:top;">${label}</td>
-        <td style="padding:9px 0;border-bottom:1px solid ${C.hairline};color:${C.text};font-size:13px;vertical-align:top;">${valueHtml}</td>
-      </tr>`;
-  }
-
-  const orderDate = createdAt.toISOString().replace("T", " ").slice(0, 16) + " UTC";
-
-  // Optional order rows — rendered only when present.
-  const optionalOrderRows =
-    (cryptoDiscountPct != null ? row("Crypto discount", `${cryptoDiscountPct}%`) : "") +
-    (promoCode ? row("Promo code", promoCode) : "") +
-    (referralCodeUsed ? row("Referral code", referralCodeUsed) : "") +
-    (note ? row("Note", note) : "");
-
-  const orderBlock = `
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px;">
-      ${row("Order number", `<span style="font-family:'SFMono-Regular',Consolas,monospace;font-weight:600;">${orderNumber}</span>`)}
-      ${row("Order date", orderDate)}
-      ${row("Status", status)}
-      ${row("Email", `<a href="mailto:${email}" style="color:${C.brand};text-decoration:none;">${email}</a>`)}
-      ${row("Payment", paymentMethod)}
-      ${row("Subtotal", usd(subtotalUsd))}
-      ${row("Total", `<strong style="color:${C.success};">${usd(totalUsd)}</strong>`)}
-      ${optionalOrderRows}
-    </table>`;
-
-  // Shipping block — the important part. Optional stateRegion row only when present.
-  const shippingBlock = `
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 24px;">
-      ${row("Full name", name)}
-      ${row("Address", address)}
-      ${row("City", city)}
-      ${row("Postal code", postalCode)}
-      ${stateRegion ? row("State / Region", stateRegion) : ""}
-      ${row("Country", country)}
-      ${row("Phone", phone)}
-    </table>`;
-
-  const attributionPresent = utmSource || utmCampaign || utmContent;
-  const attributionBlock = attributionPresent
-    ? `
-      <p style="color:${C.faint};font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">Attribution</p>
-      <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin:0 0 8px;">
-        ${row("UTM source", utmSource ?? "—")}
-        ${row("Campaign", utmCampaign ?? "—")}
-        ${row("Creative", utmContent ?? "—")}
-      </table>`
-    : "";
-
-  const inner = `
-    <p style="color:${C.brand};font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">Shipping details received</p>
-    <h1 style="color:${C.text};font-size:20px;font-weight:700;margin:0 0 20px;">${orderNumber}</h1>
-
-    <p style="color:${C.faint};font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">Order</p>
-    ${orderBlock}
-
-    <p style="color:${C.faint};font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin:0 0 8px;">Shipping address</p>
-    ${shippingBlock}
-
-    ${itemsTable(items, subtotalUsd, totalUsd)}
-    ${attributionBlock}`;
-
-  return {
-    subject,
-    html: layout(inner, `Shipping details received for ${orderNumber}.`),
-  };
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// 4. paymentConfirmed — payment received → collect shipping (send wired Step 4)
-// ════════════════════════════════════════════════════════════════════════════
+// The address is collected at checkout, so this email no longer links to a form. With an
+// address on the order it confirms where we ship and invites a reply to correct it. An
+// order placed before ADR 0024 has no address — that branch asks the buyer to reply with
+// their delivery details (replies go to the ops inbox via sendToCustomer's replyTo).
 export function paymentConfirmed({
   firstName,
   orderNumber,
-  shippingUrl,
+  name,
+  address,
+  city,
+  stateRegion,
+  postalCode,
+  country,
+  phone,
 }: {
   firstName: string;
   orderNumber: string;
-  shippingUrl: string; // our /shipping/<token> URL — NOT a mailto
+  name?: string | null;
+  address?: string | null;
+  city?: string | null;
+  stateRegion?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  phone?: string | null;
 }): { subject: string; html: string } {
-  const subject = `${firstName}, payment confirmed — provide your shipping details`;
+  // Treat the order as having an address only when every required field is present.
+  const hasAddress = !!(address?.trim() && city?.trim() && postalCode?.trim() && country?.trim());
 
-  const inner = `
-    ${heading("✓ Payment received", C.success, `${firstName}, your payment is confirmed.`, orderNumber)}
-    <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 22px;">
-      To ship your order, we need your delivery details. Use the secure link below to provide them.
+  const subject = hasAddress
+    ? `${firstName}, payment confirmed — we're preparing your order`
+    : `${firstName}, payment confirmed — reply with your shipping details`;
+  const preheader = hasAddress
+    ? "Payment confirmed — we're preparing your order."
+    : "Payment confirmed — reply with your shipping details.";
+
+  const body = hasAddress
+    ? `
+    <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 16px;">
+      Thanks — your payment is confirmed. We'll ship your order to:
     </p>
-    ${button(shippingUrl, "Provide shipping details →")}
+    ${addressBlock(
+      {
+        name: name?.trim() || firstName,
+        address: address ?? "",
+        city: city ?? "",
+        stateRegion,
+        postalCode: postalCode ?? "",
+        country: country ?? "",
+        phone: phone ?? "",
+      },
+    )}
+    <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 22px;">
+      If anything needs correcting, just reply to this email before we dispatch.
+    </p>
+    <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
+      We dispatch within 1–3 business days of confirmed payment.
+      Typical delivery: 5–12 business days depending on your location.
+    </p>`
+    : `
+    <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 22px;">
+      To ship your order, we need your delivery details. Just reply to this email with your full name, address, city, postal code, country and phone number.
+    </p>
     <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
       We will dispatch your order within 1–3 business days of receiving your shipping details.
       Typical delivery: 5–12 business days depending on your location.
     </p>`;
 
+  const inner = `
+    ${heading("✓ Payment received", C.success, `${firstName}, your payment is confirmed.`, orderNumber)}
+    ${body}`;
+
   return {
     subject,
-    html: layout(inner, "Payment confirmed — provide your shipping details."),
+    html: layout(inner, preheader),
   };
 }
 

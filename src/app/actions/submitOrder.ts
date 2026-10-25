@@ -65,6 +65,12 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     const raw = {
       name:           (formData.get("name") as string | null)?.trim() ?? "",
       email:          (formData.get("email") as string | null)?.trim() ?? "",
+      // ADR 0024 — full shipping address collected at checkout (stateRegion optional).
+      phone:          (formData.get("phone") as string | null)?.trim() ?? "",
+      address:        (formData.get("address") as string | null)?.trim() ?? "",
+      city:           (formData.get("city") as string | null)?.trim() ?? "",
+      stateRegion:    (formData.get("stateRegion") as string | null)?.trim() || null,
+      postalCode:     (formData.get("postalCode") as string | null)?.trim() ?? "",
       country:        (formData.get("country") as string | null)?.trim() ?? "",
       paymentMethod:  formData.get("paymentMethod") as string | null,
       note:           (formData.get("note") as string | null)?.trim() || null,
@@ -97,9 +103,17 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       return { error: "Missing request key. Please refresh and try again." };
     }
 
-    // 3. Required customer fields + a valid payment method. Shipping address is NOT
-    // collected here — it's captured post-payment via /shipping/<token> (ADR 0010).
-    if (!raw.name || !raw.email || !raw.country) {
+    // 3. Required customer + shipping fields and a valid payment method. ADR 0024 — the
+    // full shipping address is collected here at checkout (state / region is optional).
+    if (
+      !raw.name ||
+      !raw.email ||
+      !raw.phone ||
+      !raw.address ||
+      !raw.city ||
+      !raw.postalCode ||
+      !raw.country
+    ) {
       return { error: "Please fill in all required fields." };
     }
     if (raw.paymentMethod !== "crypto" && raw.paymentMethod !== "manual") {
@@ -232,8 +246,9 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // Consume a reward credit ONLY when it's the sole reason for the discount (eff.usesRewardCredit).
     const discountLedgerId = eff.usesRewardCredit && rewardCredit ? rewardCredit.id : null;
 
-    // 8. Identifiers + traffic classification. The shipping token is the unguessable
-    // per-order key for the post-payment /shipping/<token> link (ADR 0010).
+    // 8. Identifiers + traffic classification. The shipping token is still generated
+    // because the column is NOT NULL + unique, but it is unused since ADR 0024 removed
+    // the post-payment shipping form.
     const orderNumber = generateOrderNumber();
     const shippingToken = generateShippingToken();
     const trafficType = deriveTrafficType(raw.utmSource, raw.utmMedium);
@@ -306,9 +321,15 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           userId: currentCustomer?.id ?? null,
           name: raw.name,
           email: raw.email,
-          // phone/address/city/postalCode/stateRegion omitted — nullable, collected
-          // post-payment via /shipping/<token> (ADR 0010).
+          // ADR 0024 — shipping address written with the order; stateRegion is optional
+          // (null when blank). shippingDetailsAt is stamped at submit.
+          phone: raw.phone,
+          address: raw.address,
+          city: raw.city,
+          stateRegion: raw.stateRegion,
+          postalCode: raw.postalCode,
           country: raw.country,
+          shippingDetailsAt: new Date(),
           paymentMethod,
           cryptoDiscountPct,
           // ADR 0016 — snapshot the applied promo code (uppercase, server-validated) or null.
@@ -370,13 +391,14 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // props.value straight into Meta CAPI custom_data.value / GA4 value, both of which
     // expect the monetary amount, so we divide cents by 100 (mirrors NORA). Never throws.
     // externalId — a stable id for CAPI match quality: the logged-in customer id when
-    // present, otherwise this order's id (never PII; hashed server-side). The checkout form
-    // collects no phone (ADR 0010 — phone is captured post-payment), so phone is omitted.
+    // present, otherwise this order's id (never PII; hashed server-side). ADR 0024 — the
+    // checkout form collects phone again; server.ts hashes it (digits only) into user_data.ph.
     const externalId = currentCustomer?.id ?? orderId;
     const h = await headers();
     await trackServerEvent("order_submitted", {
       eventId: raw.eventId ?? undefined,
       email: raw.email,
+      phone: raw.phone,
       value: effectiveTotalCents / 100,
       currency: "USD",
       userAgent: h.get("user-agent") ?? undefined,
@@ -403,6 +425,10 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       linePrice: it.linePrice,
     }));
 
+    // Customer greetings use the first name only (the checkout field is "Full name");
+    // falls back to the full name if no token. Ops emails keep the full name.
+    const greetingName = firstNameFromOrderName(raw.name) ?? raw.name;
+
     try {
       const sends: Promise<unknown>[] = [];
 
@@ -410,13 +436,22 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
         // getCryptoRates never throws (empty strings on any failure → template fallback).
         const { btcEquivalent, ltcEquivalent } = await getCryptoRates(totalUsd);
         const manual = orderReceivedManual({
-          firstName: raw.name,
+          firstName: greetingName,
           orderNumber,
           items: emailItems,
           subtotalUsd,
           totalUsd,
           btcEquivalent,
           ltcEquivalent,
+          shippingAddress: {
+            name: raw.name,
+            address: raw.address,
+            city: raw.city,
+            stateRegion: raw.stateRegion,
+            postalCode: raw.postalCode,
+            country: raw.country,
+            phone: raw.phone,
+          },
         });
         sends.push(
           sendToCustomer(raw.email, manual.subject, manual.html).then(() =>
@@ -434,6 +469,11 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
         firstName: raw.name,
         email: raw.email,
         country: raw.country,
+        phone: raw.phone,
+        address: raw.address,
+        city: raw.city,
+        stateRegion: raw.stateRegion,
+        postalCode: raw.postalCode,
         items: emailItems,
         totalUsd,
         paymentMethod,

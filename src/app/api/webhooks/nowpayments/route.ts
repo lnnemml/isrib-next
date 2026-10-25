@@ -19,6 +19,7 @@ import { paymentConfirmed } from "@/lib/email/templates";
 import { trackServerEvent } from "@/lib/analytics/server";
 import { cancelAbandonedNurture } from "@/lib/qstash";
 import { createReferrerReward } from "@/lib/referral";
+import { firstNameFromOrderName } from "@/lib/marketing/addContact";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -117,7 +118,14 @@ export async function POST(req: Request): Promise<Response> {
       status: orders.status,
       email: orders.email,
       name: orders.name,
-      shippingToken: orders.shippingToken,
+      // ADR 0024 — address captured at checkout, shown in the payment-confirmed email
+      // (all nullable: orders placed before ADR 0024 have none).
+      phone: orders.phone,
+      address: orders.address,
+      city: orders.city,
+      stateRegion: orders.stateRegion,
+      postalCode: orders.postalCode,
+      country: orders.country,
       totalPrice: orders.totalPrice,
       qstashMessageId1: orders.qstashMessageId1,
       qstashMessageId2: orders.qstashMessageId2,
@@ -143,9 +151,6 @@ export async function POST(req: Request): Promise<Response> {
 
   await db.update(orders).set({ status: "paid" }).where(eq(orders.id, order.id));
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-  const shippingUrl = `${baseUrl}/shipping/${order.shippingToken}`;
-
   // Compact inline ops alert — deliberately does NOT re-query order_items.
   // ADR 0019 — surface an accepted partial (absorbed shortfall) in the ops alert for margin visibility.
   const partialNote = acceptedPartial
@@ -153,7 +158,18 @@ export async function POST(req: Request): Promise<Response> {
     : "";
   const minimalPaidAdminHtml = `<p>Order <strong>${orderNumber}</strong> — $${(order.totalPrice / 100).toFixed(2)} — <strong>PAID</strong>${partialNote}</p>`;
 
-  const confirmed = paymentConfirmed({ firstName: order.name, orderNumber, shippingUrl });
+  const confirmed = paymentConfirmed({
+    // Greeting = first name only; falls back to the full name. Address block keeps the full name.
+    firstName: firstNameFromOrderName(order.name) ?? order.name,
+    orderNumber,
+    name: order.name,
+    address: order.address,
+    city: order.city,
+    stateRegion: order.stateRegion,
+    postalCode: order.postalCode,
+    country: order.country,
+    phone: order.phone,
+  });
 
   // Best-effort side effects — Promise.allSettled so no single failure throws out of POST.
   const results = await Promise.allSettled([

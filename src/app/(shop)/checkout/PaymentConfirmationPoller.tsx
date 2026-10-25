@@ -1,7 +1,7 @@
 "use client";
 
 // Polls via router.refresh() only while the crypto payment is confirming; the server render
-// re-reads Neon and reveals the shipping link once status flips to paid — the reveal gate is
+// re-reads Neon and shows the confirmed-payment copy once status flips to paid — the gate is
 // unchanged and server-side. This client component only removes the manual-refresh/email wait.
 
 import { useEffect, useRef } from "react";

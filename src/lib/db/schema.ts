@@ -44,18 +44,19 @@ export const orders = pgTable("orders", {
   // customer
   name:                     text("name").notNull(),
   email:                    text("email").notNull(),
-  phone:                    text("phone"),                     // ADR 0010 — collected post-payment
+  phone:                    text("phone"),                     // ADR 0024 — collected at checkout; null on older ADR 0010 orders
 
-  // shipping — address fields collected post-payment now, not at checkout (ADR 0010)
-  address:                  text("address"),                   // ADR 0010 — nullable, collected post-payment
-  city:                     text("city"),                      // ADR 0010 — nullable, collected post-payment
-  postalCode:               text("postal_code"),               // ADR 0010 — nullable, collected post-payment
+  // shipping — address fields collected at checkout (ADR 0024); nullable because orders
+  // placed under ADR 0010 (post-payment collection) may have none
+  address:                  text("address"),                   // ADR 0024 — collected at checkout; nullable (older orders)
+  city:                     text("city"),                      // ADR 0024 — collected at checkout; nullable (older orders)
+  postalCode:               text("postal_code"),               // ADR 0024 — collected at checkout; nullable (older orders)
   stateRegion:              text("state_region"),
   country:                  text("country").notNull(),
 
-  // ADR 0010 — post-payment shipping
-  shippingToken:            text("shipping_token").notNull().unique(), // unguessable per-order nanoid; the /shipping/<token> link uses this, never the guessable order_number
-  shippingDetailsAt:        timestamp("shipping_details_at"),   // stamped when the post-payment shipping form is submitted
+  // shipping token (ADR 0010 post-payment link; unused since ADR 0024)
+  shippingToken:            text("shipping_token").notNull().unique(), // unguessable per-order nanoid; backed ADR 0010's post-payment link, unused since ADR 0024 (still generated)
+  shippingDetailsAt:        timestamp("shipping_details_at"),   // stamped at checkout submit (ADR 0024); null on pre-ADR-0024 orders with no address
 
   // payment
   paymentMethod:            paymentMethodEnum("payment_method").notNull(),

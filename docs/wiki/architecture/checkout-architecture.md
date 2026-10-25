@@ -106,7 +106,9 @@ cancel via `POST /emails/{id}/cancel`) replaces QStash with zero new deps — gu
 cancel-on-payment (in both the webhook AND the admin-confirm action). Swap needs no schema
 change.
 
-## 5b. Post-payment shipping form (`/shipping/<token>`) — [ADR 0010](../decisions/0010-frictionless-dr-checkout.md)
+> **Superseded 2026-10-25 by [ADR 0024](../decisions/0024-shipping-address-at-checkout.md):** the shipping address is collected at checkout again, and the post-payment `/shipping/<token>` form is removed. The text below describes the ADR 0010 period.
+
+## 5b. (REMOVED) Post-payment shipping form (`/shipping/<token>`) — [ADR 0010](../decisions/0010-frictionless-dr-checkout.md)
 
 Shipping address is collected AFTER payment, not at checkout (friction-less DR). The
 payment-confirmed email (§4 / the manual-confirm path) links to `/shipping/<token>`.

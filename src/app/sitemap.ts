@@ -5,7 +5,7 @@ const BASE_URL = "https://isrib.shop";
 
 // Static commercial/marketing routes that exist as real pages (verified against
 // src/app). Private/dev routes (/admin, /account, /checkout, /kitchen-sink, /go,
-// /api, /shipping) are intentionally excluded — they must never appear in search.
+// /api) are intentionally excluded — they must never appear in search.
 const MARKETING_PATHS = [
   "/about",
   "/faq",

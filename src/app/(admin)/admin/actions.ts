@@ -16,6 +16,7 @@ import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { paymentConfirmed, shipped, type EmailItem } from "@/lib/email/templates";
 import { cancelAbandonedNurture } from "@/lib/qstash";
 import { createReferrerReward } from "@/lib/referral";
+import { firstNameFromOrderName } from "@/lib/marketing/addContact";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -24,10 +25,6 @@ export type ActionResult = { ok: true } | { error: string };
 // The order_status enum values, sourced from the schema (single source of truth).
 type OrderStatus = (typeof orderStatusEnum.enumValues)[number];
 const STATUS_VALUES = orderStatusEnum.enumValues;
-
-function baseUrl(): string {
-  return process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
-}
 
 // ── setStatus ─────────────────────────────────────────────────────────────────
 export async function setStatus(orderId: string, status: OrderStatus): Promise<ActionResult> {
@@ -42,7 +39,8 @@ export async function setStatus(orderId: string, status: OrderStatus): Promise<A
 // ── markPaid ──────────────────────────────────────────────────────────────────
 // The MANUAL-order paid transition (crypto is driven by the NowPayments webhook). Idempotent:
 // an order already paid/fulfilled returns ok without re-sending. On the transition it sends the
-// paymentConfirmed email (the /shipping/<token> link) + a compact ops note, both non-fatally.
+// paymentConfirmed email (shows the checkout address, ADR 0024) + a compact ops note, both
+// non-fatally.
 export async function markPaid(orderId: string): Promise<ActionResult> {
   if (!(await isAdminAuthed())) return { error: "Unauthorized" };
 
@@ -70,16 +68,22 @@ export async function markPaid(orderId: string): Promise<ActionResult> {
 
   // Email is best-effort — a failure must not roll back the paid state.
   try {
-    const shippingUrl = `${baseUrl()}/shipping/${order.shippingToken}`;
     const mail = paymentConfirmed({
-      firstName: order.name,
+      // Greeting = first name only; falls back to the full name. Address block keeps the full name.
+      firstName: firstNameFromOrderName(order.name) ?? order.name,
       orderNumber: order.orderNumber,
-      shippingUrl,
+      name: order.name,
+      address: order.address,
+      city: order.city,
+      stateRegion: order.stateRegion,
+      postalCode: order.postalCode,
+      country: order.country,
+      phone: order.phone,
     });
     await sendToCustomer(order.email, mail.subject, mail.html);
     await sendToAdmin(
       `Order ${order.orderNumber} marked paid`,
-      `Order <strong>${order.orderNumber}</strong> (${order.email}) was marked paid in the admin panel. Shipping-details link sent to the customer.`,
+      `Order <strong>${order.orderNumber}</strong> (${order.email}) was marked paid in the admin panel. Payment-confirmed email sent to the customer.`,
     );
   } catch (e) {
     console.error("markPaid email failed (non-fatal):", e);
@@ -130,7 +134,7 @@ export async function saveTracking(
       linePrice: it.linePrice,
     }));
     const mail = shipped({
-      firstName: order.name,
+      firstName: firstNameFromOrderName(order.name) ?? order.name,
       orderNumber: order.orderNumber,
       items: emailItems,
       trackingNumber: cleanTracking,

@@ -2998,3 +2998,43 @@ email. Anton chose to include unpaid orders too. Signups without an order (27) a
   monitor).
 - **Not live until deployed:** the checkout hook only takes effect on prod after this
   change is pushed to `main`.
+
+## [2026-10-25] decision | ADR 0024: shipping address at checkout, post-payment form removed
+
+Roles run: LEAD, explorer, implementer, verifier, prober.
+
+Anton wanted the full order form back before payment. That reverses ADR 0010, which
+allowed for it in its own *Revisit if*. He chose: name/email/phone/address/city/postal
+code/country required, state optional, and the `/shipping/<token>` form **removed
+entirely**. No schema change (the columns were already nullable; `shipping_token` is
+still generated but unused).
+
+- **Checkout:** two sections, "Your details" and "Shipping address". `submitOrder` writes
+  the address and stamps `shipping_details_at` at submit. Server `order_submitted` now
+  carries the hashed phone (better CAPI match quality). Everything else on the checkout
+  path is untouched.
+- **Emails:**
+  - Order-received has a "Shipping to" block plus "reply if there's a typo".
+  - The ops alert has Phone and Address.
+  - Payment-confirmed has no link. It shows the address, or, for orders placed before
+    this change with no address, asks for a reply with delivery details (its own subject
+    and preheader).
+  - Customer greetings use the first name (first token of "Full name").
+  - Buyer-typed values are HTML-escaped.
+  - `shippingReceivedAdmin` was deleted.
+- **Copy:** the success page, FAQ ×3 and the PaymentSelector crypto step no longer promise
+  a post-payment link.
+- **Admin:** `awaitingShipment` now requires `status='paid'`, since unpaid orders now carry
+  an address.
+- **Also fixed:** the promo input collapsed to a sliver at 375px, and "Apply" overflowed by
+  6px. This bug existed before.
+- **Verification:**
+  - verifier APPROVE (its notes were applied);
+  - prober PASS: server-side validation rejects a missing address with no row written;
+    manual `ISR-4MZEQMXE` and crypto `ISR-HW72EFNH` orders store the address, both then set
+    to `cancelled`; `/shipping/*` returns 404;
+  - the escaping check in the order-received email in Resend passed;
+  - the desktop and mobile screenshots were checked.
+- **In flight on 2026-10-25:** 14 pending orders and 1 paid order had no address. The 14
+  get the reply-with-details email if they pay. The 1 paid order's `/shipping` link now
+  404s, so Anton must ask that buyer for the address by hand.
