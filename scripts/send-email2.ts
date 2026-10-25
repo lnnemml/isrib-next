@@ -51,12 +51,16 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// "subscriber" (case-insensitive) or empty → "there" (formula: personalizeEmail()).
+// First token of the name; empty/"subscriber" → "there"; ALL-CAPS/all-lower (len > 1) → "Capitalised", mixed case kept.
 function displayFirstName(raw: string | null | undefined): string {
-  const v = (raw ?? "").trim();
-  if (!v) return "there";
-  if (v.toLowerCase() === "subscriber") return "there";
-  return v;
+  const v = (raw ?? "").trim().split(/\s+/)[0] ?? "";
+  if (!v || v.toLowerCase() === "subscriber") return "there";
+  const upper = v.toUpperCase();
+  const lower = v.toLowerCase();
+  if (upper === lower || (v !== upper && v !== lower)) return v;
+  const chars = Array.from(v);
+  if (chars.length <= 1) return v;
+  return chars[0].toUpperCase() + chars.slice(1).join("").toLowerCase();
 }
 
 function buildSubject(firstName: string): string {

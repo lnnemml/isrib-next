@@ -3038,3 +3038,37 @@ still generated but unused).
 - **In flight on 2026-10-25:** 14 pending orders and 1 paid order had no address. The 14
   get the reply-with-details email if they pay. The 1 paid order's `/shipping` link now
   404s, so Anton must ask that buyer for the address by hand.
+
+## [2026-10-25] phase | Video-001 announcement SENT (611/611, 0 failed)
+
+Roles run: LEAD.
+
+`scripts/send-video001.ts --commit` with `NEXT_PUBLIC_BASE_URL=https://isrib.shop`, sent
+from Danylo `<noreply@isrib.shop>` with the approved 1:1-note copy g. Anton chose to send
+immediately (Sunday 03:15 ET) rather than wait for the planned weekday 8–11 am ET slot.
+Script result: 611 sent, 0 failed (it includes the 21 ADR 0023 backfilled buyers and the
+seed inbox).
+
+Resend status about 10 minutes later: 589 delivered (96.4%), 10 suppressed (already on
+Resend's suppression list), 8 bounced (1.3%), 3 still `sent`, 1 delivery_delayed.
+
+Follow-ups:
+- (a) Stamp `unsubscribed_at` in Neon for the 18 bounced/suppressed contacts, so Path-B
+  sends stop hitting them (Neon is what the scripts read).
+- (b) `marketing_contacts.first_name` holds full names for many `customers`-source rows
+  ("Adam Schran, something different this time"). `displayFirstName` in the send scripts
+  should take the first token.
+- Read replies in isrib.shop@protonmail.com for topic themes only (ADR 0009 §3).
+- Compare 001 YouTube Analytics (External / Direct traffic, views, AVD) for the send day
+  against the day before.
+
+**Follow-ups (a) and (b) done the same day.**
+- (a) The 18 bounced/suppressed addresses were pulled from Resend (campaign `last_event`)
+  and `unsubscribed_at` was stamped on them in Neon: 18/18 found, 18 updated. List now:
+  **591 active / 42 opted out.** That breaks down as 22 opted out before + these 18 + **2
+  people who unsubscribed through the video-001 email's link**, so the endpoint works.
+- (b) `displayFirstName` in `send-email2.ts` and `send-video001.ts` now takes the first
+  token and fixes ALL-CAPS / all-lowercase case ("JOSE ALBERTO…" → "Jose", "huda" →
+  "Huda"). Mixed case is kept, and empty or "subscriber" still gives "there". This
+  applies to future sends only; video-001 already went out with some full names in the
+  subject.
