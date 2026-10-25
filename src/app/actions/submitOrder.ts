@@ -24,11 +24,13 @@ import { getCryptoRates } from "@/lib/email/rates";
 import { getCurrentCustomer } from "@/lib/customer/auth";
 import { orderReceivedManual, opsAlert, type EmailItem } from "@/lib/email/templates";
 import { createInvoice } from "@/lib/nowpayments";
+import { addMarketingContact, firstNameFromOrderName, safeErrorTag } from "@/lib/marketing/addContact";
 import { Client } from "@upstash/qstash";
 import { and, eq, gt, desc, isNotNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 // Return shape designed for `useActionState`: a validation failure RETURNS { error };
@@ -470,6 +472,29 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
       await db.update(orders).set({ qstashMessageId1: m1.messageId, qstashMessageId2: m2.messageId }).where(eq(orders.id, orderId));
     } catch (e) {
       console.error("QStash enqueue failed (non-fatal):", e);
+    }
+
+    // 11c. ADR 0023 — the buyer auto-joins the marketing list (paid or unpaid). The order is
+    // already committed; insert-only, so an existing/opted-out contact is never touched.
+    // Runs via after() — scheduled here, executed AFTER the response is sent, so the DB insert
+    // + Resend round-trip (no SDK timeout) never sits in front of the redirect. after() is
+    // allowed in Server Functions and still runs when redirect() is called (Next docs,
+    // functions/after.md). NON-FATAL: any error is logged and ignored — it can never change
+    // the result or the redirect. Not reached on the idempotent-recovery path (that order
+    // already existed).
+    const marketingEmail = raw.email;
+    const marketingFirstName = firstNameFromOrderName(raw.name);
+    // Logs carry only the error name/code (safeErrorTag) — never the email.
+    try {
+      after(async () => {
+        try {
+          await addMarketingContact(marketingEmail, marketingFirstName, "orders");
+        } catch (e) {
+          console.error("Marketing list add failed (non-fatal):", safeErrorTag(e));
+        }
+      });
+    } catch (e) {
+      console.error("Marketing list add scheduling failed (non-fatal):", safeErrorTag(e));
     }
 
     // 12. Crypto path (Step 4): create the NowPayments hosted invoice, stamp its id/url

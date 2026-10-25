@@ -2971,3 +2971,30 @@ the NeuroBench launch-email doc should be updated to match.
 
 **Anton approved g (2026-10-25).** It is now the only body in `scripts/send-video001.ts`. The test
 variants are gone, and `--test`/`--commit` refuse a localhost `BASE_URL`.
+
+## [2026-10-25] decision | ADR 0023: every order auto-joins the marketing list, plus a backfill of 21
+
+Roles run: LEAD, implementer, verifier, prober.
+
+Anton asked why new buyers weren't in the audience. ADR 0017 seeded `marketing_contacts`
+once (2026-09-08), and no code path wrote to it after that. Path-B sends read Neon, so the
+21 order emails since the seed (16 paid/fulfilled, 5 unpaid) would have missed the video-001
+email. Anton chose to include unpaid orders too. Signups without an order (27) are left out.
+
+- **Code:** new `src/lib/marketing/addContact.ts`. It is insert-only (`onConflictDoNothing`,
+  so opt-outs win), pushes to the Resend "General" segment only for a new row, skips `*.test`,
+  and logs only error name/code, never the email. In `submitOrder.ts` it is step 11c,
+  scheduled with `after()` so it never sits in front of the redirect, and it is fully
+  non-fatal. Backfill script: `scripts/backfill-order-contacts.ts` (dry run by default,
+  `--commit`).
+- **Verifier:** APPROVE. Its 3 non-blocking follow-ups (try around `after()`, no emails in
+  logs, schema comment) were applied.
+- **Backfill run:** 21 added / 0 exists / 0 failed. Neon `marketing_contacts` went from 611
+  to 632. 21/21 are in Resend and in the General segment.
+- **Prober PASS:** a local manual order `ISR-GNB6D7NS` for Anton's seed inbox
+  `noraallince1703@gmail.com` created the `marketing_contacts` row (source `orders`, first
+  name `Nora`) and the Resend contact about 3 s later, with no errors. The order was then set
+  to `cancelled`. The seed inbox stays on the list, so it receives real sends (tab-placement
+  monitor).
+- **Not live until deployed:** the checkout hook only takes effect on prod after this
+  change is pushed to `main`.

@@ -168,7 +168,7 @@ export const marketingContacts = pgTable("marketing_contacts", {
   id:             text("id").primaryKey(),        // nanoid
   email:          text("email").notNull().unique(),   // always stored lowercased/trimmed
   firstName:      text("first_name"),             // nullable
-  source:         text("source").notNull(),       // "customers" | "legacy-json"
+  source:         text("source").notNull(),       // "customers" | "legacy-json" | "orders" (ADR 0023)
   unsubscribedAt: timestamp("unsubscribed_at"),   // nullable; set = opted out, never mail
   createdAt:      timestamp("created_at").defaultNow().notNull(),
 });

@@ -117,6 +117,8 @@ rather than scanning the whole directory.
   — organic video (YT long + Shorts/TikTok/Reels) is active; funnel = email opt-in → soft CTA in email; F1 logo / F2 opt-in host open
 - [`decisions/0022-shared-nootropics-video-channel.md`](./decisions/0022-shared-nootropics-video-channel.md)
   — **cross-project**: one shared nootropics channel (The Synthesis Lab) feeding isrib.shop + NORA; one interest-tagged list; disclosure mandatory
+- [`decisions/0023-buyers-auto-join-marketing-list.md`](./decisions/0023-buyers-auto-join-marketing-list.md)
+  — every order (paid or unpaid) auto-joins `marketing_contacts` + Resend segment; insert-only (opt-outs win); supersedes 0017's "seeds once"
 
 ## Planning
 

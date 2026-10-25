@@ -65,8 +65,7 @@ solves suppression + `List-Unsubscribe` natively, so it supersedes the port.
   (the batch-splitter's only remaining use).
 - We need **Resend → Neon unsubscribe reconciliation** (a Resend webhook writing
   `marketing_contacts.unsubscribedAt`) so Neon stays authoritative.
-- New buyers should auto-join the marketing list — add a hook on order/customer creation
-  (v1 seeds once).
+- ~~New buyers should auto-join the marketing list~~ → done in [ADR 0023](0023-buyers-auto-join-marketing-list.md) (2026-10-25)
 
 ## Related
 - [ADR 0016](0016-launch-promo-codes.md) (the `RELAUNCH10` code the email advertises) ·
