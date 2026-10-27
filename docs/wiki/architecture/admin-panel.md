@@ -35,6 +35,9 @@ unchanged; `fulfilled` = shipped (set when tracking is saved). No cost column (r
   AOV; top products (join order_items); revenue-by-traffic_type; revenue-by-utm_source;
   "needs action" counts (paid & `shipping_details_at IS NULL`; `shipping_details_at` set &
   `shipped_at IS NULL`); country breakdown. All money in integer cents; format at the edge.
+- `monthlyRevenue()` (2026-10-27) — last 6 UTC calendar months incl. the current partial one:
+  live paid revenue by `created_at` + legacy by `ordered_at`, paid orders, AOV, MoM %; plus an
+  MTD pace vs the previous month's same days. Rendered as "Revenue by month" under the 30-day cards.
 
 ## 4. Admin actions (`src/app/(admin)/admin/actions.ts`, "use server", auth-guarded)
 

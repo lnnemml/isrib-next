@@ -3106,3 +3106,32 @@ couldn't find a way back. Looking into it turned up three problems with `/api/un
 - **Lesson:** never mutate state on GET in email links, and never use Resend suppression
   for a marketing opt-out. Neon gates marketing; Resend suppression is reserved for
   bounces and complaints.
+
+## [2026-10-27] phase | Admin: 30-day revenue audited + "Revenue by month" trend added
+
+- **30-day revenue audit (code-level).** `biSummary().revenueCents` = Σ `orders.total_price`
+  (after crypto/promo/referral discount) where status ∈ {paid, fulfilled} AND `created_at` ≥
+  now − 30×24h. Matches `admin-panel.md` §3. Caveats, none of them a bug:
+  - It is booked by **order date**, not payment date. There is no `paid_at` column, so an
+    order placed 25 Sep and paid 3 Oct counts in September.
+  - It is **live-only**. Since the 6 Sep cutover is now more than 30 days back, that loses nothing.
+  - Accepted partial crypto payments (ADR 0019) count the full `total_price`, so the gap
+    absorbed on those is not subtracted.
+  - Test/QA orders are not filtered. If a synthetic order was ever marked paid in prod Neon,
+    it inflates the figure.
+  - The direct Neon cross-check was blocked by the session's permission classifier; it needs
+    Anton to run it or allow it.
+- **Built (implementer):** `monthlyRevenue()` in `src/lib/admin/queries.ts`, plus a "Revenue
+  by month" section on `/admin` right under the 30-day cards. It has:
+  - 2 cards: current month so far, revenue and paid orders, each vs the previous month's
+    same days (day 1 → the same day and time).
+  - A 6-month table: Live | Legacy | Total | Paid orders | AOV | Δ MoM | trend bar.
+    The current month is marked MTD, with "(partial)" on its Δ.
+  - UTC months. Legacy (`legacy_orders.ordered_at`) is folded in so September includes the
+    old site's 1–5 Sep orders.
+- **Verified:** tsc + eslint + `next build` green, and the LEAD reviewed the diff. Not yet seen
+  rendering with real data: admin is password-gated and the LEAD does not enter the password.
+  Uncommitted. **Roles run:** LEAD (audit, review) → implementer (queries + UI).
+- **Side finding (not fixed):** the NowPayments webhook idempotency check is
+  `order.status === "paid"` only. A late duplicate IPN on a `fulfilled` order would flip it
+  back to `paid` and re-send the paid email.

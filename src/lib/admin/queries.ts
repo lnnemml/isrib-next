@@ -11,7 +11,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { orders, orderItems, customers, legacyOrders } from "@/lib/db/schema";
 import { getProduct } from "@/lib/copy/products";
-import { and, count, desc, eq, gte, inArray, isNull, isNotNull, sql, sum } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, isNull, isNotNull, lt, sql, sum } from "drizzle-orm";
 
 // Status groups reused across aggregates.
 const PAID_STATUSES = ["paid", "fulfilled"] as const;
@@ -540,4 +540,190 @@ export async function lifetimeShipping(): Promise<LifetimeShipping> {
     shippingCostCents,
     netAfterShippingCents,
   };
+}
+
+// ── monthlyRevenue ───────────────────────────────────────────────────────────
+// Last MONTHLY_WINDOW calendar months (UTC), oldest → newest, INCLUDING the current
+// partial month. Live revenue uses the same definition as biSummary (paid/fulfilled,
+// bucketed by created_at); legacy_orders are folded in by ordered_at because the old site
+// still took orders in early Sept 2026 before the 6 Sep cutover. Every month is present
+// even with zero rows (gaps filled in JS). Amounts stay integer cents.
+
+const MONTHLY_WINDOW = 6;
+
+export interface MonthlyRevenueRow {
+  month: string; // "YYYY-MM" (UTC)
+  isCurrent: boolean; // the in-progress month
+  liveRevenueCents: number; // Σ total_price WHERE paid/fulfilled, by created_at
+  livePaidOrders: number; // paid + fulfilled
+  liveAllOrders: number; // ALL statuses (same as biSummary.orders30d)
+  aovCents: number; // liveRevenueCents / max(livePaidOrders, 1)
+  legacyRevenueCents: number; // Σ legacy_orders.amount_cents, by ordered_at (nulls excluded)
+  legacyOrders: number;
+  totalRevenueCents: number; // live + legacy
+  momPct: number | null; // % change of totalRevenueCents vs previous row (null: first row / prev 0)
+}
+
+// Fair pace for the partial month: current month day 1 → now vs the previous month day 1 →
+// the same day-of-month + time-of-day (clamped to the previous month's end if shorter).
+export interface MonthToDatePace {
+  month: string; // "YYYY-MM" (UTC) — the current month
+  throughDay: number; // current UTC day-of-month
+  prevMonth: string; // "YYYY-MM" (UTC)
+  prevThroughDay: number; // throughDay clamped to the previous month's length
+  totalRevenueCents: number; // live paid + legacy, current month to now
+  prevSamePeriodRevenueCents: number;
+  paidOrders: number; // live paid + legacy, current month to now
+  prevSamePeriodPaidOrders: number;
+  pacePct: number | null; // revenue % vs prev same period (null when prev is 0)
+  paidOrdersPacePct: number | null; // paid-orders % vs prev same period (null when prev is 0)
+}
+
+export interface MonthlyRevenue {
+  rows: MonthlyRevenueRow[];
+  mtd: MonthToDatePace;
+}
+
+// "YYYY-MM" for a UTC date.
+function monthKey(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+// A count expressed as a raw sql`sum(...)` comes back as a numeric string (or null).
+function toCount(v: string | number | null): number {
+  if (v == null) return 0;
+  return typeof v === "number" ? v : Math.round(Number(v));
+}
+
+function pctChange(cur: number, prev: number): number | null {
+  return prev > 0 ? ((cur - prev) / prev) * 100 : null;
+}
+
+export async function monthlyRevenue(): Promise<MonthlyRevenue> {
+  // All cutoffs computed once in UTC and bound as parameters (like cutoff30d()).
+  const now = new Date();
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
+  const windowStart = new Date(Date.UTC(y, m - (MONTHLY_WINDOW - 1), 1));
+  const curStart = new Date(Date.UTC(y, m, 1));
+  const prevStart = new Date(Date.UTC(y, m - 1, 1));
+  // Same day-of-month + time-of-day one month back; Date.UTC overflows a too-short month
+  // into the current one, so clamp to curStart (= the previous month's exclusive end).
+  const prevSameRaw = new Date(
+    Date.UTC(
+      y,
+      m - 1,
+      now.getUTCDate(),
+      now.getUTCHours(),
+      now.getUTCMinutes(),
+      now.getUTCSeconds(),
+      now.getUTCMilliseconds(),
+    ),
+  );
+  const prevEnd = prevSameRaw.getTime() < curStart.getTime() ? prevSameRaw : curStart;
+  const daysInPrevMonth = new Date(Date.UTC(y, m, 0)).getUTCDate();
+
+  // Month bucket as a "YYYY-MM" STRING key — never a raw date aggregate (see toDate()).
+  // created_at / ordered_at are UTC timestamps, so date_trunc buckets by UTC month.
+  const liveMonthExpr = sql<string>`to_char(date_trunc('month', ${orders.createdAt}), 'YYYY-MM')`;
+  const legacyMonthExpr = sql<string>`to_char(date_trunc('month', ${legacyOrders.orderedAt}), 'YYYY-MM')`;
+  const isPaid = inArray(orders.status, [...PAID_STATUSES]);
+
+  const [liveRows, legacyRows, [prevLiveRow], [prevLegacyRow]] = await Promise.all([
+    // LIVE — one grouped query over the window: all orders, paid count, paid revenue.
+    db
+      .select({
+        month: liveMonthExpr,
+        allOrders: count(),
+        paidOrders: sql<string | null>`sum(case when ${isPaid} then 1 else 0 end)`,
+        revenueCents: sql<string | null>`sum(case when ${isPaid} then ${orders.totalPrice} else 0 end)`,
+      })
+      .from(orders)
+      .where(gte(orders.createdAt, windowStart))
+      .groupBy(liveMonthExpr),
+    // LEGACY — one grouped query over the window; null ordered_at rows excluded.
+    db
+      .select({
+        month: legacyMonthExpr,
+        n: count(),
+        revenueCents: sum(legacyOrders.amountCents),
+      })
+      .from(legacyOrders)
+      .where(and(isNotNull(legacyOrders.orderedAt), gte(legacyOrders.orderedAt, windowStart)))
+      .groupBy(legacyMonthExpr),
+    // MTD comparison — previous month [prevStart, prevEnd), live paid.
+    db
+      .select({
+        n: count(),
+        revenueCents: sum(orders.totalPrice),
+      })
+      .from(orders)
+      .where(and(isPaid, gte(orders.createdAt, prevStart), lt(orders.createdAt, prevEnd))),
+    // MTD comparison — previous month [prevStart, prevEnd), legacy.
+    db
+      .select({
+        n: count(),
+        revenueCents: sum(legacyOrders.amountCents),
+      })
+      .from(legacyOrders)
+      .where(
+        and(
+          isNotNull(legacyOrders.orderedAt),
+          gte(legacyOrders.orderedAt, prevStart),
+          lt(legacyOrders.orderedAt, prevEnd),
+        ),
+      ),
+  ]);
+
+  const liveByMonth = new Map(liveRows.map((r) => [r.month, r]));
+  const legacyByMonth = new Map(legacyRows.map((r) => [r.month, r]));
+
+  // Fill every month in the window (oldest → newest), zero when there are no rows.
+  const currentKey = monthKey(curStart);
+  const rows: MonthlyRevenueRow[] = [];
+  for (let i = MONTHLY_WINDOW - 1; i >= 0; i--) {
+    const month = monthKey(new Date(Date.UTC(y, m - i, 1)));
+    const live = liveByMonth.get(month);
+    const legacy = legacyByMonth.get(month);
+    const liveRevenueCents = toCents(live?.revenueCents ?? null);
+    const livePaidOrders = toCount(live?.paidOrders ?? null);
+    const legacyRevenueCents = toCents(legacy?.revenueCents ?? null);
+    const totalRevenueCents = liveRevenueCents + legacyRevenueCents;
+    const prev = rows[rows.length - 1];
+    rows.push({
+      month,
+      isCurrent: month === currentKey,
+      liveRevenueCents,
+      livePaidOrders,
+      liveAllOrders: live?.allOrders ?? 0,
+      aovCents: Math.round(liveRevenueCents / Math.max(livePaidOrders, 1)),
+      legacyRevenueCents,
+      legacyOrders: legacy?.n ?? 0,
+      totalRevenueCents,
+      momPct: prev ? pctChange(totalRevenueCents, prev.totalRevenueCents) : null,
+    });
+  }
+
+  // Current month to now = the current (last) row — same definitions, no extra query.
+  const cur = rows[rows.length - 1];
+  const totalRevenueCents = cur.totalRevenueCents;
+  const paidOrders = cur.livePaidOrders + cur.legacyOrders;
+  const prevSamePeriodRevenueCents =
+    toCents(prevLiveRow?.revenueCents ?? null) + toCents(prevLegacyRow?.revenueCents ?? null);
+  const prevSamePeriodPaidOrders = (prevLiveRow?.n ?? 0) + (prevLegacyRow?.n ?? 0);
+
+  const mtd: MonthToDatePace = {
+    month: currentKey,
+    throughDay: now.getUTCDate(),
+    prevMonth: monthKey(prevStart),
+    prevThroughDay: Math.min(now.getUTCDate(), daysInPrevMonth),
+    totalRevenueCents,
+    prevSamePeriodRevenueCents,
+    paidOrders,
+    prevSamePeriodPaidOrders,
+    pacePct: pctChange(totalRevenueCents, prevSamePeriodRevenueCents),
+    paidOrdersPacePct: pctChange(paidOrders, prevSamePeriodPaidOrders),
+  };
+
+  return { rows, mtd };
 }

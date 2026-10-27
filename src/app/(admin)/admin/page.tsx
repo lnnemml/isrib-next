@@ -4,7 +4,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { ADMIN_COOKIE } from "@/lib/admin/auth";
-import { biSummary, listOrders, groupByCustomer, lifetimeShipping } from "@/lib/admin/queries";
+import {
+  biSummary,
+  listOrders,
+  groupByCustomer,
+  lifetimeShipping,
+  monthlyRevenue,
+} from "@/lib/admin/queries";
 import type { AdminOrderRow, AdminOrderItemRow } from "@/lib/admin/queries";
 import { formatCents, getProduct } from "@/lib/copy/products";
 import { OrderRow, type OrderRowData } from "./OrderRow";
@@ -71,6 +77,55 @@ function utmLabel(u: string | null): string {
   return u && u.trim() ? u : "—";
 }
 
+// "YYYY-MM" (UTC) → a UTC Date for month-name labels.
+function monthDate(key: string): Date {
+  const [yy, mm] = key.split("-").map(Number);
+  return new Date(Date.UTC(yy, mm - 1, 1));
+}
+
+// "2026-10" → "October"
+function monthLong(key: string): string {
+  return monthDate(key).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" });
+}
+
+// "2026-10" → "Oct"
+function monthShort(key: string): string {
+  return monthDate(key).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+}
+
+// "2026-10" → "Oct 2026"
+function monthShortYear(key: string): string {
+  return monthDate(key).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+// Signed whole-percent label: "+12%" / "−8%" (true minus sign) / "—" when null.
+function pctLabel(p: number | null): string {
+  if (p == null) return "—";
+  const r = Math.round(p);
+  if (r > 0) return `+${r}%`;
+  if (r < 0) return `−${Math.abs(r)}%`;
+  return "0%";
+}
+
+// Tone for a % change — existing tokens only (success / danger / muted).
+function pctTone(p: number | null): "success" | "danger" | "muted" {
+  if (p == null) return "muted";
+  const r = Math.round(p);
+  if (r > 0) return "success";
+  if (r < 0) return "danger";
+  return "muted";
+}
+
+const TONE_CLASS = {
+  success: "text-success",
+  danger: "text-danger",
+  muted: "text-text-muted",
+} as const;
+
 function toRowData(o: AdminOrderRow): OrderRowData {
   return {
     id: o.id,
@@ -106,10 +161,12 @@ function Card({
   label,
   value,
   sub,
+  subTone = "muted",
 }: {
   label: string;
   value: string;
   sub?: string;
+  subTone?: keyof typeof TONE_CLASS;
 }) {
   return (
     <div className="rounded-lg border border-border bg-surface p-4">
@@ -117,7 +174,7 @@ function Card({
         {label}
       </div>
       <div className="mt-1 text-h3 font-semibold text-text">{value}</div>
-      {sub && <div className="mt-0.5 text-caption text-text-muted">{sub}</div>}
+      {sub && <div className={`mt-0.5 text-caption ${TONE_CLASS[subTone]}`}>{sub}</div>}
     </div>
   );
 }
@@ -143,12 +200,18 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
 }
 
 export default async function AdminDashboardPage() {
-  const [bi, orders, customers, shipping] = await Promise.all([
+  const [bi, orders, customers, shipping, monthly] = await Promise.all([
     biSummary(),
     listOrders(),
     groupByCustomer(),
     lifetimeShipping(),
+    monthlyRevenue(),
   ]);
+
+  // Revenue by month — trend-bar scale + MTD comparison labels.
+  const { mtd } = monthly;
+  const maxMonthRevenueCents = Math.max(...monthly.rows.map((r) => r.totalRevenueCents), 0);
+  const mtdCompareLabel = `${monthShort(mtd.prevMonth)} 1–${mtd.prevThroughDay}`;
 
   const ratioLabel =
     bi.paid30d > 0 ? `${bi.unpaidToPaidRatio.toFixed(2)}× unpaid/paid` : "no paid orders";
@@ -205,6 +268,92 @@ export default async function AdminDashboardPage() {
             sub="paid·no address · awaiting shipment"
           />
         </div>
+
+        {/* 1b — Revenue by month (UTC months; live paid + legacy) */}
+        <SectionHeading>{"Revenue by month"}</SectionHeading>
+        <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-3">
+          <Card
+            label={`${monthLong(mtd.month)} so far`}
+            value={formatCents(mtd.totalRevenueCents)}
+            sub={`vs ${mtdCompareLabel}: ${pctLabel(mtd.pacePct)}`}
+            subTone={pctTone(mtd.pacePct)}
+          />
+          <Card
+            label={`${monthLong(mtd.month)} paid orders`}
+            value={String(mtd.paidOrders)}
+            sub={`vs ${mtdCompareLabel}: ${pctLabel(mtd.paidOrdersPacePct)}`}
+            subTone={pctTone(mtd.paidOrdersPacePct)}
+          />
+        </div>
+        <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+          <table className="w-full min-w-[860px]">
+            <thead className="border-b border-border bg-surface-soft">
+              <tr>
+                <Th>{"Month"}</Th>
+                <Th right>{"Live"}</Th>
+                <Th right>{"Legacy"}</Th>
+                <Th right>{"Total"}</Th>
+                <Th right>{"Paid orders"}</Th>
+                <Th right>{"AOV"}</Th>
+                <Th right>{"Δ MoM"}</Th>
+                <Th>{"Trend"}</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthly.rows.map((r) => {
+                const barPct =
+                  maxMonthRevenueCents > 0 ? (r.totalRevenueCents / maxMonthRevenueCents) * 100 : 0;
+                return (
+                  <tr key={r.month} className="border-b border-border last:border-0">
+                    <td className="px-3 py-2 text-caption text-text">
+                      {monthShortYear(r.month)}
+                      {r.isCurrent && <span className="text-text-faint">{" · MTD"}</span>}
+                    </td>
+                    <td className="px-3 py-2 text-right text-caption text-text-muted">
+                      {formatCents(r.liveRevenueCents)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-caption text-text-muted">
+                      {r.legacyRevenueCents > 0 ? formatCents(r.legacyRevenueCents) : "—"}
+                    </td>
+                    <td className="px-3 py-2 text-right text-caption font-semibold text-text">
+                      {formatCents(r.totalRevenueCents)}
+                    </td>
+                    <td className="px-3 py-2 text-right text-caption text-text-muted">
+                      {r.livePaidOrders + r.legacyOrders}
+                      {r.legacyOrders > 0 && (
+                        <span className="text-text-faint">
+                          {` (${r.livePaidOrders}+${r.legacyOrders})`}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right text-caption text-text-muted">
+                      {formatCents(r.aovCents)}
+                    </td>
+                    <td
+                      className={`px-3 py-2 text-right text-caption ${
+                        r.isCurrent ? "text-text-muted" : TONE_CLASS[pctTone(r.momPct)]
+                      }`}
+                    >
+                      {pctLabel(r.momPct)}
+                      {r.isCurrent && <span className="text-text-faint">{" (partial)"}</span>}
+                    </td>
+                    <td className="px-3 py-2">
+                      <div className="h-2 w-full min-w-[120px] overflow-hidden rounded-full bg-surface-soft">
+                        <div
+                          className="h-full rounded-full bg-success"
+                          style={{ width: `${barPct}%` }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-caption text-text-muted">
+          {"Booked by order date (UTC). Revenue = paid + fulfilled orders; legacy = old-site orders before the 6 Sep cutover."}
+        </p>
 
         {/* 2 — Attribution */}
         <SectionHeading>{"Attribution"}</SectionHeading>
