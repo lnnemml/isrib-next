@@ -122,6 +122,7 @@ export default function PrivacyPage() {
 
       <LegalHeading>{"Referral Program Data"}</LegalHeading>
       <LegalParagraph>{"If you take part in the referral program, we store your referral code, a record of which orders were referred, and any discount credits you earn, so we can run the program and apply your rewards."}</LegalParagraph>
+      <LegalParagraph>{"If you arrive through a partner link, we count the visit using a hashed identifier that changes daily rather than storing your IP address. An order you place may be attributed to that partner so a commission can be paid. Partners see order amounts and dates, but never names, contact details, or addresses."}</LegalParagraph>
 
       <LegalHeading>{"9) Cookies & Analytics"}</LegalHeading>
       <LegalParagraph>{"We use cookies that are essential to operate the site — including your sign‑in session (isrib_customer_session) and, where relevant, referral and promo cookies (isrib_ref, isrib_promo) that remember a code you arrived with."}</LegalParagraph>

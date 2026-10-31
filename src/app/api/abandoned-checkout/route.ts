@@ -14,6 +14,7 @@
 
 import { db } from "@/lib/db";
 import { orders, orderItems } from "@/lib/db/schema";
+import { discountPctFromTotals } from "@/lib/discount";
 import { getCryptoRates } from "@/lib/email/rates";
 import { abandonedCheckout, type EmailItem } from "@/lib/email/templates";
 import { sendToCustomer } from "@/lib/email/send";
@@ -48,7 +49,9 @@ export async function POST(req: Request): Promise<Response> {
       email: orders.email,
       name: orders.name,
       paymentMethod: orders.paymentMethod,
+      subtotalPrice: orders.subtotalPrice,
       totalPrice: orders.totalPrice,
+      affiliateId: orders.affiliateId,
       invoiceUrl: orders.nowpaymentsPaymentUrl,
       email1SentAt: orders.abandonedEmail1SentAt,
       email2SentAt: orders.abandonedEmail2SentAt,
@@ -106,6 +109,9 @@ export async function POST(req: Request): Promise<Response> {
       emailNumber,
       btcEquivalent,
       ltcEquivalent,
+      savingsPct: order.affiliateId
+        ? discountPctFromTotals(order.subtotalPrice, order.totalPrice)
+        : undefined,
     });
 
     await sendToCustomer(order.email, subject, html);

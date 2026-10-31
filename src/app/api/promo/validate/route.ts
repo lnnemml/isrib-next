@@ -5,12 +5,20 @@
 // the client preview (mirrors /api/referral/validate).
 
 import { NextResponse } from "next/server";
+import { getActiveAffiliateDiscountPct } from "@/lib/affiliate/lookup";
 import { validatePromoCode } from "@/lib/promo";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const code = new URL(request.url).searchParams.get("code");
+
+  // ADR 0025 — affiliate codes share this field. Null with the flag off, with no query.
+  const affiliatePct = await getActiveAffiliateDiscountPct(code);
+  if (affiliatePct !== null) {
+    return NextResponse.json({ valid: true, discountPct: affiliatePct, kind: "affiliate" });
+  }
+
   const result = await validatePromoCode({ code });
 
   return NextResponse.json({

@@ -48,6 +48,7 @@ export type CustomerOrderDetail = {
   cryptoDiscountPct: number | null;
   subtotalCents: number;
   totalCents: number;
+  affiliateId: string | null;
   note: string | null;
   // shipping address (nullable — collected at checkout since ADR 0024; older orders may lack it)
   name: string;
@@ -179,6 +180,7 @@ export async function getCustomerOrderDetail(
     cryptoDiscountPct: order.cryptoDiscountPct,
     subtotalCents: order.subtotalPrice,
     totalCents: order.totalPrice,
+    affiliateId: order.affiliateId,
     note: order.note,
     name: order.name,
     address: order.address,

@@ -21,9 +21,15 @@ const UNSELECTED =
 interface PaymentSelectorProps {
   value?: string;
   onChange?: (value: string) => void;
+  // ADR 0025 — drops the 10% claim from the crypto card, for when an affiliate code is applied.
+  hideCryptoSaving?: boolean;
 }
 
-export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) {
+export function PaymentSelector({
+  value,
+  onChange,
+  hideCryptoSaving = false,
+}: PaymentSelectorProps = {}) {
   const [internal, setInternal] = useState("crypto");
   const [howOpen, setHowOpen] = useState(false);
   const controlled = value !== undefined && onChange !== undefined;
@@ -49,12 +55,16 @@ export function PaymentSelector({ value, onChange }: PaymentSelectorProps = {}) 
         <span className="flex-1">
           <span className="flex items-center gap-2">
             <span className="text-[16px] font-semibold text-text">Crypto</span>
-            <span className="rounded-full bg-success/10 px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-success">
-              Save 10%
-            </span>
+            {hideCryptoSaving ? null : (
+              <span className="rounded-full bg-success/10 px-2.5 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-success">
+                Save 10%
+              </span>
+            )}
           </span>
           <span className="mt-1 block text-[14px] leading-[1.55] text-text-subtle">
-            {"BTC, ETH, USDT and more. Pay with crypto and save 10% — you go straight to a secure payment page."}
+            {hideCryptoSaving
+              ? "BTC, ETH, USDT and more. You go straight to a secure payment page."
+              : "BTC, ETH, USDT and more. Pay with crypto and save 10% — you go straight to a secure payment page."}
           </span>
         </span>
       </label>

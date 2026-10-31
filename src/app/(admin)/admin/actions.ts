@@ -16,6 +16,7 @@ import { sendToCustomer, sendToAdmin } from "@/lib/email/send";
 import { paymentConfirmed, shipped, type EmailItem } from "@/lib/email/templates";
 import { cancelAbandonedNurture } from "@/lib/qstash";
 import { createReferrerReward } from "@/lib/referral";
+import { claimCommissionAndNotify } from "@/lib/affiliate/earn";
 import { firstNameFromOrderName } from "@/lib/marketing/addContact";
 import { eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
@@ -32,6 +33,12 @@ export async function setStatus(orderId: string, status: OrderStatus): Promise<A
   if (!STATUS_VALUES.includes(status)) return { error: "Invalid status." };
 
   await db.update(orders).set({ status }).where(eq(orders.id, orderId));
+
+  // ADR 0025 — runs after the status is committed and never throws.
+  if (status === "paid" || status === "fulfilled") {
+    await claimCommissionAndNotify(orderId);
+  }
+
   revalidatePath("/admin");
   return { ok: true };
 }
@@ -89,6 +96,9 @@ export async function markPaid(orderId: string): Promise<ActionResult> {
     console.error("markPaid email failed (non-fatal):", e);
   }
 
+  // ADR 0025 — after the customer email, so a slow Telegram call can't delay it. Never throws.
+  await claimCommissionAndNotify(orderId);
+
   revalidatePath("/admin");
   return { ok: true };
 }
@@ -144,6 +154,9 @@ export async function saveTracking(
   } catch (e) {
     console.error("saveTracking email failed (non-fatal):", e);
   }
+
+  // ADR 0025 — after the customer email, so a slow Telegram call can't delay it. Never throws.
+  await claimCommissionAndNotify(orderId);
 
   revalidatePath("/admin");
   return { ok: true };

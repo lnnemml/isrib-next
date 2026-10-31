@@ -3135,3 +3135,40 @@ couldn't find a way back. Looking into it turned up three problems with `/api/un
 - **Side finding (not fixed):** the NowPayments webhook idempotency check is
   `order.status === "paid"` only. A late duplicate IPN on a `fulfilled` order would flip it
   back to `paid` and re-send the paid email.
+
+## [2026-10-28] ingest | Influencer outreach template (affiliate + free samples)
+
+- **Filed:** [`marketing/influencer-outreach.md`](./marketing/influencer-outreach.md). It has
+  an English email and a short DM, both written as plain prose. The pitch covers: running
+  since 2020, 500+ buyers, the six-compound catalog, in-house synthesis, 98%+ purity, NMR per
+  batch, an open affiliate format (commission link or audience code), and free samples with
+  no obligation to post. Linked from `index.md`.
+- **Open (Anton):** commission %, tracking and payout. The ADR 0014 customer referral is not a
+  creator affiliate program. If one is built, it is WHAT-level and needs `escalate` → ADR.
+  The sample budget and shipping are also open. Samples go out by hand, never as a fake paid
+  order (that would inflate admin revenue).
+- Nothing sent. **Roles run:** LEAD (draft, wiki).
+
+## [2026-10-31] decision | ADR 0025 — affiliate program (35% commission, 15% non-stacking discount)
+
+- **Filed:** [`decisions/0025-affiliate-program.md`](./decisions/0025-affiliate-program.md). Anton
+  approved the plan and chose a 15% buyer discount that does not stack with the 10% crypto discount.
+- **Build in progress** behind `AFFILIATES_ENABLED`. Deploy order is migrate → deploy → enable.
+  **Roles run:** LEAD (recon, ADR).
+
+## [2026-10-31] phase | Affiliate program built behind AFFILIATES_ENABLED (uncommitted)
+
+- **Built:** schema and reversible SQL migration, `?ref` capture and clicks, code attribution in
+  checkout, commission snapshot, one-time notification (Telegram then email) from all four paid
+  paths, `/partner` with magic-link login and CSV, `/admin/affiliates` with payouts. Also fixed the
+  webhook so a late IPN can't flip a `fulfilled` order back to `paid`.
+- **Verified:** 125 unit tests. Verifier approved after fixes (order mask cut to 2 characters,
+  `lock_timeout`, missing-secret warnings, token cleanup on deactivate and email change). Prober
+  ran the whole flow on real app code over PGlite with the outside world stubbed. Flag-off orders
+  matched HEAD on 89 checks.
+- **Not verified:** real Neon, Vercel `waitUntil`, Telegram Bot API, Resend delivery, and the
+  `db:sql` runner itself. The ADR's real test order is still required before enabling.
+- **Migration applied to production Neon on 2026-10-31.** Six `affiliate*` tables and five nullable
+  `orders` columns exist; all 53 orders have them null. Code not yet deployed, flag not set. Next:
+  deploy → enable → real test order.
+- **Roles run:** LEAD → implementer (5 tasks + fix batch) → verifier → prober.

@@ -97,7 +97,12 @@ function usd(amount: number): string {
 // One row per line: product name (via getProduct(slug).name) on top, a muted meta line
 // (sizeLabel · format · ×qty) beneath, and the extended line total on the right. Then
 // subtotal, optional crypto-discount row, and total. All values recomputed server-side.
-function itemsTable(items: EmailItem[], subtotalUsd: number, totalUsd: number): string {
+function itemsTable(
+  items: EmailItem[],
+  subtotalUsd: number,
+  totalUsd: number,
+  discountLabel = "Crypto discount",
+): string {
   const rows = items
     .map((it) => {
       const product = getProduct(it.slug);
@@ -122,7 +127,7 @@ function itemsTable(items: EmailItem[], subtotalUsd: number, totalUsd: number): 
     discountUsd > 0.005
       ? `
         <tr>
-          <td style="padding:8px 0 4px;color:${C.success};font-size:13px;">Crypto discount</td>
+          <td style="padding:8px 0 4px;color:${C.success};font-size:13px;">${discountLabel}</td>
           <td align="right" style="padding:8px 0 4px;color:${C.success};font-size:13px;font-weight:600;white-space:nowrap;">− ${usd(discountUsd)}</td>
         </tr>`
       : "";
@@ -349,6 +354,7 @@ export function orderReceivedManual({
   btcEquivalent,
   ltcEquivalent,
   shippingAddress,
+  discountLabel,
 }: {
   firstName: string;
   orderNumber: string;
@@ -358,6 +364,8 @@ export function orderReceivedManual({
   btcEquivalent?: string;
   ltcEquivalent?: string;
   shippingAddress: EmailShippingAddress;
+  // ADR 0025 — set only for an affiliate order, whose discount is not the crypto one.
+  discountLabel?: string;
 }): { subject: string; html: string } {
   const subject = "Your ISRIB Shop order — payment details inside";
   const amount = totalUsd; // manual path charges the (undiscounted) total
@@ -375,7 +383,7 @@ export function orderReceivedManual({
     <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 22px;">
       Send payment using one of the methods below. Once received, we will confirm and start preparing your order.
     </p>
-    ${itemsTable(items, subtotalUsd, totalUsd)}
+    ${itemsTable(items, subtotalUsd, totalUsd, discountLabel)}
     ${addressBlock(shippingAddress)}
     <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0 0 24px;">
       Spotted a typo in your address? Just reply to this email.
@@ -679,6 +687,7 @@ export function abandonedCheckout({
   emailNumber,
   btcEquivalent,
   ltcEquivalent,
+  savingsPct = 10,
 }: {
   firstName: string;
   orderNumber: string;
@@ -689,6 +698,8 @@ export function abandonedCheckout({
   emailNumber: 1 | 2;
   btcEquivalent?: string;
   ltcEquivalent?: string;
+  // ADR 0025 — set only for an affiliate order, whose rate is not the 10% crypto default.
+  savingsPct?: number;
 }): { subject: string; html: string } {
   const subject =
     emailNumber === 1
@@ -713,7 +724,7 @@ export function abandonedCheckout({
           Your crypto payment invoice is still active:
         </p>
         <p style="color:${C.success};font-size:14px;font-weight:700;line-height:1.6;margin:0 0 16px;">
-          Complete it with crypto and you still save 10%.
+          Complete it with crypto and you still save ${savingsPct}%.
         </p>
         ${button(invoiceUrl, "Complete crypto payment →")}
         ${cryptoHelpLine()}
@@ -744,5 +755,31 @@ export function abandonedCheckout({
   return {
     subject,
     html: layout(inner, intro),
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// 7. partnerLoginLink — affiliate magic link (ADR 0025). Plain and short.
+// ════════════════════════════════════════════════════════════════════════════
+export function partnerLoginLink({
+  loginUrl,
+  expiresInMinutes,
+}: {
+  loginUrl: string;
+  expiresInMinutes: number;
+}): { subject: string; html: string } {
+  const inner = `
+    <p style="color:${C.muted};font-size:15px;line-height:1.7;margin:0 0 20px;">
+      Use the button below to sign in to your partner dashboard. The link works once and expires
+      in ${expiresInMinutes} minutes.
+    </p>
+    ${button(loginUrl, "Sign in")}
+    <p style="color:${C.muted};font-size:13px;line-height:1.6;margin:0;">
+      If you did not ask for this, you can ignore this email.
+    </p>`;
+
+  return {
+    subject: "Your partner sign-in link",
+    html: layout(inner, "Your partner sign-in link."),
   };
 }

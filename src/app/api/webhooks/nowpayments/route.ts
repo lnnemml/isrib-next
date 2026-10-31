@@ -19,6 +19,7 @@ import { paymentConfirmed } from "@/lib/email/templates";
 import { trackServerEvent } from "@/lib/analytics/server";
 import { cancelAbandonedNurture } from "@/lib/qstash";
 import { createReferrerReward } from "@/lib/referral";
+import { claimCommissionAndNotify } from "@/lib/affiliate/earn";
 import { firstNameFromOrderName } from "@/lib/marketing/addContact";
 import { eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
@@ -145,7 +146,7 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   // Idempotent — already processed; short-circuit without re-sending emails/events.
-  if (order.status === "paid") {
+  if (order.status === "paid" || order.status === "fulfilled") {
     return new Response("OK");
   }
 
@@ -195,6 +196,8 @@ export async function POST(req: Request): Promise<Response> {
     // via allSettled: idempotent (createReferrerReward pre-checks the referrals junction) and
     // can never roll back or break the paid transition.
     createReferrerReward(order.id),
+    // ADR 0025 — claim the affiliate commission and notify. Never throws.
+    claimCommissionAndNotify(order.id),
   ]);
   for (const r of results) {
     if (r.status === "rejected") console.error("NowPayments IPN side-effect failed (non-fatal):", r.reason);

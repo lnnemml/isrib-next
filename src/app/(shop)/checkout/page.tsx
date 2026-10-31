@@ -56,6 +56,13 @@ export default function CheckoutPage() {
   const [promoCode, setPromoCode] = useState("");
   const [promoPct, setPromoPct] = useState(0);
   const [promoValid, setPromoValid] = useState<boolean | null>(null);
+  // ADR 0025 — an affiliate code shares the promo field, so the validate routes flag it with
+  // kind "affiliate". Two sources: `promoIsAffiliate` for a code applied in the field, and
+  // `linkCode` + `linkPct` for one the isrib_ref cookie holds. Both stay at their defaults
+  // unless the flag is on. The server resolves attribution; this only mirrors it.
+  const [promoIsAffiliate, setPromoIsAffiliate] = useState(false);
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [linkPct, setLinkPct] = useState(0);
 
   // Optional `code` arg lets the mount effect (auto-apply from the `isrib_promo` cookie)
   // validate a code directly without waiting for `promoCode` state to flush. Manual "Apply"
@@ -66,18 +73,21 @@ export default function CheckoutPage() {
     if (!normalized) {
       setPromoValid(null);
       setPromoPct(0);
+      setPromoIsAffiliate(false);
       return;
     }
     fetch("/api/promo/validate?code=" + encodeURIComponent(normalized))
       .then((r) => r.json())
-      .then((data: { valid?: boolean; discountPct?: number }) => {
+      .then((data: { valid?: boolean; discountPct?: number; kind?: string }) => {
         setPromoValid(!!data.valid);
         setPromoPct(data.valid ? data.discountPct ?? 0 : 0);
+        setPromoIsAffiliate(data.kind === "affiliate");
       })
       .catch(() => {
         // Best-effort — a failed preview never blocks checkout (server re-validates).
         setPromoValid(null);
         setPromoPct(0);
+        setPromoIsAffiliate(false);
       });
   }
 
@@ -90,12 +100,23 @@ export default function CheckoutPage() {
     const match = document.cookie.match(/(?:^|;\s*)isrib_ref=([^;]*)/);
     const code = match ? decodeURIComponent(match[1]).trim().toUpperCase() : "";
     if (!code) return;
+    // Existing one-shot read of an external source (document.cookie) on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRefCode(code);
     let cancelled = false;
     fetch("/api/referral/validate?code=" + encodeURIComponent(code))
       .then((r) => r.json())
-      .then((data: { valid?: boolean }) => {
-        if (!cancelled) setRefValid(!!data.valid);
+      .then((data: { valid?: boolean; discountPct?: number; kind?: string }) => {
+        if (cancelled) return;
+        if (data.kind === "affiliate") {
+          // ADR 0025 — show the link code as applied. An updater function, so a code already in
+          // the field (typed, or from the isrib_promo cookie) is left alone.
+          setLinkCode(code);
+          setLinkPct(data.discountPct ?? 0);
+          setPromoCode((current) => (current.trim() === "" ? code : current));
+          return;
+        }
+        setRefValid(!!data.valid);
       })
       .catch(() => {
         // Best-effort — a failed preview never blocks checkout (server re-validates).
@@ -114,6 +135,8 @@ export default function CheckoutPage() {
     const match = document.cookie.match(/(?:^|;\s*)isrib_promo=([^;]*)/);
     const code = match ? decodeURIComponent(match[1]).trim().toUpperCase() : "";
     if (!code) return;
+    // Existing one-shot read of an external source (document.cookie) on mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPromoCode(code);
     applyPromo(code);
     // Intentionally runs once on mount only (mirrors the isrib_ref effect above);
@@ -139,20 +162,36 @@ export default function CheckoutPage() {
   // Non-stacking (ADR 0014): a referral is worth the same flat 10% as crypto, so on the
   // manual path a valid ref previews the same discounted total.
   const referralTotalCents = subtotalCents - Math.round((subtotalCents * CRYPTO_DISCOUNT_PCT) / 100);
-  const showReferral = refValid && refCode !== null;
-  const showPromo = promoValid === true && promoPct > 0;
+  // ADR 0025 — mirrors resolveAttribution: an applied field code beats the cookie, and a field
+  // holding anything else leaves the cookie in play, even if the buyer clears it.
+  const typedAffiliate = promoValid === true && promoIsAffiliate;
+  const appliedCode = promoCode.trim().toUpperCase();
+  const affiliateCode = typedAffiliate ? appliedCode : linkCode;
+  const affiliatePct = typedAffiliate ? promoPct : linkPct;
+  const fieldHoldsLinkCode = linkCode !== null && appliedCode === linkCode;
+  // An affiliate attribution drops a customer referral (ADR 0025), so it stops previewing too.
+  const showReferral = refValid && refCode !== null && !typedAffiliate;
+  const showPromo = promoValid === true && promoPct > 0 && !promoIsAffiliate;
 
   // Non-stacking best-single (ADR 0016) — the previewed discount % is the MAX of every
-  // applicable source (crypto / referral / promo). Cosmetic only; the server recomputes.
+  // applicable source (crypto / referral / promo / affiliate). Cosmetic only; the server
+  // recomputes.
   const previewDiscountPct = Math.max(
     method === "crypto" ? CRYPTO_DISCOUNT_PCT : 0,
     showReferral ? CRYPTO_DISCOUNT_PCT : 0,
     showPromo ? promoPct : 0,
+    affiliatePct,
   );
   const promoTotalCents = subtotalCents - Math.round((subtotalCents * promoPct) / 100);
   // The promo line "wins" (is the best single discount) only when it strictly beats the
   // base 10% either method/referral would already give — that's what the buyer pays.
   const promoIsWinning = showPromo && promoPct > (method === "crypto" || showReferral ? CRYPTO_DISCOUNT_PCT : 0);
+  // Same idea for an affiliate code. On a tie with a promo code the total is identical.
+  const affiliateIsWinning =
+    affiliatePct > 0 &&
+    affiliatePct >= (showPromo ? promoPct : 0) &&
+    affiliatePct > (method === "crypto" || showReferral ? CRYPTO_DISCOUNT_PCT : 0);
+  const affiliateTotalCents = subtotalCents - Math.round((subtotalCents * affiliatePct) / 100);
   const cartPayload = JSON.stringify(
     lines.map((l) => ({
       productSlug: l.productSlug,
@@ -275,7 +314,21 @@ export default function CheckoutPage() {
           <span className="text-small text-success">{"Promo code applied: " + promoCode.trim().toUpperCase()}</span>
         </div>
       ) : null}
-      {promoIsWinning ? (
+      {affiliateCode !== null ? (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-small text-success">{"Code applied: " + affiliateCode}</span>
+        </div>
+      ) : null}
+      {affiliateIsWinning ? (
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-small font-semibold text-success">
+            {"You save " + formatCents(subtotalCents - affiliateTotalCents) + " with your code (−" + affiliatePct + "%)"}
+          </span>
+          <span className="font-mono text-[18px] font-bold text-success">
+            {formatCents(affiliateTotalCents)}
+          </span>
+        </div>
+      ) : promoIsWinning ? (
         <div className="mt-2 flex items-center justify-between">
           <span className="text-small text-success">{"Promo total (−" + promoPct + "%)"}</span>
           <span className="font-mono text-[16px] font-semibold text-success">
@@ -376,7 +429,11 @@ export default function CheckoutPage() {
 
         <section className="flex flex-col gap-5">
           <h2 className="text-h4 font-semibold text-text">{"Payment method"}</h2>
-          <PaymentSelector value={method} onChange={setMethod} />
+          <PaymentSelector
+            value={method}
+            onChange={setMethod}
+            hideCryptoSaving={affiliateCode !== null}
+          />
         </section>
 
         {/* ADR 0016 — promo code. Cosmetic preview only; the server re-validates and is
@@ -396,6 +453,7 @@ export default function CheckoutPage() {
                   setPromoCode(e.target.value.toUpperCase());
                   setPromoValid(null);
                   setPromoPct(0);
+                  setPromoIsAffiliate(false);
                 }}
                 autoComplete="off"
                 className={FIELD_CLASS + " min-w-0 flex-1"}
@@ -412,6 +470,10 @@ export default function CheckoutPage() {
             {showPromo ? (
               <p className="mt-1.5 text-small text-success">
                 {"Code applied — " + promoPct + "% off."}
+              </p>
+            ) : typedAffiliate || fieldHoldsLinkCode ? (
+              <p className="mt-1.5 text-small text-success">
+                {"Code applied — " + (typedAffiliate ? promoPct : linkPct) + "% off."}
               </p>
             ) : promoValid === false ? (
               <p className="mt-1.5 text-small text-text-muted">{"That code is not valid."}</p>
@@ -448,7 +510,7 @@ export default function CheckoutPage() {
           </Button>
           <p className="mt-3 text-caption text-text-faint">
             {method === "crypto"
-              ? "You'll be taken straight to our secure crypto payment page (BTC, ETH, USDT, XMR) to pay with the 10% discount. No card payment."
+              ? "You'll be taken straight to our secure crypto payment page (BTC, ETH, USDT, XMR) to pay with the " + (affiliateIsWinning ? affiliatePct : CRYPTO_DISCOUNT_PCT) + "% discount. No card payment."
               : "No card payment. We'll email payment details to arrange payment manually after you place the order."}
           </p>
         </div>

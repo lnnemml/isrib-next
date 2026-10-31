@@ -46,6 +46,9 @@ rather than scanning the whole directory.
   **the skill-driven `/go` landing rewrite** (Breakthrough Advertising DIAGNOSE + ratified
   "stuck-brake high-performer" identity + belief-gate copy deck). Boundary-first; mechanism,
   never a health-outcome promise. S1–S6 drafted; offer (100m-offers) + FAQ passes pending.
+- [`marketing/influencer-outreach.md`](./marketing/influencer-outreach.md) —
+  **cold outreach to nootropic creators**: an email and a DM template offering an affiliate
+  partnership plus free samples. Commission terms are not decided yet (open decisions inside).
 
 ## Journal / SEO hub
 
@@ -120,6 +123,7 @@ rather than scanning the whole directory.
 - [`decisions/0023-buyers-auto-join-marketing-list.md`](./decisions/0023-buyers-auto-join-marketing-list.md)
   — every order (paid or unpaid) auto-joins `marketing_contacts` + Resend segment; insert-only (opt-outs win); supersedes 0017's "seeds once"
 - [`decisions/0024-shipping-address-at-checkout.md`](./decisions/0024-shipping-address-at-checkout.md)
+- [`decisions/0025-affiliate-program.md`](./decisions/0025-affiliate-program.md)
   — full shipping address collected AT checkout again; post-payment `/shipping/<token>` form removed; supersedes ADR 0010
 
 ## Planning

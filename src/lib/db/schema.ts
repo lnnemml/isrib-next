@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean, pgEnum, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 // ── Enums ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +32,12 @@ export const discountLedgerStatusEnum = pgEnum("discount_ledger_status", [
   "available",
   "redeemed",
   "expired",
+]);
+
+// ADR 0025 — how an order reached an affiliate: the ?ref link cookie, or a typed code
+export const attributionSourceEnum = pgEnum("attribution_source", [
+  "link",
+  "code",
 ]);
 
 // ── orders ─────────────────────────────────────────────────────────────────
@@ -74,6 +80,15 @@ export const orders = pgTable("orders", {
   referralCodeUsed:         text("referral_code_used"),         // snapshot of the code the referee used (attribution)
   referredByCustomerId:     text("referred_by_customer_id"),    // the referrer's customer id (drives reward-on-paid)
   discountLedgerId:         text("discount_ledger_id"),         // nullable; set when a referrer credit was redeemed on THIS order
+
+  // ADR 0025 — affiliate attribution + commission snapshot, written at order creation from the
+  // final total. Earned/void is derived from `status`, never stored (commissionState).
+  // No onDelete: an affiliate with order history is deactivated (is_active), not deleted.
+  affiliateId:              text("affiliate_id").references(() => affiliates.id),
+  attributionSource:        attributionSourceEnum("attribution_source"),
+  commissionRateSnapshotBps: integer("commission_rate_snapshot_bps"), // 3500 = 35%; the affiliate's rate when the order was placed
+  commissionAmountCents:    integer("commission_amount_cents"),
+  commissionEarnedAt:       timestamp("commission_earned_at"),  // atomic claim; the only trigger for the notification, so it fires once
 
   // nowpayments (crypto path only)
   nowpaymentsInvoiceId:     text("nowpayments_invoice_id"),
@@ -118,7 +133,9 @@ export const orders = pgTable("orders", {
   // mints it per checkout attempt and passes it to both the Pixel order_submitted and the
   // server action; the NowPayments webhook reuses it for the order_confirmed Purchase dedup.
   eventId:                  text("event_id"),
-});
+}, (table) => [
+  index("orders_affiliate_id_idx").on(table.affiliateId),
+]);
 
 export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
@@ -281,3 +298,104 @@ export const webhookLogs = pgTable("webhook_logs", {
 
 export type WebhookLog = typeof webhookLogs.$inferSelect;
 export type NewWebhookLog = typeof webhookLogs.$inferInsert;
+
+// ── affiliates ───────────────────────────────────────────────────────────────
+// ADR 0025 — creator affiliate program, separate from the customer referral (ADR 0014).
+// Codes share the `isrib_ref` cookie and the promo field with those flows. Money is integer
+// cents; rates are integer basis points (3500 = 35%).
+
+export const affiliates = pgTable("affiliates", {
+  id:                   text("id").primaryKey(),          // nanoid
+  name:                 text("name").notNull(),
+  handle:               text("handle"),                   // nullable; e.g. the X/Twitter handle
+  code:                 text("code").notNull().unique(),  // stored uppercase (normalizeAffiliateCode); never REF-, never a promo code
+  commissionRateBps:    integer("commission_rate_bps").notNull().default(3500),
+  customerDiscountBps:  integer("customer_discount_bps").notNull().default(1500),
+  notifyEmail:          text("notify_email"),             // nullable; also the self-purchase check (case-insensitive)
+  notifyTelegramChatId: text("notify_telegram_chat_id"),  // nullable; when set, Telegram goes first and email is the fallback
+  isActive:             boolean("is_active").notNull().default(true),
+  createdAt:            timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Affiliate = typeof affiliates.$inferSelect;
+export type NewAffiliate = typeof affiliates.$inferInsert;
+
+// ── affiliate_clicks ─────────────────────────────────────────────────────────
+// ADR 0025 — one row per visitor per affiliate per UTC day. visitor_hash uses a daily salt,
+// so the unique index IS the dedupe (ON CONFLICT DO NOTHING). Never store a raw IP.
+
+export const affiliateClicks = pgTable("affiliate_clicks", {
+  id:          text("id").primaryKey(),          // nanoid
+  affiliateId: text("affiliate_id").notNull().references(() => affiliates.id, { onDelete: "cascade" }),
+  createdAt:   timestamp("created_at").defaultNow().notNull(),
+  landingPath: text("landing_path"),             // nullable; a click is never dropped for lacking one
+  visitorHash: text("visitor_hash").notNull(),   // HMAC(HMAC(secret, UTC date), IP + user agent)
+}, (table) => [
+  uniqueIndex("affiliate_clicks_affiliate_id_visitor_hash_idx").on(table.affiliateId, table.visitorHash),
+]);
+
+export type AffiliateClick = typeof affiliateClicks.$inferSelect;
+export type NewAffiliateClick = typeof affiliateClicks.$inferInsert;
+
+// ── affiliate_payouts ────────────────────────────────────────────────────────
+// ADR 0025 — manual crypto payouts recorded in admin. balance = earned − sum(payouts), so a
+// cancellation after a payout carries forward as a negative balance. No onDelete: this is a
+// money record, and an affiliate who has been paid must not be deletable.
+
+export const affiliatePayouts = pgTable("affiliate_payouts", {
+  id:             text("id").primaryKey(),          // nanoid
+  affiliateId:    text("affiliate_id").notNull().references(() => affiliates.id),
+  amountCents:    integer("amount_cents").notNull(),// cents
+  cryptoCurrency: text("crypto_currency").notNull(),// e.g. "USDT"
+  cryptoAmount:   text("crypto_amount").notNull(),  // text so it stays exact
+  txHash:         text("tx_hash").notNull().unique(),
+  periodStart:    timestamp("period_start").notNull(),
+  periodEnd:      timestamp("period_end").notNull(),
+  paidAt:         timestamp("paid_at").notNull(),
+  createdAt:      timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AffiliatePayout = typeof affiliatePayouts.$inferSelect;
+export type NewAffiliatePayout = typeof affiliatePayouts.$inferInsert;
+
+// ── affiliate_login_tokens ───────────────────────────────────────────────────
+// ADR 0025 — single-use magic links. Only the SHA-256 hash of the opaque token is stored.
+
+export const affiliateLoginTokens = pgTable("affiliate_login_tokens", {
+  id:          text("id").primaryKey(),               // nanoid
+  affiliateId: text("affiliate_id").notNull().references(() => affiliates.id, { onDelete: "cascade" }),
+  tokenHash:   text("token_hash").notNull().unique(), // SHA-256 of the opaque token
+  expiresAt:   timestamp("expires_at").notNull(),     // 30 minutes emailed, 24 hours from admin (set by the caller, not the schema)
+  usedAt:      timestamp("used_at"),                  // nullable; set once the POST consumes it
+  createdAt:   timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AffiliateLoginToken = typeof affiliateLoginTokens.$inferSelect;
+export type NewAffiliateLoginToken = typeof affiliateLoginTokens.$inferInsert;
+
+// ── affiliate_sessions ───────────────────────────────────────────────────────
+// ADR 0025 — DB-backed partner sessions (30 days), so deactivating an affiliate cuts access
+// at once. Only the SHA-256 hash of the cookie value is stored.
+
+export const affiliateSessions = pgTable("affiliate_sessions", {
+  id:          text("id").primaryKey(),               // nanoid
+  affiliateId: text("affiliate_id").notNull().references(() => affiliates.id, { onDelete: "cascade" }),
+  tokenHash:   text("token_hash").notNull().unique(), // SHA-256 of the opaque session token
+  expiresAt:   timestamp("expires_at").notNull(),
+  createdAt:   timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AffiliateSession = typeof affiliateSessions.$inferSelect;
+export type NewAffiliateSession = typeof affiliateSessions.$inferInsert;
+
+// ── affiliate_login_attempts ─────────────────────────────────────────────────
+// ADR 0025 — login-request rate limiting only (5 per visitor hash per 15 minutes).
+
+export const affiliateLoginAttempts = pgTable("affiliate_login_attempts", {
+  id:          text("id").primaryKey(),        // nanoid
+  visitorHash: text("visitor_hash").notNull(), // same daily-salted HMAC as affiliate_clicks; never a raw IP
+  createdAt:   timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AffiliateLoginAttempt = typeof affiliateLoginAttempts.$inferSelect;
+export type NewAffiliateLoginAttempt = typeof affiliateLoginAttempts.$inferInsert;

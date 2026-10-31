@@ -15,6 +15,9 @@ import {
   getAvailableRewardCredit,
 } from "@/lib/referral";
 import { validatePromoCode, incrementPromoRedemption } from "@/lib/promo";
+import { computeCommissionCents, resolveAttribution, type Attribution } from "@/lib/affiliate/core";
+import { affiliatesEnabled } from "@/lib/affiliate/flag";
+import { getAffiliatesByCodes } from "@/lib/affiliate/lookup";
 import { getProduct } from "@/lib/copy/products";
 import { computeTieredPrice } from "@/lib/copy/pricing";
 import { generateOrderNumber, generateShippingToken, deriveTrafficType } from "@/lib/order-number";
@@ -26,7 +29,7 @@ import { orderReceivedManual, opsAlert, type EmailItem } from "@/lib/email/templ
 import { createInvoice } from "@/lib/nowpayments";
 import { addMarketingContact, firstNameFromOrderName, safeErrorTag } from "@/lib/marketing/addContact";
 import { Client } from "@upstash/qstash";
-import { and, eq, gt, desc, isNotNull } from "drizzle-orm";
+import { and, eq, gt, desc, isNotNull, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -58,6 +61,23 @@ function mgFromSizeLabel(sizeLabel: string): number | null {
   const mg = /^([\d.]+)\s*mg$/i.exec(sizeLabel.trim());
   if (mg) return Math.round(parseFloat(mg[1]));
   return null;
+}
+
+// ADR 0025 — who, if anyone, this order is attributed to. The flag-off path makes no query, and
+// a failed lookup costs the attribution, never the sale.
+async function lookupAttribution(input: {
+  typedCode: string | null;
+  cookieCode: string | null;
+  buyerEmail: string;
+}): Promise<Attribution | null> {
+  if (!affiliatesEnabled()) return null;
+  try {
+    const affiliates = await getAffiliatesByCodes([input.typedCode, input.cookieCode]);
+    return resolveAttribution({ ...input, affiliates });
+  } catch (e) {
+    console.error("Affiliate attribution failed (non-fatal):", safeErrorTag(e));
+    return null;
+  }
 }
 
 export async function submitOrder(_prev: SubmitState, formData: FormData): Promise<SubmitState> {
@@ -227,12 +247,24 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     const promoRaw = formData.get("promoCode") as string | null;
     const promo = await validatePromoCode({ code: promoRaw });
 
+    // ADR 0025 — an affiliate attribution drops any customer referral on this order (no
+    // reward) and leaves a reward credit unconsumed. The credit is withheld rather than left
+    // for computeEffectiveDiscount, so it cannot lift an order whose code is worth under 10%
+    // without being spent. With no attribution this adds nothing to the numbers above.
+    const attribution = await lookupAttribution({
+      typedCode: promoRaw,
+      cookieCode: refCookie,
+      buyerEmail: raw.email,
+    });
+    const hasValidReferral = referral.ok && attribution === null;
+
     const eff = computeEffectiveDiscount({
       subtotalCents,
       isCrypto,
-      hasValidReferral: referral.ok,
-      rewardCreditAvailable: !!rewardCredit,
+      hasValidReferral,
+      rewardCreditAvailable: !!rewardCredit && attribution === null,
       promoPct: promo.ok ? promo.discountPct : 0,
+      affiliatePct: attribution ? attribution.affiliate.customerDiscountBps / 100 : 0,
     });
 
     // Keep existing column semantics: cryptoDiscountPct reflects the crypto method only.
@@ -241,8 +273,8 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
 
     // Attribution + reward-trigger fields (set whenever a valid referral is present, EVEN on
     // crypto orders where it adds no extra discount — the referee was still referred).
-    const referralCodeUsed = referral.ok ? referral.code : null;
-    const referredByCustomerId = referral.ok ? referral.referrerId : null;
+    const referralCodeUsed = referral.ok && hasValidReferral ? referral.code : null;
+    const referredByCustomerId = referral.ok && hasValidReferral ? referral.referrerId : null;
     // Consume a reward credit ONLY when it's the sole reason for the discount (eff.usesRewardCredit).
     const discountLedgerId = eff.usesRewardCredit && rewardCredit ? rewardCredit.id : null;
 
@@ -274,6 +306,8 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
     // live invoice for the SAME total, send them back to THAT invoice instead of minting
     // another. Invoices are floating-rate now (ADR — no rate-lock), so a <60-min-old invoice
     // is still payable. Matches email + total to avoid reusing a stale invoice for a changed cart.
+    // ADR 0025 — also matches the affiliate, so a same-total order never reuses an invoice whose
+    // order is credited to someone else.
     if (paymentMethod === "crypto") {
       const sixtyMinAgo = new Date(Date.now() - 60 * 60 * 1000);
       const [dupe] = await db
@@ -285,6 +319,7 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
             eq(orders.paymentMethod, "crypto"),
             eq(orders.status, "pending_payment_instructions"),
             eq(orders.totalPrice, totalCents),
+            attribution ? eq(orders.affiliateId, attribution.affiliate.id) : isNull(orders.affiliateId),
             isNotNull(orders.nowpaymentsPaymentUrl),
             gt(orders.createdAt, sixtyMinAgo),
           ),
@@ -350,6 +385,14 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
           referralCodeUsed,
           referredByCustomerId,
           discountLedgerId: effectiveDiscountLedgerId,
+          // ADR 0025 — attribution + commission snapshot, from the final total. Earned state
+          // is derived from status; commissionEarnedAt stays null until the paid claim.
+          affiliateId: attribution ? attribution.affiliate.id : null,
+          attributionSource: attribution ? attribution.source : null,
+          commissionRateSnapshotBps: attribution ? attribution.affiliate.commissionRateBps : null,
+          commissionAmountCents: attribution
+            ? computeCommissionCents(effectiveTotalCents, attribution.affiliate.commissionRateBps)
+            : null,
           // Analytics dedup id (ADR 0005) — stored so the NowPayments webhook's Purchase
           // event can reuse it. Nullable: a missing incoming eventId stores null, never fails.
           eventId: raw.eventId,
@@ -452,6 +495,7 @@ export async function submitOrder(_prev: SubmitState, formData: FormData): Promi
             country: raw.country,
             phone: raw.phone,
           },
+          discountLabel: attribution ? `Discount (${eff.discountPct}%)` : undefined,
         });
         sends.push(
           sendToCustomer(raw.email, manual.subject, manual.html).then(() =>

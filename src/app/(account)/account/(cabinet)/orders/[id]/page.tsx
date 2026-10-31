@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCurrentCustomer } from "@/lib/customer/auth";
 import { getCustomerOrderDetail } from "@/lib/customer/orders";
 import { formatCents } from "@/lib/copy/products";
+import { discountPctFromTotals } from "@/lib/discount";
 import { StatusBadge } from "../../statusBadge";
 
 export const metadata: Metadata = {
@@ -48,6 +49,11 @@ export default async function AccountOrderDetailPage({
 
   const order = await getCustomerOrderDetail(customer.email, id);
   if (!order) notFound(); // not found OR not owned by this customer
+
+  // ADR 0025 — a manual order has no cryptoDiscountPct, but an affiliate code still discounts it.
+  const showDiscount =
+    !!order.cryptoDiscountPct ||
+    (order.affiliateId !== null && order.subtotalCents > order.totalCents);
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -112,9 +118,15 @@ export default async function AccountOrderDetailPage({
           <span>{"Subtotal"}</span>
           <span>{formatCents(order.subtotalCents)}</span>
         </div>
-        {order.cryptoDiscountPct ? (
+        {showDiscount ? (
           <div className="mt-1 flex items-center justify-between text-small text-success">
-            <span>{`Crypto discount (${order.cryptoDiscountPct}%)`}</span>
+            <span>
+              {/* ADR 0025 — an affiliate discount replaces the crypto one, so the crypto label
+                  would state the wrong rate. */}
+              {order.affiliateId
+                ? `Discount (${discountPctFromTotals(order.subtotalCents, order.totalCents)}%)`
+                : `Crypto discount (${order.cryptoDiscountPct}%)`}
+            </span>
             <span>{`− ${formatCents(order.subtotalCents - order.totalCents)}`}</span>
           </div>
         ) : null}

@@ -5,6 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
+import { getActiveAffiliateDiscountPct } from "@/lib/affiliate/lookup";
 import { db } from "@/lib/db";
 import { customers } from "@/lib/db/schema";
 import { normalizeReferralCode } from "@/lib/referral";
@@ -15,6 +16,13 @@ export async function GET(request: Request) {
   const code = normalizeReferralCode(new URL(request.url).searchParams.get("code"));
   if (code === null) {
     return NextResponse.json({ valid: false });
+  }
+
+  // ADR 0025 — the isrib_ref cookie can hold an affiliate code. Null with the flag off, with
+  // no query.
+  const affiliatePct = await getActiveAffiliateDiscountPct(code);
+  if (affiliatePct !== null) {
+    return NextResponse.json({ valid: true, discountPct: affiliatePct, kind: "affiliate" });
   }
 
   const [referrer] = await db

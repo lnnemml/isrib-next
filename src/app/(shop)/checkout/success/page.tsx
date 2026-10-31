@@ -6,6 +6,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { orders, orderItems } from "@/lib/db/schema";
 import { getProduct, formatCents } from "@/lib/copy/products";
+import { discountPctFromTotals } from "@/lib/discount";
 import { eq } from "drizzle-orm";
 import { ClearCartOnMount } from "../ClearCartOnMount";
 import { PaymentConfirmationPoller } from "../PaymentConfirmationPoller";
@@ -50,6 +51,10 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
   // URL flag is spoofable, so it drives ONLY the optimistic headline during the crypto
   // webhook race.
   const confirmedPaid = order.status === "paid";
+  // ADR 0025 — a manual order has no cryptoDiscountPct, but an affiliate code still discounts it.
+  const showDiscount =
+    !!order.cryptoDiscountPct ||
+    (order.affiliateId !== null && order.subtotalPrice > order.totalPrice);
 
   return (
     <main className="mx-auto max-w-[820px] px-8 py-16">
@@ -87,9 +92,13 @@ export default async function CheckoutSuccessPage({ searchParams }: SuccessPageP
         <span className="text-body text-text-muted">{"Subtotal"}</span>
         <span className="font-mono text-[16px] text-text">{formatCents(order.subtotalPrice)}</span>
       </div>
-      {order.cryptoDiscountPct ? (
+      {showDiscount ? (
         <div className="mt-1 flex items-center justify-between">
-          <span className="text-small text-success">{"Crypto discount (−10%)"}</span>
+          <span className="text-small text-success">
+            {order.affiliateId
+              ? `Discount (−${discountPctFromTotals(order.subtotalPrice, order.totalPrice)}%)`
+              : "Crypto discount (−10%)"}
+          </span>
           <span className="font-mono text-[14px] text-success">
             {"−"}
             {formatCents(order.subtotalPrice - order.totalPrice)}
